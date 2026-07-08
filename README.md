@@ -19,7 +19,13 @@ npm run dev
 
 **https://k8rvin.github.io/midtownworker/**
 
-Первый раз в настройках репозитория: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+Первый раз в настройках репозитория:
+
+1. **Settings → Pages → Build and deployment**
+2. **Source:** Deploy from a branch
+3. **Branch:** `gh-pages` → папка `/ (root)` → Save
+
+Для бесплатного аккаунта GitHub Pages работает только с **публичным** репозиторием (приватный — нужен GitHub Pro).
 
 Локальная сборка как на Pages:
 
