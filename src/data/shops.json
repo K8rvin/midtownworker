@@ -1,0 +1,48 @@
+[
+  {
+    "id": "grocery_1",
+    "type": "grocery",
+    "name": "Супермаркет «Уголок»",
+    "x": 106,
+    "y": 108,
+    "doorX": 106,
+    "doorY": 109,
+    "interiorX": 105,
+    "interiorY": 106,
+    "interiorW": 3,
+    "interiorH": 2,
+    "clerk": { "name": "Кассир", "x": 106, "y": 106 },
+    "items": ["bread", "water", "sandwich", "meal"]
+  },
+  {
+    "id": "furniture_1",
+    "type": "furniture",
+    "name": "Мебельный «Дом»",
+    "x": 118,
+    "y": 118,
+    "doorX": 118,
+    "doorY": 119,
+    "interiorX": 117,
+    "interiorY": 116,
+    "interiorW": 3,
+    "interiorH": 2,
+    "clerk": { "name": "Консультант", "x": 118, "y": 116 },
+    "items": ["bed_basic", "fridge_basic", "desk_basic"]
+  },
+  {
+    "id": "armory_1",
+    "type": "weapon",
+    "name": "Оружейная «Тень»",
+    "killerOnly": true,
+    "x": 145,
+    "y": 87,
+    "doorX": 145,
+    "doorY": 89,
+    "interiorX": 144,
+    "interiorY": 87,
+    "interiorW": 3,
+    "interiorH": 2,
+    "clerk": { "name": "Снабженец", "x": 145, "y": 87 },
+    "items": ["pistol", "shotgun", "sniper"]
+  }
+]

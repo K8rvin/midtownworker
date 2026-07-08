@@ -1,0 +1,6 @@
+[
+  { "id": "bread", "name": "Хлеб", "price": 8, "hunger": 15 },
+  { "id": "water", "name": "Вода", "price": 5, "hunger": 5 },
+  { "id": "sandwich", "name": "Сэндвич", "price": 18, "hunger": 35 },
+  { "id": "meal", "name": "Готовый обед", "price": 35, "hunger": 55 }
+]

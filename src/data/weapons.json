@@ -1,0 +1,52 @@
+[
+  {
+    "id": "fists",
+    "name": "Кулаки",
+    "damage": 10,
+    "fireRate": 400,
+    "range": 40,
+    "ammoType": null,
+    "price": 0
+  },
+  {
+    "id": "pistol",
+    "name": "Пистолет",
+    "damage": 25,
+    "fireRate": 300,
+    "range": 400,
+    "ammoType": "pistol_ammo",
+    "magSize": 12,
+    "price": 500
+  },
+  {
+    "id": "shotgun",
+    "name": "Дробовик",
+    "damage": 60,
+    "fireRate": 800,
+    "range": 200,
+    "ammoType": "shotgun_ammo",
+    "magSize": 6,
+    "price": 1200
+  },
+  {
+    "id": "uzi",
+    "name": "Узи",
+    "damage": 15,
+    "fireRate": 100,
+    "range": 350,
+    "ammoType": "uzi_ammo",
+    "magSize": 30,
+    "price": 2500
+  },
+  {
+    "id": "sniper",
+    "name": "Снайперская винтовка",
+    "damage": 95,
+    "fireRate": 1400,
+    "range": 1100,
+    "ammoType": "sniper_ammo",
+    "magSize": 5,
+    "price": 4500,
+    "scoped": true
+  }
+]

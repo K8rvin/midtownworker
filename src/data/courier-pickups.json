@@ -1,0 +1,30 @@
+[
+  {
+    "id": "grocery",
+    "name": "Супермаркет «Уголок»",
+    "category": "shop",
+    "x": 106,
+    "y": 109
+  },
+  {
+    "id": "furniture",
+    "name": "Мебельный «Дом»",
+    "category": "shop",
+    "x": 118,
+    "y": 119
+  },
+  {
+    "id": "cafe",
+    "name": "Кафе «Причал»",
+    "category": "cafe",
+    "x": 180,
+    "y": 100
+  },
+  {
+    "id": "warehouse",
+    "name": "Склад «Быстрая доставка»",
+    "category": "warehouse",
+    "x": 132,
+    "y": 72
+  }
+]

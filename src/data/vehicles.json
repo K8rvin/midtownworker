@@ -1,0 +1,42 @@
+[
+  {
+    "id": "sedan",
+    "name": "Седан",
+    "color": "#4a90d9",
+    "maxSpeed": 220,
+    "acceleration": 180,
+    "handling": 2.8,
+    "hp": 80,
+    "price": 0
+  },
+  {
+    "id": "sports",
+    "name": "Спорткар",
+    "color": "#e74c3c",
+    "maxSpeed": 320,
+    "acceleration": 280,
+    "handling": 3.5,
+    "hp": 60,
+    "price": 3000
+  },
+  {
+    "id": "truck",
+    "name": "Грузовик",
+    "color": "#8b7355",
+    "maxSpeed": 160,
+    "acceleration": 100,
+    "handling": 1.8,
+    "hp": 150,
+    "price": 1500
+  },
+  {
+    "id": "police",
+    "name": "Полицейская",
+    "color": "#ffd600",
+    "maxSpeed": 280,
+    "acceleration": 220,
+    "handling": 3.0,
+    "hp": 100,
+    "price": 0
+  }
+]

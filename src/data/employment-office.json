@@ -1,0 +1,15 @@
+[
+  {
+    "id": "employment_office_1",
+    "name": "Офис занятости",
+    "mapId": "city",
+    "doorX": 95,
+    "doorY": 111,
+    "interiorX": 94,
+    "interiorY": 109,
+    "interiorW": 3,
+    "interiorH": 2,
+    "clerkX": 95,
+    "clerkY": 109
+  }
+]

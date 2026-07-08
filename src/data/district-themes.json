@@ -1,0 +1,79 @@
+{
+  "yakuza_quarter": {
+    "building": 5925413,
+    "roof": 7037768,
+    "sidewalk": 4868688,
+    "grass": 1714472,
+    "minimap": 9056320
+  },
+  "rednecks_yard": {
+    "building": 6054051,
+    "roof": 6842474,
+    "sidewalk": 5592405,
+    "grass": 2368548,
+    "minimap": 16744211
+  },
+  "scientists_campus": {
+    "building": 4886754,
+    "roof": 5614336,
+    "sidewalk": 5000070,
+    "grass": 1907776,
+    "minimap": 5635926
+  },
+  "residential_hills": {
+    "building": 5533300,
+    "roof": 6381924,
+    "sidewalk": 5855577,
+    "grass": 2565927,
+    "minimap": 9139029
+  },
+  "downtown": {
+    "building": 4342338,
+    "roof": 5263440,
+    "sidewalk": 4473924,
+    "grass": 1710624,
+    "minimap": 11141375
+  },
+  "central_park": {
+    "building": 3368703,
+    "roof": 4521792,
+    "sidewalk": 5000268,
+    "grass": 2281960,
+    "minimap": 3066997
+  },
+  "old_town": {
+    "building": 6051954,
+    "roof": 7105634,
+    "sidewalk": 5723997,
+    "grass": 2434341,
+    "minimap": 9678672
+  },
+  "industrial_mid": {
+    "building": 5263440,
+    "roof": 6052956,
+    "sidewalk": 4735314,
+    "grass": 1973790,
+    "minimap": 9408394
+  },
+  "waterfront": {
+    "building": 3755148,
+    "roof": 4875268,
+    "sidewalk": 4285560,
+    "grass": 1527761,
+    "minimap": 5592575
+  },
+  "midtown_east": {
+    "building": 4934746,
+    "roof": 6059898,
+    "sidewalk": 5197642,
+    "grass": 1908500,
+    "minimap": 12040119
+  },
+  "default": {
+    "building": 4013372,
+    "roof": 5131858,
+    "sidewalk": 3815992,
+    "grass": 1973807,
+    "minimap": 7039850
+  }
+}

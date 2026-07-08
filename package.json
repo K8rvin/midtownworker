@@ -1,0 +1,31 @@
+{
+  "name": "gta2-game",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Работяга из мидтауна — симулятор городской жизни",
+  "type": "module",
+  "scripts": {
+    "generate:map": "node scripts/generate-tiled-map.mjs",
+    "export:assets": "node scripts/export-png-assets.mjs",
+    "server": "node server/ws-server.mjs",
+    "predev": "node scripts/generate-tiled-map.mjs",
+    "prebuild": "node scripts/generate-tiled-map.mjs",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test:ui": "node tests/ui-logic.test.mjs",
+    "test:audio": "node tests/audio-settings.test.mjs",
+    "test:unit": "node tests/weapon-manager.test.mjs && node tests/police-decay.test.mjs && node tests/quests-count.test.mjs && node tests/navigation-grid.test.mjs && node tests/tiled-map.test.mjs && node tests/roof-shop.test.mjs && node tests/phase4.test.mjs && node tests/phase5.test.mjs && node tests/phase9.test.mjs && node tests/phase6.test.mjs && node tests/phase7.test.mjs && node tests/phase8.test.mjs && node tests/phase10.test.mjs && node tests/phase10-coop.test.mjs && node tests/phase11.test.mjs && node tests/phase12.test.mjs && node tests/phase12-roads.test.mjs && node tests/phase12-minimap.test.mjs && node tests/phase12-lanes.test.mjs && node tests/phase12-pedestrians.test.mjs && node tests/phase13-interactions.test.mjs && node tests/phase14-navigation.test.mjs && node tests/phase15-life-sim.test.mjs && node tests/png-assets.test.mjs && node tests/online.test.mjs",
+    "test:browser": "node tests/browser-quest.mjs && node tests/browser-settings.mjs && node tests/browser-weapons.mjs && node tests/browser-quests-count.mjs && node tests/browser-save-continue.mjs",
+    "test": "npm run test:ui && npm run test:audio && npm run test:unit"
+  },
+  "dependencies": {
+    "phaser": "^3.80.1",
+    "ws": "^8.21.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11"
+  }
+}

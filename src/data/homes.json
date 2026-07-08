@@ -1,0 +1,33 @@
+[
+  {
+    "id": "apt_midtown_1",
+    "name": "Квартира в мидтауне",
+    "mapId": "city",
+    "doorX": 125,
+    "doorY": 119,
+    "rentPerWeek": 120,
+    "buyPrice": 2500,
+    "interiorW": 8,
+    "interiorH": 6,
+    "furnitureSlots": [
+      { "id": "bed_slot", "x": 2, "y": 2, "accepts": ["bed_basic"] },
+      { "id": "fridge_slot", "x": 5, "y": 2, "accepts": ["fridge_basic"] },
+      { "id": "desk_slot", "x": 2, "y": 4, "accepts": ["desk_basic"] }
+    ]
+  },
+  {
+    "id": "apt_oldtown_1",
+    "name": "Студия в Старом городе",
+    "mapId": "city",
+    "doorX": 78,
+    "doorY": 78,
+    "rentPerWeek": 80,
+    "buyPrice": 1800,
+    "interiorW": 7,
+    "interiorH": 5,
+    "furnitureSlots": [
+      { "id": "bed_slot", "x": 2, "y": 2, "accepts": ["bed_basic"] },
+      { "id": "desk_slot", "x": 4, "y": 2, "accepts": ["desk_basic"] }
+    ]
+  }
+]

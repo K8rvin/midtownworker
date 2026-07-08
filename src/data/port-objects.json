@@ -1,0 +1,30 @@
+{
+  "payphones": [
+    { "x": 17, "y": 35 },
+    { "x": 53, "y": 35 }
+  ],
+  "flags": [
+    { "x": 14, "y": 14, "gang": "rednecks" },
+    { "x": 56, "y": 56, "gang": "scientists" }
+  ],
+  "npcSpawns": [
+    { "x": 17, "y": 17, "gang": "rednecks", "count": 4 },
+    { "x": 53, "y": 53, "gang": "scientists", "count": 4 },
+    { "x": 35, "y": 35, "gang": null, "count": 3 }
+  ],
+  "blockposts": [
+    { "id": "bp_port_n", "tx": 35, "ty": 14 },
+    { "id": "bp_port_s", "tx": 35, "ty": 56 }
+  ],
+  "transitions": [
+    {
+      "id": "to_city",
+      "x": 1,
+      "y": 35,
+      "targetMap": "city",
+      "targetX": 118,
+      "targetY": 60,
+      "label": "В центр"
+    }
+  ]
+}

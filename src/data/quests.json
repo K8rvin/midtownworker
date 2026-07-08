@@ -1,0 +1,1282 @@
+[
+  {
+    "id": "quest_delivery",
+    "title": "Горячая посылка",
+    "description": "Доставьте посылку в район Реднеков",
+    "type": "delivery",
+    "reward": 750,
+    "respectGang": "yakuza",
+    "respectGain": 15,
+    "targetX": 55,
+    "targetY": 25,
+    "dialogStart": [
+      {
+        "speaker": "Вексель",
+        "text": "Эй, наёмник. Есть работа — и она горячая."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Пакет нужно доставить в район Реднеков. Без вопросов, без вскрытия."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Сколько?"
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Семьсот пятьдесят. И не опоздай."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Вексель",
+        "text": "Пакет на месте. Чистая работа."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Держи плату. Следующий контракт будет посложнее."
+      }
+    ],
+    "giverId": "npc_broker"
+  },
+  {
+    "id": "quest_collect",
+    "title": "Сбор пакетов",
+    "description": "Соберите 5 пакетов за 2.5 минуты",
+    "type": "collect",
+    "reward": 650,
+    "respectGang": "scientists",
+    "respectGain": 10,
+    "collectCount": 5,
+    "timeLimit": 150,
+    "requiresQuest": "quest_delivery",
+    "dialogStart": [
+      {
+        "speaker": "Вексель",
+        "text": "Помнишь тот пакет? Так вот — их разбросали по центру."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Собери пять штук за две с половиной минуты."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Кто разбросал?"
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Не твоё дело. Беги."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Вексель",
+        "text": "Все пакеты здесь. Отлично."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Учёные будут довольны. Ну, или нет — мне всё равно."
+      }
+    ],
+    "giverId": "npc_broker"
+  },
+  {
+    "id": "quest_clean",
+    "title": "Тихий визит",
+    "description": "Доберитесь до точки без розыска",
+    "type": "nocops",
+    "reward": 850,
+    "respectGang": "scientists",
+    "respectGain": 14,
+    "targetX": 35,
+    "targetY": 35,
+    "requiresQuest": "quest_collect",
+    "dialogStart": [
+      {
+        "speaker": "Вексель",
+        "text": "Нужен тихий визит. Дойди до метки в центре."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Главное — копы не должны тебя знать в лицо."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Розыск обнулить?"
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Именно. Иначе контракт сгорит."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Вексель",
+        "text": "Чисто, как и договаривались."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Таких исполнителей я ценю."
+      }
+    ],
+    "giverId": "npc_broker"
+  },
+  {
+    "id": "quest_kill",
+    "title": "Ликвидация",
+    "description": "Устраните цель в районе Учёных",
+    "type": "kill",
+    "reward": 1100,
+    "respectGang": "rednecks",
+    "respectGain": 20,
+    "targetX": 30,
+    "targetY": 55,
+    "requiresQuest": "quest_clean",
+    "dialogStart": [
+      {
+        "speaker": "Вексель",
+        "text": "Один крыса мешает делам в районе Учёных."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Устрани цель. Быстро и без свидетелей."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Имя?"
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Увидишь на месте. Фиолетовый — не ошибёшься."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Вексель",
+        "text": "Цель ликвидирована. Город стал чище."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Реднеки заплатят за это уважением. И ты тоже."
+      }
+    ],
+    "giverId": "npc_broker"
+  },
+  {
+    "id": "quest_escort",
+    "title": "Эскорт",
+    "description": "Сопроводите информатора до безопасной зоны",
+    "type": "escort",
+    "reward": 950,
+    "respectGang": "scientists",
+    "respectGain": 15,
+    "targetX": 45,
+    "targetY": 45,
+    "requiresQuest": "quest_kill",
+    "dialogStart": [
+      {
+        "speaker": "Вексель",
+        "text": "Наш информатор раскрылся. Его надо вывести в безопасную зону."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Сопроводи до центра. Если он умрёт — ты платишь."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Понял."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Не отставай. Он паникует при выстрелах."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Вексель",
+        "text": "Он в безопасности. Хорошая работа."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Учёные не забудут такой жест."
+      }
+    ],
+    "giverId": "npc_broker"
+  },
+  {
+    "id": "quest_bribe",
+    "title": "Взятка",
+    "description": "Передайте $400 в точке на карте",
+    "type": "bribe",
+    "reward": 600,
+    "respectGang": "yakuza",
+    "respectGain": 10,
+    "targetX": 48,
+    "targetY": 22,
+    "cost": 400,
+    "requiresQuest": "quest_escort",
+    "dialogStart": [
+      {
+        "speaker": "Вексель",
+        "text": "Коп на перекрёстке ждёт конверт."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Четыреста долларов. Отнеси тихо, без разговоров."
+      },
+      {
+        "speaker": "Вы",
+        "text": "А если спросит откуда?"
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Не спросит. Он профессионал."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Вексель",
+        "text": "Дело улажено. Коп доволен, мы — тоже."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Так держать город на плаву."
+      }
+    ],
+    "giverId": "npc_broker"
+  },
+  {
+    "id": "quest_steal",
+    "title": "Угон",
+    "description": "Угоните спорткар и доставьте в гараж",
+    "type": "steal",
+    "reward": 1600,
+    "respectGang": "yakuza",
+    "respectGain": 20,
+    "vehicleType": "sports",
+    "targetX": 42,
+    "targetY": 38,
+    "requiresQuest": "quest_bribe",
+    "dialogStart": [
+      {
+        "speaker": "Вексель",
+        "text": "Красный спорткар стоит рядом. Красивый, правда?"
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Угони и доставь в гараж на карте. Владелец в отпуске."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Надеюсь."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Якудза хочет эту машину. Не подведи."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Вексель",
+        "text": "Машина на месте. Якудза оценит."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Ты умеешь водить. Это редкость."
+      }
+    ],
+    "giverId": "npc_broker"
+  },
+  {
+    "id": "quest_race",
+    "title": "Гонка",
+    "description": "На машине до финиша за 50 секунд",
+    "type": "race",
+    "reward": 1000,
+    "respectGang": "scientists",
+    "respectGain": 12,
+    "targetX": 58,
+    "targetY": 58,
+    "timeLimit": 50,
+    "requireVehicle": true,
+    "requiresQuest": "quest_steal",
+    "dialogStart": [
+      {
+        "speaker": "Вексель",
+        "text": "Гонка на время. Финиш на юго-востоке."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Пятьдесят секунд. Не больше."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Пешком?"
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Бери что угодно. Главное — успеть."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Вексель",
+        "text": "Ты быстрый. Вот приз."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Учёные следят за такими гонщиками."
+      }
+    ],
+    "giverId": "npc_broker"
+  },
+  {
+    "id": "quest_survive",
+    "title": "Вражеская зона",
+    "description": "Продержитесь 20 сек в районе Якудзы",
+    "type": "survive",
+    "reward": 900,
+    "respectGang": "rednecks",
+    "respectGain": 15,
+    "territoryGang": "yakuza",
+    "surviveTime": 20,
+    "requiresQuest": "quest_race",
+    "dialogStart": [
+      {
+        "speaker": "Вексель",
+        "text": "Зайди в район Якудзы и продержись двадцать секунд."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Покажи характер. Реднеки любят храбрых дураков."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Это самоубийство."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Именно поэтому хорошо платят."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Вексель",
+        "text": "Ты вышел живым. Респект."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Реднеки уже шепчут твоё имя."
+      }
+    ],
+    "giverId": "npc_broker"
+  },
+  {
+    "id": "quest_territory",
+    "title": "Захват территории",
+    "description": "Захватите 3 точки вражеской банды",
+    "type": "territory",
+    "reward": 1800,
+    "respectGang": "rednecks",
+    "respectGain": 30,
+    "captureCount": 3,
+    "enemyGang": "scientists",
+    "requiresQuest": "quest_survive",
+    "dialogStart": [
+      {
+        "speaker": "Вексель",
+        "text": "Три точки Учёных нужно захватить."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Подойди к каждой метке и закрепи контроль."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Это война."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Это бизнес. Покажи, кто тут главный."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Вексель",
+        "text": "Территория наша!"
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Реднеки получили то, что хотели."
+      }
+    ],
+    "giverId": "npc_broker"
+  },
+  {
+    "id": "quest_rampage",
+    "title": "Резня Реднеков",
+    "description": "Убейте 4 членов банды Реднеков",
+    "type": "gang_kill",
+    "reward": 1300,
+    "respectGang": "yakuza",
+    "respectGain": 20,
+    "targetGang": "rednecks",
+    "killCount": 4,
+    "requiresQuest": "quest_territory",
+    "dialogStart": [
+      {
+        "speaker": "Вексель",
+        "text": "Четверо Реднеков на улице. Слишком много шума."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Разберись. Якудза заплатит."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Все четверо?"
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Все четверо. Без свидетелей."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Вексель",
+        "text": "Реднеки услышали. Хорошая работа."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Якудза ценит такую прямоту."
+      }
+    ],
+    "giverId": "npc_broker"
+  },
+  {
+    "id": "quest_wreck",
+    "title": "Демолишн",
+    "description": "Уничтожьте 2 машины",
+    "type": "destroy",
+    "reward": 1100,
+    "respectGang": "rednecks",
+    "respectGain": 18,
+    "destroyCount": 2,
+    "requiresQuest": "quest_rampage",
+    "dialogStart": [
+      {
+        "speaker": "Вексель",
+        "text": "Взорви пару тачек. Пусть город дрожит."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Два автомобиля. Любых. Громко."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Зачем?"
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Отвлечение. Не задавай лишних вопросов."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Вексель",
+        "text": "Красивая работа. Салют был виден из порта."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Реднеки смеются. Это хороший знак."
+      }
+    ],
+    "giverId": "npc_broker"
+  },
+  {
+    "id": "quest_escape",
+    "title": "Побег от копов",
+    "description": "Удерживайте wanted ≥ 2 в течение 25 секунд",
+    "type": "escape",
+    "reward": 1400,
+    "respectGang": "yakuza",
+    "respectGain": 25,
+    "escapeTime": 25,
+    "minWanted": 2,
+    "requiresQuest": "quest_wreck",
+    "dialogStart": [
+      {
+        "speaker": "Вексель",
+        "text": "Привлеки внимание копов. Розыск второй уровень."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Держи его двадцать пять секунд. Потом исчезни."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Погоня?"
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Настоящий беглец не спрашивает. Бежит."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Вексель",
+        "text": "Ты настоящий беглец!"
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Копы будут помнить этот день."
+      }
+    ],
+    "giverId": "npc_broker"
+  },
+  {
+    "id": "quest_purge",
+    "title": "Зачистка",
+    "description": "Убейте 3 членов банды Учёных",
+    "type": "gang_kill",
+    "reward": 1250,
+    "respectGang": "rednecks",
+    "respectGain": 22,
+    "targetGang": "scientists",
+    "killCount": 3,
+    "requiresQuest": "quest_escape",
+    "dialogStart": [
+      {
+        "speaker": "Вексель",
+        "text": "Учёные слишком шумят. Убери троих."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Их белые халаты — отличная мишень."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Реднеки снова?"
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Они платят. Ты стреляешь. Всё просто."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Вексель",
+        "text": "Лаборатория в панике."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Три тела — хорошая статистика."
+      }
+    ],
+    "giverId": "npc_broker"
+  },
+  {
+    "id": "quest_blockpost",
+    "title": "Проезд блокпостов",
+    "description": "Проедьте 2 блокпоста с розыском ≥ 1",
+    "type": "blockpost",
+    "reward": 1700,
+    "respectGang": "yakuza",
+    "respectGain": 28,
+    "passCount": 2,
+    "minWanted": 1,
+    "requiresQuest": "quest_purge",
+    "dialogStart": [
+      {
+        "speaker": "Вексель",
+        "text": "Два блокпоста на перекрёстках. Проскочи с розыском."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Копы должны тебя видеть. Потом — проехать мимо."
+      },
+      {
+        "speaker": "Вы",
+        "text": "На машине?"
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Как хочешь. Главное — два поста."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Вексель",
+        "text": "Копы в ярости. Отлично."
+      },
+      {
+        "speaker": "Вексель",
+        "text": "Ты прошёл основную цепочку. Дальше — выбор банды."
+      }
+    ],
+    "giverId": "npc_broker"
+  },
+  {
+    "id": "branch_yakuza_1",
+    "title": "Кодекс чести",
+    "description": "Доставьте свиток в район Якудзы",
+    "type": "delivery",
+    "reward": 1200,
+    "respectGang": "yakuza",
+    "respectGain": 20,
+    "targetX": 52,
+    "targetY": 28,
+    "branchGang": "yakuza",
+    "blocksQuests": [
+      "branch_rednecks_1",
+      "branch_scientists_1"
+    ],
+    "requiresQuest": "quest_blockpost",
+    "dialogStart": [
+      {
+        "speaker": "Кэндзи",
+        "text": "Ты доказал, что умеешь работать. Якудза предлагает путь силы."
+      },
+      {
+        "speaker": "Кэндзи",
+        "text": "Доставь свиток в наш район. Это клятва."
+      },
+      {
+        "speaker": "Вы",
+        "text": "А другие банды?"
+      },
+      {
+        "speaker": "Кэндзи",
+        "text": "Выбрав нас, ты закрываешь им двери. Честь превыше сомнений."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Кэндзи",
+        "text": "Честь превыше всего. Добро пожаловать в семью."
+      },
+      {
+        "speaker": "Кэндзи",
+        "text": "Клан примет тебя официально после следующих дел."
+      }
+    ],
+    "giverId": "npc_kenji"
+  },
+  {
+    "id": "branch_yakuza_2",
+    "title": "Кровная вендетта",
+    "description": "Убейте 3 Реднеков",
+    "type": "gang_kill",
+    "reward": 1500,
+    "respectGang": "yakuza",
+    "respectGain": 25,
+    "targetGang": "rednecks",
+    "killCount": 3,
+    "branchGang": "yakuza",
+    "requiresQuest": "branch_yakuza_1",
+    "dialogStart": [
+      {
+        "speaker": "Кэндзи",
+        "text": "Реднеки оскорбили клан. Это кровная обида."
+      },
+      {
+        "speaker": "Кэндзи",
+        "text": "Трое из них должны исчезнуть до заката."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Вендетта?"
+      },
+      {
+        "speaker": "Кэндзи",
+        "text": "Вендетта. Без пощады."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Кэндзи",
+        "text": "Кровь смыта. Клан доволен."
+      },
+      {
+        "speaker": "Кэндзи",
+        "text": "Реднеки запомнят этот урок."
+      }
+    ],
+    "giverId": "npc_kenji"
+  },
+  {
+    "id": "branch_yakuza_3",
+    "title": "Дань городу",
+    "description": "Передайте $600 в точке сбора",
+    "type": "bribe",
+    "reward": 1300,
+    "respectGang": "yakuza",
+    "respectGain": 18,
+    "targetX": 50,
+    "targetY": 30,
+    "cost": 600,
+    "branchGang": "yakuza",
+    "requiresQuest": "branch_yakuza_2",
+    "dialogStart": [
+      {
+        "speaker": "Кэндзи",
+        "text": "Сбор в северном квартале. Шестьсот долларов."
+      },
+      {
+        "speaker": "Кэндзи",
+        "text": "Без лишних глаз. Дань городу."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Кому?"
+      },
+      {
+        "speaker": "Кэндзи",
+        "text": "Тем, кто держит улицы в порядке. Нам."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Кэндзи",
+        "text": "Дань принята. Территория расширяется."
+      },
+      {
+        "speaker": "Кэндзи",
+        "text": "Остался финальный удар."
+      }
+    ],
+    "giverId": "npc_kenji"
+  },
+  {
+    "id": "branch_yakuza_finale",
+    "title": "Империя Якудзы",
+    "description": "Захватите 3 точки Учёных",
+    "type": "territory",
+    "reward": 3000,
+    "respectGang": "yakuza",
+    "respectGain": 40,
+    "captureCount": 3,
+    "enemyGang": "scientists",
+    "branchGang": "yakuza",
+    "isFinale": true,
+    "requiresQuest": "branch_yakuza_3",
+    "dialogStart": [
+      {
+        "speaker": "Кэндзи",
+        "text": "Финальный удар по Учёным. Три точки — три гвоздя в их гроб."
+      },
+      {
+        "speaker": "Кэндзи",
+        "text": "Захвати их территорию. Город будет наш."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Империя?"
+      },
+      {
+        "speaker": "Кэндзи",
+        "text": "Империя. Ты станешь легендой улиц."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Кэндзи",
+        "text": "Империя восстановлена."
+      },
+      {
+        "speaker": "Кэндзи",
+        "text": "Твоё имя будут произносить шёпотом. Навсегда."
+      }
+    ],
+    "giverId": "npc_kenji"
+  },
+  {
+    "id": "branch_rednecks_1",
+    "title": "Городской выстрел",
+    "description": "На машине до финиша за 45 секунд",
+    "type": "race",
+    "reward": 1100,
+    "respectGang": "rednecks",
+    "respectGain": 18,
+    "targetX": 25,
+    "targetY": 55,
+    "timeLimit": 45,
+    "requireVehicle": true,
+    "branchGang": "rednecks",
+    "blocksQuests": [
+      "branch_yakuza_1",
+      "branch_scientists_1"
+    ],
+    "requiresQuest": "quest_blockpost",
+    "dialogStart": [
+      {
+        "speaker": "Джейк",
+        "text": "Реднеки зовут на гонку. Сорок пять секунд до финиша."
+      },
+      {
+        "speaker": "Джейк",
+        "text": "Покажи, что ты свой. Быстрый и дерзкий."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Приз?"
+      },
+      {
+        "speaker": "Джейк",
+        "text": "Уважение. А потом — настоящая работа."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Джейк",
+        "text": "Быстрый и дерзкий — наш человек."
+      },
+      {
+        "speaker": "Джейк",
+        "text": "Добро пожаловать в семью, гонщик."
+      }
+    ],
+    "giverId": "npc_jake"
+  },
+  {
+    "id": "branch_rednecks_2",
+    "title": "Диверсия",
+    "description": "Уничтожьте 3 машины",
+    "type": "destroy",
+    "reward": 1400,
+    "respectGang": "rednecks",
+    "respectGain": 22,
+    "destroyCount": 3,
+    "branchGang": "rednecks",
+    "requiresQuest": "branch_rednecks_race2",
+    "dialogStart": [
+      {
+        "speaker": "Джейк",
+        "text": "Взорви три тачки. Пусть город дрожит!"
+      },
+      {
+        "speaker": "Джейк",
+        "text": "Нам нужен салют, который услышат на доках."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Три?"
+      },
+      {
+        "speaker": "Джейк",
+        "text": "Три. Считай вслух, если помогает."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Джейк",
+        "text": "Красивый салют. Реднеки смеются."
+      },
+      {
+        "speaker": "Джейк",
+        "text": "Так и должно быть в диком западе."
+      }
+    ],
+    "giverId": "npc_jake"
+  },
+  {
+    "id": "branch_rednecks_3",
+    "title": "Набег",
+    "description": "Продержитесь 25 сек в районе Якудзы",
+    "type": "survive",
+    "reward": 1250,
+    "respectGang": "rednecks",
+    "respectGain": 20,
+    "territoryGang": "yakuza",
+    "surviveTime": 25,
+    "branchGang": "rednecks",
+    "requiresQuest": "branch_rednecks_2",
+    "dialogStart": [
+      {
+        "speaker": "Джейк",
+        "text": "Зайди в логово Якудзы. Двадцать пять секунд — и выйди живым."
+      },
+      {
+        "speaker": "Джейк",
+        "text": "Если умрёшь — мы посмеёмся. Если выживешь — уважение."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Справедливо."
+      },
+      {
+        "speaker": "Джейк",
+        "text": "Дикий запад не для слабаков."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Джейк",
+        "text": "Ты прошёл через ад. Респект."
+      },
+      {
+        "speaker": "Джейк",
+        "text": "Остался последний шаг."
+      }
+    ],
+    "giverId": "npc_jake"
+  },
+  {
+    "id": "branch_rednecks_finale",
+    "title": "Дикий запад",
+    "description": "Убейте 5 Учёных",
+    "type": "gang_kill",
+    "reward": 3200,
+    "respectGang": "rednecks",
+    "respectGain": 45,
+    "targetGang": "scientists",
+    "killCount": 5,
+    "branchGang": "rednecks",
+    "isFinale": true,
+    "requiresQuest": "branch_rednecks_3",
+    "dialogStart": [
+      {
+        "speaker": "Джейк",
+        "text": "Учёные мешают бизнесу. Пятеро — и город наш."
+      },
+      {
+        "speaker": "Джейк",
+        "text": "Никакой пощады. Это финал."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Пять тел?"
+      },
+      {
+        "speaker": "Джейк",
+        "text": "Пять. Дикий запад победил науку."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Джейк",
+        "text": "Дикий запад победил. Город твой."
+      },
+      {
+        "speaker": "Джейк",
+        "text": "Поднимем тост на доках. Ты герой."
+      }
+    ],
+    "giverId": "npc_jake"
+  },
+  {
+    "id": "branch_scientists_1",
+    "title": "Образцы",
+    "description": "Соберите 4 пакета за 2 минуты",
+    "type": "collect",
+    "reward": 1150,
+    "respectGang": "scientists",
+    "respectGain": 18,
+    "collectCount": 4,
+    "timeLimit": 120,
+    "branchGang": "scientists",
+    "blocksQuests": [
+      "branch_yakuza_1",
+      "branch_rednecks_1"
+    ],
+    "requiresQuest": "quest_blockpost",
+    "dialogStart": [
+      {
+        "speaker": "Доктор Чен",
+        "text": "Учёные ищут образцы. Четыре пакета за две минуты."
+      },
+      {
+        "speaker": "Доктор Чен",
+        "text": "Собери — и мы поговорим о будущем."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Что внутри?"
+      },
+      {
+        "speaker": "Доктор Чен",
+        "text": "Знания. Опасные и дорогие."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Доктор Чен",
+        "text": "Образцы целы. Наука благодарна."
+      },
+      {
+        "speaker": "Доктор Чен",
+        "text": "Ты понимаешь ценность данных. Редкое качество."
+      }
+    ],
+    "giverId": "npc_dr_chen"
+  },
+  {
+    "id": "branch_scientists_2",
+    "title": "Тихая лаборатория",
+    "description": "Доберитесь до лаборатории без розыска",
+    "type": "nocops",
+    "reward": 1350,
+    "respectGang": "scientists",
+    "respectGain": 20,
+    "targetX": 28,
+    "targetY": 52,
+    "branchGang": "scientists",
+    "requiresQuest": "branch_scientists_1",
+    "dialogStart": [
+      {
+        "speaker": "Доктор Чен",
+        "text": "Лаборатория на юге. Доберись без розыска."
+      },
+      {
+        "speaker": "Доктор Чен",
+        "text": "Копы не должны знать о нашем эксперименте."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Тихо?"
+      },
+      {
+        "speaker": "Доктор Чен",
+        "text": "Тихо. Как хирургический разрез."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Доктор Чен",
+        "text": "Чистый вход. Эксперимент продолжается."
+      },
+      {
+        "speaker": "Доктор Чен",
+        "text": "Ещё один шаг — и данные в безопасности."
+      }
+    ],
+    "giverId": "npc_dr_chen"
+  },
+  {
+    "id": "branch_scientists_3",
+    "title": "Эвакуация данных",
+    "description": "Сопроводите учёного до убежища",
+    "type": "escort",
+    "reward": 1450,
+    "respectGang": "scientists",
+    "respectGain": 22,
+    "targetX": 32,
+    "targetY": 48,
+    "branchGang": "scientists",
+    "requiresQuest": "branch_scientists_2",
+    "dialogStart": [
+      {
+        "speaker": "Доктор Чен",
+        "text": "Проводи нашего учёного до убежища."
+      },
+      {
+        "speaker": "Доктор Чен",
+        "text": "Данные на нём бесценны. Не дай ему погибнуть."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Он вооружён?"
+      },
+      {
+        "speaker": "Доктор Чен",
+        "text": "Он вооружён знаниями. Этого достаточно."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Доктор Чен",
+        "text": "Данные в безопасности."
+      },
+      {
+        "speaker": "Доктор Чен",
+        "text": "Новый мир ближе, чем кажется."
+      }
+    ],
+    "giverId": "npc_dr_chen"
+  },
+  {
+    "id": "branch_scientists_finale",
+    "title": "Новый мир",
+    "description": "Удерживайте wanted ≥ 3 в течение 30 сек",
+    "type": "escape",
+    "reward": 3100,
+    "respectGang": "scientists",
+    "respectGain": 42,
+    "escapeTime": 30,
+    "minWanted": 3,
+    "branchGang": "scientists",
+    "isFinale": true,
+    "requiresQuest": "branch_scientists_3",
+    "dialogStart": [
+      {
+        "speaker": "Доктор Чен",
+        "text": "Отвлеки копов. Третий уровень розыска — тридцать секунд."
+      },
+      {
+        "speaker": "Доктор Чен",
+        "text": "Нам нужен хаос. Ты — катализатор."
+      },
+      {
+        "speaker": "Вы",
+        "text": "Риск?"
+      },
+      {
+        "speaker": "Доктор Чен",
+        "text": "Прогресс всегда рискует. Ты — его архитектор."
+      }
+    ],
+    "dialogEnd": [
+      {
+        "speaker": "Доктор Чен",
+        "text": "Новый мир начинается."
+      },
+      {
+        "speaker": "Доктор Чен",
+        "text": "Ты изменил город. Наука не забудет."
+      }
+    ],
+    "giverId": "npc_dr_chen"
+  },
+  {
+    "id": "quest_race_circuit",
+    "title": "Кольцо центра",
+    "description": "Проедьте 4 чекпоинта по кольцу дорог за 65 сек",
+    "type": "race",
+    "reward": 1200,
+    "respectGang": "rednecks",
+    "respectGain": 16,
+    "timeLimit": 65,
+    "requireVehicle": true,
+    "checkpoints": [
+      { "x": 100, "y": 50 },
+      { "x": 150, "y": 100 },
+      { "x": 100, "y": 150 },
+      { "x": 50, "y": 100 }
+    ],
+    "requiresQuest": "quest_race",
+    "giverId": "npc_jake",
+    "dialogStart": [
+      { "speaker": "Джейк", "text": "Думаешь, умеешь водить? Кольцо вокруг центра — шестьдесят пять секунд." },
+      { "speaker": "Джейк", "text": "Четыре чекпоинта по часовой. Пропустишь один — всё зря." },
+      { "speaker": "Вы", "text": "Машина?" },
+      { "speaker": "Джейк", "text": "Бросаю рядом. Не подведи." }
+    ],
+    "dialogEnd": [
+      { "speaker": "Джейк", "text": "Чистое кольцо! Реднеки одобряют." },
+      { "speaker": "Джейк", "text": "Есть ещё трассы — если не сдуешься." }
+    ]
+  },
+  {
+    "id": "quest_race_port_sprint",
+    "title": "Портовый спринт",
+    "description": "На доках проедьте 3 чекпоинта за 35 сек",
+    "type": "race",
+    "reward": 900,
+    "respectGang": "rednecks",
+    "respectGain": 12,
+    "timeLimit": 35,
+    "requireVehicle": true,
+    "mapId": "port",
+    "checkpoints": [
+      { "x": 14, "y": 35 },
+      { "x": 35, "y": 35 },
+      { "x": 56, "y": 35 }
+    ],
+    "requiresQuest": "quest_delivery",
+    "giverId": "npc_docks",
+    "dialogStart": [
+      { "speaker": "Старый Моряк", "text": "На доках скучно. Устроим спринт — три буя по пирсу." },
+      { "speaker": "Старый Моряк", "text": "Тридцать пять секунд. Только на колёсах." },
+      { "speaker": "Вы", "text": "Приз стоит поездки в порт?" },
+      { "speaker": "Старый Моряк", "text": "Девятьсот и уважение докеров. Гони." }
+    ],
+    "dialogEnd": [
+      { "speaker": "Старый Моряк", "text": "Быстрый катер на колёсах!" },
+      { "speaker": "Старый Моряк", "text": "Порт запомнит твоё имя." }
+    ]
+  },
+  {
+    "id": "quest_race_highway",
+    "title": "Трасса",
+    "description": "Проскочите 4 чекпоинта с запада на восток за 55 сек",
+    "type": "race",
+    "reward": 1400,
+    "respectGang": "yakuza",
+    "respectGain": 18,
+    "timeLimit": 55,
+    "requireVehicle": true,
+    "checkpoints": [
+      { "x": 50, "y": 100 },
+      { "x": 100, "y": 100 },
+      { "x": 150, "y": 100 },
+      { "x": 198, "y": 100 }
+    ],
+    "requiresQuest": "quest_race_circuit",
+    "giverId": "npc_broker",
+    "dialogStart": [
+      { "speaker": "Вексель", "text": "Трасса через весь город. Запад — восток, четыре отсечки." },
+      { "speaker": "Вексель", "text": "Пятьдесят пять секунд. Якудза следит за результатом." },
+      { "speaker": "Вы", "text": "Копы?" },
+      { "speaker": "Вексель", "text": "Если нагонят — это твои проблемы. Гони." }
+    ],
+    "dialogEnd": [
+      { "speaker": "Вексель", "text": "Трасса пройдена. Чистый заезд." },
+      { "speaker": "Вексель", "text": "Якудза любит быстрых курьеров." }
+    ]
+  },
+  {
+    "id": "quest_race_nitro",
+    "title": "Нитро-забег",
+    "description": "На спорткаре до юго-востока за 40 сек",
+    "type": "race",
+    "reward": 1600,
+    "respectGang": "rednecks",
+    "respectGain": 20,
+    "targetX": 168,
+    "targetY": 168,
+    "timeLimit": 40,
+    "requireVehicle": true,
+    "vehicleType": "sports",
+    "requiresQuest": "quest_race_highway",
+    "giverId": "npc_jake",
+    "dialogStart": [
+      { "speaker": "Джейк", "text": "Финальный тест. Спорткар, сорок секунд, юго-восток." },
+      { "speaker": "Джейк", "text": "Полный газ. Без тормозов на поворотах." },
+      { "speaker": "Вы", "text": "А если разобью?" },
+      { "speaker": "Джейк", "text": "Тогда пешком домой. Стартуй." }
+    ],
+    "dialogEnd": [
+      { "speaker": "Джейк", "text": "Вот это скорость! Настоящий гонщик." },
+      { "speaker": "Джейк", "text": "Реднеки ставят на тебя в следующих делах." }
+    ]
+  },
+  {
+    "id": "branch_rednecks_race2",
+    "title": "Гонка по окраине",
+    "description": "Пройдите 3 чекпоинта в районе Реднеков за 50 сек",
+    "type": "race",
+    "reward": 1300,
+    "respectGang": "rednecks",
+    "respectGain": 20,
+    "timeLimit": 50,
+    "requireVehicle": true,
+    "branchGang": "rednecks",
+    "checkpoints": [
+      { "x": 168, "y": 25 },
+      { "x": 182, "y": 40 },
+      { "x": 168, "y": 55 }
+    ],
+    "requiresQuest": "branch_rednecks_1",
+    "giverId": "npc_jake",
+    "dialogStart": [
+      { "speaker": "Джейк", "text": "Первый заезд — разминка. Теперь окраина — три чекпоинта." },
+      { "speaker": "Джейк", "text": "Пятьдесят секунд. Покажи, что семья не ошиблась." },
+      { "speaker": "Вы", "text": "Дальше что?" },
+      { "speaker": "Джейк", "text": "Выживешь — поговорим о настоящей работе." }
+    ],
+    "dialogEnd": [
+      { "speaker": "Джейк", "text": "Окраина твоя. Отличный заезд." },
+      { "speaker": "Джейк", "text": "Теперь займёмся делом посерьёзнее." }
+    ]
+  }
+]

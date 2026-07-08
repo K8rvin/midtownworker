@@ -1,0 +1,20 @@
+[
+  {
+    "id": "yakuza",
+    "name": "Якудза",
+    "color": "#ff2d55",
+    "homeDistrict": { "x": 10, "y": 10, "w": 20, "h": 20 }
+  },
+  {
+    "id": "rednecks",
+    "name": "Реднеки",
+    "color": "#ff6b35",
+    "homeDistrict": { "x": 50, "y": 10, "w": 20, "h": 20 }
+  },
+  {
+    "id": "scientists",
+    "name": "Учёные",
+    "color": "#00e676",
+    "homeDistrict": { "x": 10, "y": 50, "w": 20, "h": 20 }
+  }
+]

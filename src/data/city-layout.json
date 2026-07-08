@@ -1,0 +1,169 @@
+{
+  "width": 200,
+  "height": 200,
+  "majorRoads": { "centers": [50, 100, 150], "width": 5 },
+  "minorRoads": { "centers": [25, 75, 125, 175], "width": 3 },
+  "districts": [
+    {
+      "id": "yakuza_quarter",
+      "name": "Квартал Якудзы",
+      "gang": "yakuza",
+      "x": 6,
+      "y": 6,
+      "w": 42,
+      "h": 42,
+      "style": "dense",
+      "blockSize": 3,
+      "gap": 2
+    },
+    {
+      "id": "rednecks_yard",
+      "name": "Двор Реднеков",
+      "gang": "rednecks",
+      "x": 152,
+      "y": 6,
+      "w": 42,
+      "h": 42,
+      "style": "industrial",
+      "blockSize": 6,
+      "gap": 2
+    },
+    {
+      "id": "scientists_campus",
+      "name": "Кампус учёных",
+      "gang": "scientists",
+      "x": 6,
+      "y": 152,
+      "w": 42,
+      "h": 42,
+      "style": "campus",
+      "blockSize": 4,
+      "gap": 4
+    },
+    {
+      "id": "residential_hills",
+      "name": "Спальный район",
+      "gang": null,
+      "x": 152,
+      "y": 152,
+      "w": 42,
+      "h": 42,
+      "style": "suburban",
+      "blockSize": 2,
+      "gap": 4
+    },
+    {
+      "id": "downtown",
+      "name": "Центр",
+      "gang": null,
+      "x": 88,
+      "y": 88,
+      "w": 24,
+      "h": 24,
+      "style": "skyline",
+      "blockSize": 4,
+      "gap": 1
+    },
+    {
+      "id": "central_park",
+      "name": "Парк",
+      "gang": null,
+      "x": 54,
+      "y": 112,
+      "w": 28,
+      "h": 32,
+      "style": "park",
+      "blockSize": 0,
+      "gap": 0
+    },
+    {
+      "id": "old_town",
+      "name": "Старый город",
+      "gang": null,
+      "x": 54,
+      "y": 54,
+      "w": 28,
+      "h": 28,
+      "style": "sparse",
+      "blockSize": 3,
+      "gap": 5
+    },
+    {
+      "id": "industrial_mid",
+      "name": "Промзона",
+      "gang": null,
+      "x": 118,
+      "y": 54,
+      "w": 28,
+      "h": 36,
+      "style": "industrial",
+      "blockSize": 5,
+      "gap": 2
+    },
+    {
+      "id": "waterfront",
+      "name": "Набережная",
+      "gang": null,
+      "x": 168,
+      "y": 92,
+      "w": 28,
+      "h": 16,
+      "style": "docks",
+      "blockSize": 8,
+      "gap": 2
+    },
+    {
+      "id": "midtown_east",
+      "name": "Восточный мидтаун",
+      "gang": null,
+      "x": 118,
+      "y": 108,
+      "w": 28,
+      "h": 36,
+      "style": "mixed",
+      "blockSize": 4,
+      "gap": 3
+    }
+  ],
+  "npcSpawns": [
+    { "x": 33, "y": 33, "gang": "yakuza", "count": 6 },
+    { "x": 168, "y": 33, "gang": "rednecks", "count": 6 },
+    { "x": 33, "y": 168, "gang": "scientists", "count": 6 },
+    { "x": 100, "y": 100, "gang": null, "count": 8 },
+    { "x": 65, "y": 128, "gang": null, "count": 3 },
+    { "x": 135, "y": 72, "gang": null, "count": 4 }
+  ],
+  "blockposts": [
+    { "id": "bp_nw", "tx": 50, "ty": 100 },
+    { "id": "bp_ne", "tx": 150, "ty": 100 },
+    { "id": "bp_sw", "tx": 100, "ty": 50 },
+    { "id": "bp_se", "tx": 100, "ty": 150 }
+  ],
+  "transitions": [
+    {
+      "id": "to_port",
+      "x": 198,
+      "y": 100,
+      "targetMap": "port",
+      "targetX": 2,
+      "targetY": 35,
+      "label": "В порт"
+    }
+  ],
+  "pedestrians": {
+    "count": 32,
+    "speed": 42
+  },
+  "landmarks": [
+    { "district": "yakuza_quarter", "kind": "torii", "x": 24, "y": 22 },
+    { "district": "rednecks_yard", "kind": "crane", "x": 170, "y": 22 },
+    { "district": "scientists_campus", "kind": "lab_dome", "x": 22, "y": 170 },
+    { "district": "residential_hills", "kind": "tree", "x": 168, "y": 168 },
+    { "district": "downtown", "kind": "skyline", "x": 94, "y": 94 },
+    { "district": "central_park", "kind": "fountain", "x": 68, "y": 128 },
+    { "district": "old_town", "kind": "clock_tower", "x": 68, "y": 68 },
+    { "district": "industrial_mid", "kind": "crane", "x": 132, "y": 72 },
+    { "district": "waterfront", "kind": "dock", "x": 180, "y": 100 },
+    { "district": "midtown_east", "kind": "billboard", "x": 132, "y": 126 }
+  ]
+}

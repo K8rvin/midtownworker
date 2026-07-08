@@ -1,0 +1,78 @@
+[
+  {
+    "id": "task_first_job",
+    "title": "Первая работа",
+    "description": "Офис занятости (95, 111), телефон или ноутбук дома",
+    "reward": 100,
+    "type": "get_job"
+  },
+  {
+    "id": "task_rent_home",
+    "title": "Крыша над головой",
+    "description": "Зелёная дверь (78, 78) — [E] «Снять» — $80/нед",
+    "reward": 30,
+    "type": "rent_home"
+  },
+  {
+    "id": "task_tutorial_food",
+    "title": "Первый укус",
+    "description": "Дверь супермаркета (106, 109) — [E] → «Съесть»",
+    "reward": 25,
+    "type": "buy_food",
+    "count": 1
+  },
+  {
+    "id": "task_buy_food",
+    "title": "Поесть",
+    "description": "Купите еду в супермаркете 3 раза",
+    "reward": 75,
+    "type": "buy_food",
+    "count": 3
+  },
+  {
+    "id": "task_pay_rent",
+    "title": "Оплатить аренду",
+    "description": "Вовремя оплатите аренду (меню дома или у двери)",
+    "reward": 120,
+    "type": "pay_rent"
+  },
+  {
+    "id": "task_buy_bed",
+    "title": "Обустроить дом",
+    "description": "Купите кровать и поставьте дома",
+    "reward": 150,
+    "type": "place_furniture",
+    "furnitureId": "bed_basic"
+  },
+  {
+    "id": "task_courier_deliveries",
+    "title": "Курьерские рейсы",
+    "description": "Устройтесь курьером и выполните 3 доставки",
+    "reward": 180,
+    "type": "courier_delivery",
+    "count": 3
+  },
+  {
+    "id": "task_remote_work",
+    "title": "Удалёнка",
+    "description": "Отработайте удалённо 2 дня (нужна работа с remote)",
+    "reward": 200,
+    "type": "remote_shifts",
+    "count": 2
+  },
+  {
+    "id": "task_buy_home",
+    "title": "Своя квартира",
+    "description": "Накопите и выкупите квартиру",
+    "reward": 500,
+    "type": "own_home"
+  },
+  {
+    "id": "task_contract_kill",
+    "title": "Контракт",
+    "description": "Устройтесь киллером и ликвидируйте 2 цели (красные метки)",
+    "reward": 400,
+    "type": "contract_kill",
+    "count": 2
+  }
+]
