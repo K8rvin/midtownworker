@@ -28,6 +28,7 @@ const courierMgr = readFileSync(join(root, 'src', 'systems', 'CourierManager.ts'
 if (!courierMgr.includes('takeOrder')) throw new Error('Courier take order missing');
 if (!courierMgr.includes('deliverPackage')) throw new Error('Courier deliver missing');
 if (!courierMgr.includes('estimatePay')) throw new Error('Courier distance pay missing');
+if (!courierMgr.includes('getWaypoint')) throw new Error('Courier waypoint navigation missing');
 
 const groceryMgr = readFileSync(join(root, 'src', 'systems', 'GroceryManager.ts'), 'utf8');
 if (!groceryMgr.includes('eatNow')) throw new Error('Grocery eat-now missing');
@@ -75,6 +76,8 @@ if (!gameScene.includes('LIFE_SIM ? undefined : this.dailyQuest')) {
 }
 if (!gameScene.includes('courier_take_order')) throw new Error('Courier take order interaction missing');
 if (!gameScene.includes('handleCourierDeliver')) throw new Error('Courier deliver handler missing');
+if (!gameScene.includes('WaypointArrow')) throw new Error('Screen waypoint arrow missing');
+if (!gameScene.includes('getLifeSimMinimapMarkers')) throw new Error('Courier minimap markers missing');
 if (!gameScene.includes('spawnHomeDoorMarkers')) throw new Error('Home door markers missing');
 if (!gameScene.includes('shop_grocery')) throw new Error('Grocery shop sprite missing');
 

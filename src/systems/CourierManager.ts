@@ -1,6 +1,7 @@
 import { TILE_SIZE, type GameState } from '../config';
 import pickupsData from '../data/courier-pickups.json';
 import homesData from '../data/homes.json';
+import jobsData from '../data/jobs.json';
 
 export interface CourierPickupConfig {
   id: string;
@@ -8,6 +9,13 @@ export interface CourierPickupConfig {
   category: 'shop' | 'cafe' | 'warehouse' | 'restaurant';
   x: number;
   y: number;
+}
+
+export interface CourierWaypoint {
+  tileX: number;
+  tileY: number;
+  label: string;
+  phase: 'warehouse' | 'pickup' | 'dropoff';
 }
 
 export interface CourierDeliveryState {
@@ -128,9 +136,44 @@ export class CourierManager {
     return Math.hypot(px - hx, py - hy) < WAREHOUSE_RADIUS;
   }
 
+  getWarehouseTile(): { x: number; y: number } {
+    const job = (jobsData as { id: string; doorX: number; doorY: number }[]).find(
+      (j) => j.id === 'courier'
+    );
+    return { x: job?.doorX ?? 132, y: job?.doorY ?? 72 };
+  }
+
+  getWaypoint(): CourierWaypoint | null {
+    if (!this.isCourierEmployed()) return null;
+    const d = this.state.courierDelivery;
+    if (!d) {
+      const wh = this.getWarehouseTile();
+      return {
+        tileX: wh.x,
+        tileY: wh.y,
+        label: 'Склад «Быстрая доставка»',
+        phase: 'warehouse',
+      };
+    }
+    if (!d.hasPackage) {
+      return {
+        tileX: d.pickupX,
+        tileY: d.pickupY,
+        label: d.pickupName,
+        phase: 'pickup',
+      };
+    }
+    return {
+      tileX: d.dropoffX,
+      tileY: d.dropoffY,
+      label: d.dropoffName,
+      phase: 'dropoff',
+    };
+  }
+
   getStatusText(): string {
     const d = this.state.courierDelivery;
-    if (!d) return 'На складе — возьмите заказ';
+    if (!d) return 'Склад — возьмите заказ (следуйте за стрелкой)';
     if (!d.hasPackage) {
       return `Забрать: ${d.pickupName} (~$${this.estimatePay(d.distanceTiles)})`;
     }

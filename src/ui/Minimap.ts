@@ -91,7 +91,7 @@ export class Minimap {
         this.offsetX + this.size / 2,
         this.offsetY + this.size + 10,
         LIFE_SIM
-          ? '▶ цель сюжета  ■ магазин  ◎ доска заданий'
+          ? '▶ сюжет  ◆ курьер  ■ магазин  ◎ задания'
           : '▶ цель  ▲ заказчик  ◎ таксофон  ■ магазин',
         {
           fontFamily: 'monospace',
@@ -109,7 +109,7 @@ export class Minimap {
     py: number,
     p2x?: number,
     p2y?: number,
-    storyMarker?: { x: number; y: number } | null
+    lifeMarkers?: { x: number; y: number; kind: MinimapMarker['kind'] }[] | null
   ): void {
     const playerTx = px / TILE_SIZE;
     const playerTy = py / TILE_SIZE;
@@ -128,9 +128,7 @@ export class Minimap {
 
     this.questMarkers.clear();
     const markers: MinimapMarker[] = LIFE_SIM
-      ? storyMarker
-        ? [{ x: storyMarker.x, y: storyMarker.y, kind: 'target' }]
-        : []
+      ? (lifeMarkers ?? [])
       : this.questManager.getAllMinimapMarkers(this.cityMap.mapId);
     const edgeArrows: EdgeArrow[] = [];
 

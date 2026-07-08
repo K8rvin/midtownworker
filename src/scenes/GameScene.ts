@@ -39,6 +39,7 @@ import { QuestManager } from '../systems/QuestManager';
 import { SaveManager } from '../systems/SaveManager';
 import { HUD } from '../ui/HUD';
 import { Minimap } from '../ui/Minimap';
+import { WaypointArrow } from '../ui/WaypointArrow';
 import { QuestLog } from '../ui/QuestLog';
 import { ShopUI } from '../ui/ShopUI';
 import { DialogBox } from '../ui/DialogBox';
@@ -131,6 +132,7 @@ export class GameScene extends Phaser.Scene {
   private courierManager!: CourierManager;
   private courierMarkerGfx: Phaser.GameObjects.Graphics | null = null;
   private courierMarkerLabels: Phaser.GameObjects.Text[] = [];
+  private courierWaypointArrow: WaypointArrow | null = null;
   private housingManager!: HousingManager;
   private lifeTaskManager!: LifeTaskManager;
   private lifeSimStory!: LifeSimStoryManager;
@@ -356,6 +358,7 @@ export class GameScene extends Phaser.Scene {
       LIFE_SIM ? undefined : this.dailyQuest ?? undefined
     );
     this.minimap = new Minimap(this, this.cityMap, this.questManager);
+    if (LIFE_SIM) this.courierWaypointArrow = new WaypointArrow(this);
     this.questLog = new QuestLog(
       this,
       this.questManager,
@@ -512,7 +515,8 @@ export class GameScene extends Phaser.Scene {
       getAudio(this).stopEngine();
       const pos = this.player.getPosition();
       const p2 = this.player2?.getPosition();
-      this.minimap.update(pos.x, pos.y, p2?.x, p2?.y, this.getLifeSimMinimapMarker());
+      this.minimap.update(pos.x, pos.y, p2?.x, p2?.y, this.getLifeSimMinimapMarkers());
+      this.updateCourierWaypoint();
       this.hudUpdate('');
       return;
     }
@@ -526,7 +530,8 @@ export class GameScene extends Phaser.Scene {
       this.player.stopMovement();
       this.scopeOverlay.updateAim(this.player, pointer);
       const pos = this.player.getPosition();
-      this.minimap.update(pos.x, pos.y, undefined, undefined, this.getLifeSimMinimapMarker());
+      this.minimap.update(pos.x, pos.y, undefined, undefined, this.getLifeSimMinimapMarkers());
+      this.updateCourierWaypoint();
       this.hudUpdate('');
       return;
     }
@@ -630,18 +635,53 @@ export class GameScene extends Phaser.Scene {
 
     const pos = this.player.getPosition();
     const p2pos = this.player2?.getPosition();
-    this.minimap.update(pos.x, pos.y, p2pos?.x, p2pos?.y, this.getLifeSimMinimapMarker());
+    this.minimap.update(pos.x, pos.y, p2pos?.x, p2pos?.y, this.getLifeSimMinimapMarkers());
+    this.updateCourierWaypoint();
     this.hudUpdate(this.getInteractHint());
   }
 
-  private getLifeSimMinimapMarker(): { x: number; y: number } | null {
-    if (!LIFE_SIM) return null;
-    const m = this.lifeSimStory.getMarker();
-    if (!m) return null;
-    return {
-      x: m.x * TILE_SIZE + TILE_SIZE / 2,
-      y: m.y * TILE_SIZE + TILE_SIZE / 2,
-    };
+  private getLifeSimMinimapMarkers(): { x: number; y: number; kind: 'target' | 'objective' }[] {
+    if (!LIFE_SIM) return [];
+    const markers: { x: number; y: number; kind: 'target' | 'objective' }[] = [];
+    const story = this.lifeSimStory.getMarker();
+    if (story) {
+      markers.push({
+        x: story.x * TILE_SIZE + TILE_SIZE / 2,
+        y: story.y * TILE_SIZE + TILE_SIZE / 2,
+        kind: 'target',
+      });
+    }
+    const wp = this.courierManager.getWaypoint();
+    if (wp) {
+      markers.push({
+        x: wp.tileX * TILE_SIZE + TILE_SIZE / 2,
+        y: wp.tileY * TILE_SIZE + TILE_SIZE / 2,
+        kind: 'objective',
+      });
+    }
+    return markers;
+  }
+
+  private updateCourierWaypoint(): void {
+    if (!LIFE_SIM || !this.courierWaypointArrow) return;
+    const wp = this.courierManager.getWaypoint();
+    if (!wp) {
+      this.courierWaypointArrow.update(null);
+      return;
+    }
+    const colors = {
+      warehouse: { fill: 0xffd600, text: '#ffd600' },
+      pickup: { fill: 0x00b4ff, text: '#00b4ff' },
+      dropoff: { fill: 0xff6b35, text: '#ff6b35' },
+    } as const;
+    const c = colors[wp.phase];
+    this.courierWaypointArrow.update({
+      x: wp.tileX * TILE_SIZE + TILE_SIZE / 2,
+      y: wp.tileY * TILE_SIZE + TILE_SIZE / 2,
+      label: wp.label,
+      color: c.fill,
+      labelColor: c.text,
+    });
   }
 
   private handlePlayerDeath(player: Player, msg: string): void {
@@ -1034,6 +1074,10 @@ export class GameScene extends Phaser.Scene {
             this.clearContractTargets();
             this.spawnContractTargets();
             this.showMessage('Контрактные цели отмечены на карте. Оружейная «Тень» открыта.');
+          }
+          if (job.jobType === 'courier' || job.id === 'courier') {
+            this.refreshCourierMarkers();
+            this.showMessage('Склад отмечен на карте — следуйте за стрелкой');
           }
         }
         return err;
@@ -1700,16 +1744,19 @@ export class GameScene extends Phaser.Scene {
     this.courierMarkerGfx = null;
     this.courierMarkerLabels = [];
 
-    const d = this.courierManager.getDelivery();
-    if (!d) return;
+    const wp = this.courierManager.getWaypoint();
+    if (!wp) return;
 
+    const colors = { warehouse: 0xffd600, pickup: 0x00b4ff, dropoff: 0xff6b35 } as const;
     const g = this.add.graphics().setDepth(6);
-    const targets: { x: number; y: number; label: string; color: number }[] = [];
-    if (!d.hasPackage) {
-      targets.push({ x: d.pickupX, y: d.pickupY, label: `▲ ${d.pickupName}`, color: 0x00b4ff });
-    } else {
-      targets.push({ x: d.dropoffX, y: d.dropoffY, label: `▲ ${d.dropoffName}`, color: 0xff6b35 });
-    }
+    const targets = [
+      {
+        x: wp.tileX,
+        y: wp.tileY,
+        label: `▲ ${wp.label}`,
+        color: colors[wp.phase],
+      },
+    ];
 
     for (const t of targets) {
       const wx = t.x * TILE_SIZE + TILE_SIZE / 2;
@@ -1763,6 +1810,7 @@ export class GameScene extends Phaser.Scene {
   private onResumeFromHome = (): void => {
     if (!LIFE_SIM) return;
     this.refreshTutorialMarkers();
+    this.refreshCourierMarkers();
     this.hudUpdate(this.getInteractHint());
   };
 

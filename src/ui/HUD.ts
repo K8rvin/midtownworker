@@ -227,7 +227,7 @@ export class HUD {
   }
 
   private courierStatusLine(d: CourierDeliveryState | null): string {
-    if (!d) return '📦 На складе (132, 72) — возьмите заказ';
+    if (!d) return '📦 Склад — возьмите заказ (следуйте за стрелкой)';
     const pay = Math.round(12 + d.distanceTiles * 2.5);
     if (!d.hasPackage) return `📦 Забрать: ${d.pickupName} · ~$${pay}`;
     return `📦 Доставить: ${d.dropoffName} · ~$${pay}`;
