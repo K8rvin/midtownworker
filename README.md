@@ -13,6 +13,22 @@ npm run dev
 
 Откройте http://localhost:5173
 
+## Игра онлайн (GitHub Pages)
+
+После push в `main` игра публикуется автоматически:
+
+**https://k8rvin.github.io/midtownworker/**
+
+Первый раз в настройках репозитория: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+
+Локальная сборка как на Pages:
+
+```bash
+set GITHUB_PAGES=true
+npm run build
+npm run preview
+```
+
 ## Управление
 
 | Клавиша | Действие |
