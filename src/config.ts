@@ -135,6 +135,8 @@ export interface GameState {
   /** Life sim (phase 15) */
   hunger: number;
   sleep: number;
+  /** 0–100 intoxication level (life sim). */
+  drunkLevel: number;
   day: number;
   hour: number;
   housing: HousingState;
@@ -215,6 +217,7 @@ export const DEFAULT_GAME_STATE: GameState = {
   currentMapId: 'city',
   hunger: 85,
   sleep: 90,
+  drunkLevel: 0,
   day: 1,
   hour: 8,
   housing: { ...DEFAULT_HOUSING },

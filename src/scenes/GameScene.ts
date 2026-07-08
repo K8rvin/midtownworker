@@ -40,6 +40,7 @@ import { SaveManager } from '../systems/SaveManager';
 import { HUD } from '../ui/HUD';
 import { Minimap } from '../ui/Minimap';
 import { WaypointArrow } from '../ui/WaypointArrow';
+import { NeedsEffectsOverlay } from '../ui/NeedsEffectsOverlay';
 import { QuestLog } from '../ui/QuestLog';
 import { ShopUI } from '../ui/ShopUI';
 import { DialogBox } from '../ui/DialogBox';
@@ -157,6 +158,9 @@ export class GameScene extends Phaser.Scene {
   private tireMarks!: TireMarkManager;
   private smokeTimer = 0;
   private playTimeSeconds = 0;
+  private needsEffects: NeedsEffectsOverlay | null = null;
+  private cameraFollowTarget: Phaser.GameObjects.GameObject | null = null;
+  private sprintBlockedCooldown = 0;
   private mobileControls: MobileControls | null = null;
   private garageManager!: GarageManager;
   private colliders: Phaser.Physics.Arcade.Collider[] = [];
@@ -358,7 +362,11 @@ export class GameScene extends Phaser.Scene {
       LIFE_SIM ? undefined : this.dailyQuest ?? undefined
     );
     this.minimap = new Minimap(this, this.cityMap, this.questManager);
-    if (LIFE_SIM) this.courierWaypointArrow = new WaypointArrow(this);
+    if (LIFE_SIM) {
+      this.courierWaypointArrow = new WaypointArrow(this);
+      this.needsEffects = new NeedsEffectsOverlay(this);
+    }
+    this.cameras.main.roundPixels = true;
     this.questLog = new QuestLog(
       this,
       this.questManager,
@@ -501,7 +509,10 @@ export class GameScene extends Phaser.Scene {
       if (hourChanged && this.state.hour !== this.lastHour) {
         this.lastHour = this.state.hour;
         const needs = this.needsManager.onHourPassed(this.state);
-        if (needs.fainted && needs.message) this.showMessage(needs.message);
+        if (needs.fainted && needs.message) {
+          this.needsEffects?.triggerCollapseBlink();
+          this.showMessage(needs.message);
+        }
       }
       if (dayAdvanced) {
         const rentMsg = this.housingManager.onDayAdvanced();
@@ -517,6 +528,9 @@ export class GameScene extends Phaser.Scene {
       const p2 = this.player2?.getPosition();
       this.minimap.update(pos.x, pos.y, p2?.x, p2?.y, this.getLifeSimMinimapMarkers());
       this.updateCourierWaypoint();
+      if (LIFE_SIM && this.needsEffects) {
+        this.needsEffects.update(dt, this.state.sleep, this.state.drunkLevel);
+      }
       this.hudUpdate('');
       return;
     }
@@ -538,7 +552,18 @@ export class GameScene extends Phaser.Scene {
 
     const move = this.inputMgr.getMovementVector();
     this.lastMoveInput = move;
-    const sprint = this.inputMgr.isSprinting();
+    let sprint = this.inputMgr.isSprinting();
+    if (LIFE_SIM && sprint && !this.needsManager.canSprint(this.state)) {
+      sprint = false;
+      this.sprintBlockedCooldown -= dt;
+      if (this.sprintBlockedCooldown <= 0) {
+        const reason = this.needsManager.sprintBlockedReason(this.state);
+        if (reason) this.showMessage(reason);
+        this.sprintBlockedCooldown = 4;
+      }
+    } else if (LIFE_SIM) {
+      this.sprintBlockedCooldown = 0;
+    }
 
     if (this.player.inVehicle && this.player.currentVehicle) {
       this.updateVehicleDriving(move, dt);
@@ -629,8 +654,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (this.isCoop) this.updateCoopCamera();
-    else if (!this.player.inVehicle) {
-      this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
+    else this.updateSmoothCamera();
+
+    if (LIFE_SIM && this.needsEffects) {
+      this.needsEffects.update(dt, this.state.sleep, this.state.drunkLevel);
     }
 
     const pos = this.player.getPosition();
@@ -877,7 +904,6 @@ export class GameScene extends Phaser.Scene {
       }
     }
     this.player.syncToVehicle();
-    this.cameras.main.centerOn(vehicle.sprite.x, vehicle.sprite.y);
 
     for (const npc of this.getAllNPCs()) {
       if (!npc.active) continue;
@@ -1405,8 +1431,7 @@ export class GameScene extends Phaser.Scene {
         getAudio(this).stopEngine();
         player.exitVehicle();
         if (player.slot === 1) {
-          this.cameras.main.startFollow(player.sprite, true, 0.1, 0.1);
-          this.cameras.main.setZoom(1);
+          this.setCameraFollow(player.sprite, 1);
           this.setupCollisions();
         }
         break;
@@ -1482,7 +1507,7 @@ export class GameScene extends Phaser.Scene {
         const vehicle = payload!.vehicle as Vehicle;
         player.enterVehicle(vehicle);
         if (player.slot === 1) {
-          this.cameras.main.setZoom(0.9);
+          this.setCameraFollow(vehicle.sprite, 0.9);
           this.setupCollisions();
         }
         break;
@@ -1909,6 +1934,7 @@ export class GameScene extends Phaser.Scene {
         if (!err) this.notifyLifeEvent('buy_food');
         return err;
       },
+      (id) => this.groceryManager.drinkNow(id),
       (msg) => this.showMessage(msg),
       () => {}
     );
@@ -2244,13 +2270,32 @@ export class GameScene extends Phaser.Scene {
   }
 
   private setupCamera(): void {
-    this.cameras.main.setBounds(0, 0, this.cityMap.worldWidth, this.cityMap.worldHeight);
+    const cam = this.cameras.main;
+    cam.setBounds(0, 0, this.cityMap.worldWidth, this.cityMap.worldHeight);
+    cam.roundPixels = true;
     if (this.isCoop) {
-      this.cameras.main.setZoom(0.95);
+      cam.setZoom(0.95);
       this.updateCoopCamera();
     } else {
-      this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
-      this.cameras.main.setZoom(1);
+      this.setCameraFollow(this.player.sprite, 1);
+    }
+  }
+
+  private setCameraFollow(target: Phaser.GameObjects.GameObject, zoom: number): void {
+    const cam = this.cameras.main;
+    if (this.cameraFollowTarget !== target) {
+      cam.stopFollow();
+      cam.startFollow(target, true, 0.045, 0.045);
+      this.cameraFollowTarget = target;
+    }
+    if (Math.abs(cam.zoom - zoom) > 0.001) cam.setZoom(zoom);
+  }
+
+  private updateSmoothCamera(): void {
+    if (this.player.inVehicle && this.player.currentVehicle) {
+      this.setCameraFollow(this.player.currentVehicle.sprite, 0.9);
+    } else {
+      this.setCameraFollow(this.player.sprite, 1);
     }
   }
 

@@ -431,6 +431,7 @@ export class HomeScene extends Phaser.Scene {
       return;
     }
     this.needs.sleep(this.state, this.housing.getSleepBonus());
+    this.notifyLifeEvent('sleep_home');
     this.showHint('Вы отдохнули');
     this.refreshStatus();
   }

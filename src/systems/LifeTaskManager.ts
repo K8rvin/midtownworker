@@ -49,13 +49,27 @@ export class LifeTaskManager {
 
   checkProgress(event: string, payload?: Record<string, unknown>): boolean {
     const task = this.getActiveTask();
-    if (!task || task.type !== event) return false;
+    if (!task) return false;
+
+    if (task.type === 'bed_and_sleep') {
+      if (event === 'place_furniture' && payload?.furnitureId === task.furnitureId) {
+        this.state.questProgress[task.id] = 1;
+        return false;
+      }
+      if (event === 'sleep_home') {
+        return (this.state.questProgress[task.id] ?? 0) >= 1;
+      }
+      return false;
+    }
+
+    if (task.type !== event) return false;
 
     switch (event) {
       case 'get_job':
       case 'rent_home':
       case 'own_home':
       case 'pay_rent':
+      case 'sleep_home':
         return true;
       case 'buy_food':
       case 'remote_shifts':

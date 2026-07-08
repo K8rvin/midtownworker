@@ -129,8 +129,10 @@ export class HUD {
     if (LIFE_SIM) {
       this.livesText.setText(timeManager?.formatClock(this.state) ?? `День ${this.state.day}`);
       this.moneyText.setText(`$${this.state.money}`);
+      const drunkLine =
+        this.state.drunkLevel > 8 ? ` · 🍺 ${Math.round(this.state.drunkLevel)}%` : '';
       this.wantedText.setText(
-        `Голод ${this.state.hunger}% · Сон ${this.state.sleep}%`
+        `Голод ${this.state.hunger}% · Сон ${this.state.sleep}%${drunkLine}`
       );
       const jobCfg = this.state.job
         ? (jobsData as { id: string; jobType?: string; violent?: boolean }[]).find(

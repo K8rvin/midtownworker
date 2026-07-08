@@ -1,5 +1,5 @@
 [
-  { "id": "bed_basic", "name": "Кровать", "price": 200, "sleepBonus": 80, "slotType": "bed" },
+  { "id": "bed_basic", "name": "Кровать", "price": 120, "sleepBonus": 80, "slotType": "bed" },
   { "id": "fridge_basic", "name": "Холодильник", "price": 350, "foodCapacity": 10, "slotType": "fridge" },
   { "id": "desk_basic", "name": "Рабочий стол", "price": 180, "remoteBonus": true, "slotType": "desk" }
 ]

@@ -37,6 +37,14 @@
     "type": "pay_rent"
   },
   {
+    "id": "task_tutorial_bed_sleep",
+    "title": "Кровать и сон",
+    "description": "Купите кровать, поставьте дома и поспите",
+    "reward": 40,
+    "type": "bed_and_sleep",
+    "furnitureId": "bed_basic"
+  },
+  {
     "id": "task_buy_bed",
     "title": "Обустроить дом",
     "description": "Купите кровать и поставьте дома",

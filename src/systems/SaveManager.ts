@@ -46,6 +46,7 @@ export class SaveManager {
         vehicleType: null,
         hunger: parsed.hunger ?? DEFAULT_GAME_STATE.hunger,
         sleep: parsed.sleep ?? DEFAULT_GAME_STATE.sleep,
+        drunkLevel: parsed.drunkLevel ?? 0,
         day: parsed.day ?? DEFAULT_GAME_STATE.day,
         hour: parsed.hour ?? DEFAULT_GAME_STATE.hour,
         housing: { ...DEFAULT_HOUSING, ...parsed.housing },

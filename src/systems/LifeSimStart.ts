@@ -5,6 +5,7 @@ export function applyLifeSimNewGameStart(state: GameState): void {
   state.money = 85;
   state.hunger = 28;
   state.sleep = 35;
+  state.drunkLevel = 0;
   state.health = 68;
   state.day = 1;
   state.hour = 20;

@@ -2,5 +2,8 @@
   { "id": "bread", "name": "Хлеб", "price": 8, "hunger": 15 },
   { "id": "water", "name": "Вода", "price": 5, "hunger": 5 },
   { "id": "sandwich", "name": "Сэндвич", "price": 18, "hunger": 35 },
-  { "id": "meal", "name": "Готовый обед", "price": 35, "hunger": 55 }
+  { "id": "meal", "name": "Готовый обед", "price": 35, "hunger": 55 },
+  { "id": "beer", "name": "Пиво", "price": 12, "hunger": 3, "alcohol": 18 },
+  { "id": "wine", "name": "Вино", "price": 22, "hunger": 5, "alcohol": 28 },
+  { "id": "vodka", "name": "Водка", "price": 35, "hunger": 0, "alcohol": 48 }
 ]

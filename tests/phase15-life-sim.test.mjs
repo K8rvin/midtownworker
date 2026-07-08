@@ -11,6 +11,7 @@ if (!config.includes('job: JobState | null')) throw new Error('Single job slot m
 if (!config.includes('food: Record<string, number>')) throw new Error('Food inventory by id missing');
 if (!config.includes('storyChapter')) throw new Error('Story chapter missing');
 if (!config.includes('courierDelivery')) throw new Error('Courier delivery state missing');
+if (!config.includes('drunkLevel')) throw new Error('Drunk level state missing');
 if (!config.includes('courierDeliveries')) throw new Error('Courier deliveries stat missing');
 
 const storyMgr = readFileSync(join(root, 'src', 'systems', 'LifeSimStoryManager.ts'), 'utf8');
@@ -18,6 +19,8 @@ if (!storyMgr.includes('LifeSimStoryManager')) throw new Error('Story manager mi
 
 const storyData = readFileSync(join(root, 'src', 'data', 'life-sim-story.json'), 'utf8');
 if (!storyData.includes('task_rent_home')) throw new Error('Story chapters missing');
+if (!storyData.includes('task_tutorial_bed_sleep')) throw new Error('Bed and sleep tutorial chapter missing');
+if (!storyData.includes('кровати нет')) throw new Error('Story should mention missing bed');
 
 const jobMgr = readFileSync(join(root, 'src', 'systems', 'JobManager.ts'), 'utf8');
 if (!jobMgr.includes('canApply')) throw new Error('JobManager single-job guard missing');
@@ -30,7 +33,18 @@ if (!courierMgr.includes('deliverPackage')) throw new Error('Courier deliver mis
 if (!courierMgr.includes('estimatePay')) throw new Error('Courier distance pay missing');
 if (!courierMgr.includes('getWaypoint')) throw new Error('Courier waypoint navigation missing');
 
+const needsMgr = readFileSync(join(root, 'src', 'systems', 'NeedsManager.ts'), 'utf8');
+if (needsMgr.includes('FAINT_PENALTY')) throw new Error('$50 faint penalty should be removed');
+if (!needsMgr.includes('canSprint')) throw new Error('Hunger sprint block missing');
+
+const needsFx = readFileSync(join(root, 'src', 'ui', 'NeedsEffectsOverlay.ts'), 'utf8');
+if (!needsFx.includes('NeedsEffectsOverlay')) throw new Error('Drowsiness overlay missing');
+
+const groceries = readFileSync(join(root, 'src', 'data', 'groceries.json'), 'utf8');
+if (!groceries.includes('"alcohol"')) throw new Error('Alcohol items missing');
+
 const groceryMgr = readFileSync(join(root, 'src', 'systems', 'GroceryManager.ts'), 'utf8');
+if (!groceryMgr.includes('drinkNow')) throw new Error('Drink alcohol handler missing');
 if (!groceryMgr.includes('eatNow')) throw new Error('Grocery eat-now missing');
 if (!groceryMgr.includes('getFoodCapacity')) throw new Error('Fridge capacity missing');
 if (!groceryMgr.includes('getFoodStockSummary')) throw new Error('Food stock summary missing');

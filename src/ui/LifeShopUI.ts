@@ -13,6 +13,7 @@ export class LifeShopUI {
     private shopType: 'grocery' | 'furniture',
     private onBuy: (id: string) => string | null,
     private onEat: (id: string) => string | null,
+    private onDrink: (id: string) => string | null,
     private onMessage: (msg: string) => void,
     private onClose: () => void
   ) {}
@@ -102,31 +103,41 @@ export class LifeShopUI {
 
     if (this.shopType === 'grocery') {
       this.grocery.getGroceries().forEach((item, i) => {
-        const y = GAME_HEIGHT / 2 - 148 + i * 52;
+        const y = GAME_HEIGHT / 2 - 168 + i * 46;
         const label = this.scene.add
           .text(GAME_WIDTH / 2 - 200, y - 8, `${item.name} — $${item.price}`, {
             fontFamily: 'monospace',
             fontSize: '14px',
-            color: '#e5e7eb',
+            color: item.alcohol ? '#ff9f43' : '#e5e7eb',
           })
           .setScrollFactor(0)
           .setDepth(depth + 1);
+        const hintText = item.alcohol
+          ? `алкоголь +${item.alcohol}${item.hunger ? ` · голод +${item.hunger}` : ''}`
+          : `+${item.hunger} голод`;
         const hint = this.scene.add
-          .text(GAME_WIDTH / 2 - 200, y + 10, `+${item.hunger} голод`, {
+          .text(GAME_WIDTH / 2 - 200, y + 10, hintText, {
             fontFamily: 'monospace',
             fontSize: '11px',
-            color: '#6b7280',
+            color: item.alcohol ? '#ff6b6b' : '#6b7280',
           })
           .setScrollFactor(0)
           .setDepth(depth + 1);
         this.rows.push(label, hint);
-        const buy = this.makeButton(GAME_WIDTH / 2 + 80, y, 'Домой', depth, () => {
-          this.handleResult(this.onBuy(item.id), `В запасы: ${item.name}`);
-        });
-        const eat = this.makeButton(GAME_WIDTH / 2 + 170, y, 'Съесть', depth, () => {
-          this.handleResult(this.onEat(item.id), `Съели ${item.name} (+${item.hunger} голод)`);
-        });
-        this.rows.push(buy, eat);
+        if (item.alcohol) {
+          const drink = this.makeButton(GAME_WIDTH / 2 + 140, y, 'Выпить', depth, () => {
+            this.handleResult(this.onDrink(item.id), `Выпили ${item.name}`);
+          });
+          this.rows.push(drink);
+        } else {
+          const buy = this.makeButton(GAME_WIDTH / 2 + 80, y, 'Домой', depth, () => {
+            this.handleResult(this.onBuy(item.id), `В запасы: ${item.name}`);
+          });
+          const eat = this.makeButton(GAME_WIDTH / 2 + 170, y, 'Съесть', depth, () => {
+            this.handleResult(this.onEat(item.id), `Съели ${item.name} (+${item.hunger} голод)`);
+          });
+          this.rows.push(buy, eat);
+        }
       });
     } else {
       this.grocery.getFurniture().forEach((item, i) => {

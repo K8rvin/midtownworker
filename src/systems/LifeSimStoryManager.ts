@@ -82,8 +82,8 @@ export class LifeSimStoryManager {
     let completeMsg = ch.onComplete;
 
     if (taskId === 'task_rent_home') {
-      this.state.money += 8;
-      completeMsg = ch.onComplete;
+      this.state.money += 115;
+      completeMsg = `${ch.onComplete}\n(+ $115 — часть залога вернули на обстановку)`;
     }
 
     const nextId = ch.id + 1;

@@ -7,6 +7,7 @@ export interface GroceryItem {
   name: string;
   price: number;
   hunger: number;
+  alcohol?: number;
 }
 
 export interface FurnitureItem {
@@ -54,10 +55,21 @@ export class GroceryManager {
   eatNow(itemId: string): string | null {
     const item = this.groceries.find((g) => g.id === itemId);
     if (!item) return 'Нет товара';
+    if (item.alcohol) return 'Это алкоголь — нажмите «Выпить»';
     if (this.state.money < item.price) return 'Недостаточно денег';
     this.state.money -= item.price;
     this.state.hunger = Math.min(100, this.state.hunger + item.hunger);
     this.state.lifeStats.foodBought += 1;
+    return null;
+  }
+
+  drinkNow(itemId: string): string | null {
+    const item = this.groceries.find((g) => g.id === itemId);
+    if (!item?.alcohol) return 'Это не алкоголь';
+    if (this.state.money < item.price) return 'Недостаточно денег';
+    this.state.money -= item.price;
+    this.state.hunger = Math.min(100, this.state.hunger + item.hunger);
+    this.state.drunkLevel = Math.min(100, this.state.drunkLevel + item.alcohol);
     return null;
   }
 

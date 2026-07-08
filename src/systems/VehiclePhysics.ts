@@ -36,11 +36,11 @@ export class VehiclePhysics {
 
     newState.speed = Phaser.Math.Clamp(newState.speed, -stats.maxSpeed * 0.4, stats.maxSpeed);
 
-    if (Math.abs(steerSmoothed) > 0.01) {
-      const speedFactor = Math.max(0.3, Math.min(1, Math.abs(newState.speed) / (stats.maxSpeed * 0.65)));
-      const pivotFactor = Math.abs(newState.speed) < 15 && throttle !== 0 ? 0.55 : speedFactor;
+    const steerDeadzone = 0.07;
+    if (Math.abs(steerSmoothed) > steerDeadzone) {
+      const speedFactor = Math.max(0.35, Math.min(1, Math.abs(newState.speed) / (stats.maxSpeed * 0.65)));
       const direction = newState.speed >= 0 ? 1 : -1;
-      const turnDelta = steerSmoothed * stats.handling * 98 * pivotFactor * dt * direction;
+      const turnDelta = steerSmoothed * stats.handling * 88 * speedFactor * dt * direction;
       const maxTurn = 95 * dt;
       newState.angle += Phaser.Math.Clamp(turnDelta, -maxTurn, maxTurn);
     }

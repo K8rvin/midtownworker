@@ -30,7 +30,8 @@ export class Vehicle {
   public pathFollower = new PathFollower();
   private textureKey: string;
   private steerSmoothed = 0;
-  private readonly steerSmoothRate = 5.5;
+  private readonly steerSmoothRate = 6;
+  private readonly steerDecayRate = 16;
   private laneSegmentId: string | null = null;
   private laneWaypointIndex = 0;
 
@@ -83,8 +84,10 @@ export class Vehicle {
   updateDriving(throttle: number, steer: number, dt: number): void {
     this.syncFromPhysics();
 
-    const steerBlend = 1 - Math.exp(-this.steerSmoothRate * dt);
-    this.steerSmoothed = Phaser.Math.Linear(this.steerSmoothed, steer, steerBlend);
+    const steerTarget = Math.abs(steer) < 0.04 ? 0 : steer;
+    const rate = steerTarget === 0 ? this.steerDecayRate : this.steerSmoothRate;
+    const steerBlend = 1 - Math.exp(-rate * dt);
+    this.steerSmoothed = Phaser.Math.Linear(this.steerSmoothed, steerTarget, steerBlend);
 
     this.state = VehiclePhysics.update(
       this.state,
