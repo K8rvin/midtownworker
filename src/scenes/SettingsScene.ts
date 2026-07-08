@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME_WIDTH } from '../config';
+import { GAME_WIDTH, GAME_HEIGHT } from '../config';
 import { getAudio } from '../systems/AudioManager';
 import {
   ControlSettings,
@@ -8,11 +8,24 @@ import {
 } from '../systems/ControlSettings';
 import { CloudSaveManager } from '../systems/CloudSaveManager';
 import { AssetSettings } from '../graphics/AssetSettings';
-import { createMenuBackdrop, createMenuButton, createMenuPanel } from '../ui/MenuTheme';
+import {
+  createMenuBackdrop,
+  createMenuButton,
+  createMenuDivider,
+  createMenuPanel,
+  createMenuScrollArea,
+} from '../ui/MenuTheme';
+
+const PANEL_W = 540;
+const SCROLL_TOP = 132;
+const SCROLL_HEIGHT = 500;
+const CONTENT_HEIGHT = 780;
+const FOOTER_Y = GAME_HEIGHT - 52;
 
 export class SettingsScene extends Phaser.Scene {
   private returnScene = 'MainMenuScene';
   private resumeGame = false;
+  private scrollAreaDestroy?: () => void;
 
   constructor() {
     super({ key: 'SettingsScene' });
@@ -26,12 +39,12 @@ export class SettingsScene extends Phaser.Scene {
   create(): void {
     getAudio(this).ensureContext();
     createMenuBackdrop(this, 0.96);
-    createMenuPanel(this, GAME_WIDTH / 2, 420, 540, 720);
+    createMenuPanel(this, GAME_WIDTH / 2, GAME_HEIGHT / 2, PANEL_W, GAME_HEIGHT - 48).setDepth(1);
 
     this.add
-      .text(GAME_WIDTH / 2, 90, 'НАСТРОЙКИ', {
+      .text(GAME_WIDTH / 2, 56, 'НАСТРОЙКИ', {
         fontFamily: 'monospace',
-        fontSize: '36px',
+        fontSize: '32px',
         color: '#c8f542',
         stroke: '#0a0a12',
         strokeThickness: 4,
@@ -39,26 +52,40 @@ export class SettingsScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(2);
 
+    createMenuDivider(this, GAME_WIDTH / 2, 88, PANEL_W - 72).setDepth(2);
+
     const audio = getAudio(this);
     const audioSettings = audio.getSettings();
     const controls = ControlSettings.load();
     const assets = AssetSettings.load();
 
-    this.createSlider('Громкость эффектов', 160, audioSettings.sfxVolume, (v) => {
+    const scroll = createMenuScrollArea(this, {
+      x: GAME_WIDTH / 2,
+      top: SCROLL_TOP,
+      width: PANEL_W - 48,
+      height: SCROLL_HEIGHT,
+      contentHeight: CONTENT_HEIGHT,
+      depth: 2,
+    });
+    this.scrollAreaDestroy = scroll.destroy;
+    const content = scroll.content;
+
+    let y = 24;
+
+    y = this.addSlider(content, y, 'Громкость эффектов', audioSettings.sfxVolume, (v) => {
       audio.updateSettings({ sfxVolume: v });
       audio.playSfx('ui');
     });
 
-    this.createSlider('Громкость музыки', 220, audioSettings.musicVolume, (v) => {
+    y = this.addSlider(content, y, 'Громкость музыки', audioSettings.musicVolume, (v) => {
       audio.updateSettings({ musicVolume: v });
       if (v > 0 && !audio.getSettings().muted) audio.startMusic();
       else audio.stopMusic();
     });
 
-    createMenuButton(
-      this,
-      GAME_WIDTH / 2,
-      280,
+    y = this.addButton(
+      content,
+      y,
       audioSettings.muted ? 'ЗВУК: ВЫКЛ' : 'ЗВУК: ВКЛ',
       () => {
         const next = !audio.getSettings().muted;
@@ -66,23 +93,22 @@ export class SettingsScene extends Phaser.Scene {
         if (next) audio.stopMusic();
         else if (audio.getSettings().musicVolume > 0) audio.startMusic();
         this.scene.restart({ returnScene: this.returnScene, resumeGame: this.resumeGame });
+      }
+    );
+
+    y = this.addSection(content, y, 'УПРАВЛЕНИЕ');
+
+    y = this.addSlider(
+      content,
+      y,
+      'Чувствительность руля',
+      (controls.steerSensitivity - 0.5) / 1.5,
+      (v) => {
+        const current = ControlSettings.load();
+        ControlSettings.save({ ...current, steerSensitivity: 0.5 + v * 1.5 });
       },
-      360
-    ).setDepth(2);
-
-    this.add
-      .text(GAME_WIDTH / 2, 330, '— УПРАВЛЕНИЕ —', {
-        fontFamily: 'monospace',
-        fontSize: '13px',
-        color: '#6b7280',
-      })
-      .setOrigin(0.5)
-      .setDepth(2);
-
-    this.createSlider('Чувствительность руля', 380, (controls.steerSensitivity - 0.5) / 1.5, (v) => {
-      const current = ControlSettings.load();
-      ControlSettings.save({ ...current, steerSensitivity: 0.5 + v * 1.5 });
-    }, true);
+      true
+    );
 
     const mobileLabel =
       controls.mobileControls === 'auto'
@@ -91,24 +117,20 @@ export class SettingsScene extends Phaser.Scene {
           ? 'СЕНСОР: ВКЛ'
           : 'СЕНСОР: ВЫКЛ';
 
-    createMenuButton(this, GAME_WIDTH / 2, 440, mobileLabel, () => {
+    y = this.addButton(content, y, mobileLabel, () => {
       const order: MobileControlMode[] = ['auto', 'on', 'off'];
       const next = order[(order.indexOf(controls.mobileControls) + 1) % order.length];
       ControlSettings.save({ ...controls, mobileControls: next });
       this.scene.restart({ returnScene: this.returnScene, resumeGame: this.resumeGame });
-    }, 360).setDepth(2);
+    });
 
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        490,
-        `Действие [${controls.keys.interact}] · Квесты [${controls.keys.questLog}] · Карта [${controls.keys.map}] · Спринт [${controls.keys.sprint}]`,
-        { fontFamily: 'monospace', fontSize: '11px', color: '#9ca3af', align: 'center' }
-      )
-      .setOrigin(0.5)
-      .setDepth(2);
+    y = this.addHint(
+      content,
+      y,
+      `Действие [${controls.keys.interact}] · Квесты [${controls.keys.questLog}] · Карта [${controls.keys.map}] · Спринт [${controls.keys.sprint}]`
+    );
 
-    createMenuButton(this, GAME_WIDTH / 2, 540, 'СБРОСИТЬ КЛАВИШИ', () => {
+    y = this.addButton(content, y, 'СБРОСИТЬ КЛАВИШИ', () => {
       const current = ControlSettings.load();
       ControlSettings.save({
         ...current,
@@ -116,100 +138,119 @@ export class SettingsScene extends Phaser.Scene {
         steerSensitivity: DEFAULT_CONTROL_SETTINGS.steerSensitivity,
       });
       this.scene.restart({ returnScene: this.returnScene, resumeGame: this.resumeGame });
-    }, 360).setDepth(2);
+    });
 
-    this.add
-      .text(GAME_WIDTH / 2, 545, '— ГРАФИКА —', {
-        fontFamily: 'monospace',
-        fontSize: '13px',
-        color: '#6b7280',
-      })
-      .setOrigin(0.5)
-      .setDepth(2);
+    y = this.addSection(content, y, 'ГРАФИКА');
 
-    createMenuButton(
-      this,
-      GAME_WIDTH / 2,
-      590,
-      `АССЕТЫ: ${AssetSettings.modeLabel(assets.mode)}`,
-      () => {
-        AssetSettings.save({ mode: AssetSettings.cycleMode(assets.mode) });
-        this.scene.restart({ returnScene: this.returnScene, resumeGame: this.resumeGame });
-      },
-      360
-    ).setDepth(2);
+    y = this.addButton(content, y, `АССЕТЫ: ${AssetSettings.modeLabel(assets.mode)}`, () => {
+      AssetSettings.save({ mode: AssetSettings.cycleMode(assets.mode) });
+      this.scene.restart({ returnScene: this.returnScene, resumeGame: this.resumeGame });
+    });
 
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        625,
-        'АВТО: PNG если есть · PNG: только файлы · ПРОЦЕДУР: код',
-        { fontFamily: 'monospace', fontSize: '10px', color: '#6b7280' }
-      )
-      .setOrigin(0.5)
-      .setDepth(2);
+    y = this.addHint(content, y, 'АВТО: PNG если есть · PNG: только файлы · ПРОЦЕДУР: код');
 
-    this.add
-      .text(GAME_WIDTH / 2, 655, '— ОБЛАЧНОЕ СОХРАНЕНИЕ —', {
-        fontFamily: 'monospace',
-        fontSize: '13px',
-        color: '#6b7280',
-      })
-      .setOrigin(0.5)
-      .setDepth(2);
+    y = this.addSection(content, y, 'ОБЛАЧНОЕ СОХРАНЕНИЕ');
 
-    createMenuButton(this, GAME_WIDTH / 2, 690, 'ЭКСПОРТ КОДА', () => this.exportSave(), 360).setDepth(2);
-    createMenuButton(this, GAME_WIDTH / 2, 740, 'ИМПОРТ КОДА', () => this.importSave(), 360).setDepth(2);
-    createMenuButton(this, GAME_WIDTH / 2, 790, 'НАЗАД', () => this.goBack(), 360).setDepth(2);
+    y = this.addButton(content, y, 'ЭКСПОРТ КОДА', () => this.exportSave());
+    this.addButton(content, y, 'ИМПОРТ КОДА', () => this.importSave());
+
+    createMenuButton(this, GAME_WIDTH / 2, FOOTER_Y, 'НАЗАД', () => this.goBack(), 360, 44).setDepth(3);
 
     this.input.keyboard?.once('keydown-ESC', () => this.goBack());
   }
 
-  private createSlider(
-    label: string,
+  shutdown(): void {
+    this.scrollAreaDestroy?.();
+    this.scrollAreaDestroy = undefined;
+  }
+
+  private addSection(content: Phaser.GameObjects.Container, y: number, label: string): number {
+    const text = this.add
+      .text(0, y, `— ${label} —`, {
+        fontFamily: 'monospace',
+        fontSize: '13px',
+        color: '#6b7280',
+      })
+      .setOrigin(0.5, 0);
+    content.add(text);
+    return y + 36;
+  }
+
+  private addHint(content: Phaser.GameObjects.Container, y: number, text: string): number {
+    const hint = this.add
+      .text(0, y, text, {
+        fontFamily: 'monospace',
+        fontSize: '11px',
+        color: '#9ca3af',
+        align: 'center',
+        wordWrap: { width: PANEL_W - 96 },
+      })
+      .setOrigin(0.5, 0);
+    content.add(hint);
+    return y + hint.height + 16;
+  }
+
+  private addButton(
+    content: Phaser.GameObjects.Container,
     y: number,
+    label: string,
+    onClick: () => void
+  ): number {
+    const btn = createMenuButton(this, 0, y + 22, label, onClick, 360, 44);
+    content.add(btn);
+    return y + 58;
+  }
+
+  private addSlider(
+    content: Phaser.GameObjects.Container,
+    y: number,
+    label: string,
     initial: number,
     onChange: (value: number) => void,
     isControl = false
-  ): void {
-    this.add
-      .text(GAME_WIDTH / 2 - 210, y - 22, label, {
+  ): number {
+    const rowY = y + 28;
+
+    const labelText = this.add
+      .text(-210, rowY - 22, label, {
         fontFamily: 'monospace',
         fontSize: '14px',
         color: isControl ? '#ff2d55' : '#c8f542',
       })
-      .setOrigin(0, 0.5)
-      .setDepth(2);
+      .setOrigin(0, 0.5);
+    content.add(labelText);
 
-    const barX = GAME_WIDTH / 2 - 110;
+    const barX = -110;
     const barW = 300;
     const barH = 10;
 
     const track = this.add
-      .rectangle(barX + barW / 2, y, barW, barH, 0x10101a)
+      .rectangle(barX + barW / 2, rowY, barW, barH, 0x10101a)
       .setStrokeStyle(1, 0xc8f542, 0.6)
-      .setDepth(2);
+      .setInteractive({ useHandCursor: true });
+    content.add(track);
 
-    const fill = this.add.rectangle(barX, y, barW * initial, barH, 0xc8f542).setOrigin(0, 0.5).setDepth(2);
+    const fill = this.add.rectangle(barX, rowY, barW * initial, barH, 0xc8f542).setOrigin(0, 0.5);
+    content.add(fill);
 
     const pctText = this.add
-      .text(barX + barW + 16, y, `${Math.round(initial * 100)}%`, {
+      .text(barX + barW + 16, rowY, `${Math.round(initial * 100)}%`, {
         fontFamily: 'monospace',
         fontSize: '12px',
         color: '#6b7280',
       })
-      .setOrigin(0, 0.5)
-      .setDepth(2);
+      .setOrigin(0, 0.5);
+    content.add(pctText);
 
     const setValue = (pointer: Phaser.Input.Pointer): void => {
-      const localX = Phaser.Math.Clamp(pointer.x - barX, 0, barW);
+      const bounds = track.getBounds();
+      const localX = Phaser.Math.Clamp(pointer.x - bounds.x, 0, bounds.width);
       const value = localX / barW;
       fill.width = barW * value;
       pctText.setText(`${Math.round(value * 100)}%`);
       onChange(value);
     };
 
-    track.setInteractive({ useHandCursor: true });
     track.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       let dragging = true;
       setValue(pointer);
@@ -226,6 +267,8 @@ export class SettingsScene extends Phaser.Scene {
       this.input.on('pointermove', onMove);
       this.input.on('pointerup', onUp);
     });
+
+    return y + 64;
   }
 
   private exportSave(): void {

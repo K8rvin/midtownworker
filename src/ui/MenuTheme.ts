@@ -69,12 +69,13 @@ export function createMenuTitle(
   scene: Phaser.Scene,
   title: string,
   subtitle?: string,
-  accentColor = '#c8f542'
+  accentColor = '#c8f542',
+  centerY = 130
 ): { title: Phaser.GameObjects.Text; subtitle?: Phaser.GameObjects.Text } {
   const titleText = scene.add
-    .text(GAME_WIDTH / 2, subtitle ? 130 : 150, title, {
+    .text(GAME_WIDTH / 2, subtitle ? centerY - 28 : centerY, title, {
       fontFamily: 'monospace',
-      fontSize: '58px',
+      fontSize: subtitle ? '48px' : '58px',
       color: accentColor,
       stroke: '#0a0a12',
       strokeThickness: 6,
@@ -84,15 +85,119 @@ export function createMenuTitle(
   if (!subtitle) return { title: titleText };
 
   const subtitleText = scene.add
-    .text(GAME_WIDTH / 2, 200, subtitle, {
+    .text(GAME_WIDTH / 2, centerY + 22, subtitle, {
       fontFamily: 'monospace',
-      fontSize: '22px',
-      color: '#ff2d55',
-      letterSpacing: 8,
+      fontSize: '18px',
+      color: '#ff6b6b',
+      letterSpacing: 6,
     })
     .setOrigin(0.5);
 
   return { title: titleText, subtitle: subtitleText };
+}
+
+export function createMenuDivider(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  width: number,
+  depth = 2
+): Phaser.GameObjects.Graphics {
+  const g = scene.add.graphics().setDepth(depth);
+  g.lineStyle(1, MENU_COLORS.accent, 0.25);
+  g.lineBetween(x - width / 2, y, x + width / 2, y);
+  g.lineStyle(1, MENU_COLORS.hot, 0.45);
+  g.lineBetween(x - width / 4, y + 2, x + width / 4, y + 2);
+  return g;
+}
+
+export interface MenuScrollArea {
+  content: Phaser.GameObjects.Container;
+  destroy: () => void;
+}
+
+export function createMenuScrollArea(
+  scene: Phaser.Scene,
+  opts: {
+    x: number;
+    top: number;
+    width: number;
+    height: number;
+    contentHeight: number;
+    depth?: number;
+  }
+): MenuScrollArea {
+  const { x, top, width, height, contentHeight, depth = 2 } = opts;
+  const maxScroll = Math.max(0, contentHeight - height);
+  let scroll = 0;
+
+  const content = scene.add.container(x, top).setDepth(depth);
+
+  const maskShape = scene.make.graphics({ x: 0, y: 0 });
+  maskShape.fillStyle(0xffffff);
+  maskShape.fillRect(x - width / 2, top, width, height);
+  const mask = maskShape.createGeometryMask();
+  content.setMask(mask);
+
+  const scrollbar = scene.add.graphics().setDepth(depth + 1);
+  const drawScrollbar = () => {
+    scrollbar.clear();
+    if (maxScroll <= 0) return;
+    const trackH = height - 8;
+    const thumbH = Math.max(28, (height / contentHeight) * trackH);
+    const thumbY = top + 4 + (scroll / maxScroll) * (trackH - thumbH);
+    scrollbar.fillStyle(MENU_COLORS.accent, 0.15);
+    scrollbar.fillRect(x + width / 2 - 10, top + 4, 5, trackH);
+    scrollbar.fillStyle(MENU_COLORS.accent, 0.65);
+    scrollbar.fillRect(x + width / 2 - 10, thumbY, 5, thumbH);
+  };
+
+  const applyScroll = (delta: number) => {
+    if (maxScroll <= 0) return;
+    scroll = Phaser.Math.Clamp(scroll + delta, 0, maxScroll);
+    content.y = top - scroll;
+    drawScrollbar();
+  };
+
+  const wheelHandler = (
+    pointer: Phaser.Input.Pointer,
+    _over: Phaser.GameObjects.GameObject[],
+    _dx: number,
+    dy: number
+  ) => {
+    if (
+      pointer.x < x - width / 2 ||
+      pointer.x > x + width / 2 ||
+      pointer.y < top ||
+      pointer.y > top + height
+    ) {
+      return;
+    }
+    applyScroll(dy * 0.45);
+  };
+
+  scene.input.on('wheel', wheelHandler);
+  drawScrollbar();
+
+  if (maxScroll > 0) {
+    scene.add
+      .text(x, top + height + 6, 'колёсико мыши — прокрутка', {
+        fontFamily: 'monospace',
+        fontSize: '10px',
+        color: '#6b7280',
+      })
+      .setOrigin(0.5)
+      .setDepth(depth + 1);
+  }
+
+  return {
+    content,
+    destroy: () => {
+      scene.input.off('wheel', wheelHandler);
+      maskShape.destroy();
+      scrollbar.destroy();
+    },
+  };
 }
 
 export function createMenuButton(
@@ -101,18 +206,19 @@ export function createMenuButton(
   y: number,
   label: string,
   onClick: () => void,
-  width = 320
+  width = 320,
+  height = 46
 ): Phaser.GameObjects.Container {
   const btn = scene.add.container(x, y);
   const bg = scene.add
-    .rectangle(0, 0, width, 46, MENU_COLORS.panel, 0.95)
+    .rectangle(0, 0, width, height, MENU_COLORS.panel, 0.95)
     .setStrokeStyle(1, MENU_COLORS.accent, 0.55)
     .setInteractive({ useHandCursor: true });
 
   const text = scene.add
     .text(0, 0, label, {
       fontFamily: 'monospace',
-      fontSize: '20px',
+      fontSize: height < 44 ? '17px' : '20px',
       color: '#c8f542',
     })
     .setOrigin(0.5);

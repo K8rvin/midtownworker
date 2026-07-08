@@ -54,10 +54,12 @@ if (!shops.some((s) => s.type === 'grocery')) throw new Error('Grocery shop miss
 if (!shops.some((s) => s.type === 'furniture')) throw new Error('Furniture shop missing');
 
 const mainMenu = readFileSync(join(root, 'src', 'scenes', 'MainMenuScene.ts'), 'utf8');
-if (!mainMenu.includes("createMenuTitle(this, 'РАБОТЯГА', 'из мидтауна')")) {
+if (!mainMenu.includes("'РАБОТЯГА'") || !mainMenu.includes("'из мидтауна'")) {
   throw new Error('Game title should be Работяга из мидтауна');
 }
-if (!mainMenu.includes('buttonStartY')) throw new Error('Main menu dynamic button layout missing');
+if (!mainMenu.includes('buttonStartY') && !mainMenu.includes('panelCenterY')) {
+  throw new Error('Main menu dynamic button layout missing');
+}
 if (!mainMenu.includes('Симулятор жизни — жильё')) throw new Error('Life sim menu hint missing');
 if (mainMenu.includes('Следуйте подсказкам сюжета внизу экрана')) {
   throw new Error('Menu hint should be single line to avoid button overlap');
