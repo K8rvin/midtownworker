@@ -351,7 +351,7 @@ export class GameScene extends Phaser.Scene {
 
     this.setupCamera();
     this.atmosphere = new AtmosphereOverlay(this);
-    this.streetLights = new StreetLights(this);
+    this.streetLights = new StreetLights(this, this.cityMap);
     this.timeOfDay = new TimeOfDayManager(this.atmosphere);
     if (LIFE_SIM) {
       this.timeOfDay.enableGameClock();

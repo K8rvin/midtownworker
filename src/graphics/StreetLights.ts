@@ -1,54 +1,63 @@
 import Phaser from 'phaser';
 import type { DayPhase } from '../systems/TimeOfDayManager';
 import { TILE_SIZE } from '../config';
+import { TileType, type CityMap } from '../world/CityMap';
 
 /**
- * Soft additive street-light glows near the player at night/dusk.
- * Cheap: few circles, updated every frame from player position.
+ * Very soft night ambience: a few dim glows on real road tiles only.
+ * (Previous grid of ADD-blend circles looked like 9 yellow bug markers.)
  */
 export class StreetLights {
   private gfx: Phaser.GameObjects.Graphics;
-  private lastPhase: DayPhase = 'day';
 
-  constructor(private scene: Phaser.Scene) {
+  constructor(
+    private scene: Phaser.Scene,
+    private cityMap?: CityMap | null
+  ) {
     this.gfx = scene.add.graphics();
     this.gfx.setDepth(1.5);
-    this.gfx.setBlendMode(Phaser.BlendModes.ADD);
+    // Normal blend — ADD made tiny alpha look like solid yellow blobs
+  }
+
+  setCityMap(map: CityMap): void {
+    this.cityMap = map;
   }
 
   update(playerX: number, playerY: number, phase: DayPhase): void {
-    this.lastPhase = phase;
     this.gfx.clear();
     if (phase !== 'night' && phase !== 'dusk') return;
+    if (!this.cityMap) return;
 
-    const intensity = phase === 'night' ? 1 : 0.45;
-    const spacing = TILE_SIZE * 4;
-    const radius = 12 * TILE_SIZE;
+    const intensity = phase === 'night' ? 1 : 0.4;
     const baseTx = Math.floor(playerX / TILE_SIZE);
     const baseTy = Math.floor(playerY / TILE_SIZE);
+    const maxLights = 5;
+    let drawn = 0;
 
-    // Grid of lamp posts along road-ish grid near player
-    for (let dy = -12; dy <= 12; dy += 4) {
-      for (let dx = -12; dx <= 12; dx += 4) {
+    // Sparse scan: every 6 tiles, only on roads, max 5 glows
+    for (let dy = -15; dy <= 15 && drawn < maxLights; dy += 6) {
+      for (let dx = -15; dx <= 15 && drawn < maxLights; dx += 6) {
+        if (dx === 0 && dy === 0) continue;
         const tx = baseTx + dx;
         const ty = baseTy + dy;
-        // Stagger lamps on even road intersections feel
-        if ((tx + ty) % 2 !== 0) continue;
+        if (ty < 0 || ty >= this.cityMap.mapHeight) continue;
+        if (tx < 0 || tx >= this.cityMap.mapWidth) continue;
+        if (this.cityMap.tiles[ty][tx] !== TileType.Road) continue;
+
         const wx = tx * TILE_SIZE + TILE_SIZE / 2;
         const wy = ty * TILE_SIZE + TILE_SIZE / 2;
         const dist = Phaser.Math.Distance.Between(playerX, playerY, wx, wy);
-        if (dist > radius) continue;
-        const falloff = 1 - dist / radius;
-        const a = 0.07 * intensity * falloff * falloff;
-        this.gfx.fillStyle(0xffe8a0, a);
-        this.gfx.fillCircle(wx, wy, 48 + falloff * 20);
-        this.gfx.fillStyle(0xfff6d0, a * 1.4);
-        this.gfx.fillCircle(wx, wy, 18);
+        if (dist > 14 * TILE_SIZE) continue;
+
+        const falloff = 1 - dist / (14 * TILE_SIZE);
+        const a = 0.028 * intensity * falloff * falloff;
+        if (a < 0.006) continue;
+
+        this.gfx.fillStyle(0xffd080, a);
+        this.gfx.fillCircle(wx, wy, 36 + falloff * 12);
+        drawn++;
       }
     }
-
-    // Headlight cone on player vehicle is handled elsewhere; boost near player a bit
-    void spacing;
   }
 
   destroy(): void {

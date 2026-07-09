@@ -38,7 +38,8 @@ export function getPedestrianCountForHour(hour: number): number {
 
 export class TimeOfDayManager {
   private elapsed = 0;
-  private phaseIndex = 0;
+  /** Start at day so night FX (street lights) don't flash before first sync. */
+  private phaseIndex = 2; // 'day' in PHASE_ORDER
   private useGameClock = false;
 
   constructor(private atmosphere?: { setPhase: (phase: DayPhase, blend: number) => void }) {}
