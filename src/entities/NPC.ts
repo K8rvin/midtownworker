@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { GangId } from '../config';
 import { PathFollower } from '../world/PathFollower';
+import { walkFrameIndex } from './walkAnim';
 
 export type NPCRole = 'civilian' | 'gang' | 'police' | 'target' | 'escort' | 'quest_giver' | 'shop_clerk';
 
@@ -21,6 +22,7 @@ export class NPC {
   private wanderTimer = 0;
   private wanderDir = { x: 0, y: 0 };
   private attackCooldown = 0;
+  private animTime = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -54,7 +56,7 @@ export class NPC {
                 ? 'npc_scientists'
                 : 'npc_civilian';
 
-    this.sprite = scene.physics.add.sprite(x, y, texture);
+    this.sprite = scene.physics.add.sprite(x, y, texture, 0);
     this.sprite.setOrigin(0.5, 0.5);
     this.sprite.setDepth(3);
     this.sprite.setCollideWorldBounds(true);
@@ -82,6 +84,7 @@ export class NPC {
       );
       const rad = Phaser.Math.DegToRad(angle);
       this.sprite.setVelocity(Math.cos(rad) * speed, Math.sin(rad) * speed);
+      this.syncWalkFrame(dt);
       return;
     }
 
@@ -89,13 +92,25 @@ export class NPC {
     if (this.wanderTimer <= 0) this.pickWanderDir();
 
     this.sprite.setVelocity(this.wanderDir.x * 40, this.wanderDir.y * 40);
+    this.syncWalkFrame(dt);
+  }
+
+  private syncWalkFrame(dt: number): void {
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    const vx = body?.velocity.x ?? 0;
+    const vy = body?.velocity.y ?? 0;
+    this.animTime += dt;
+    this.sprite.setFrame(walkFrameIndex(vx, vy, this.animTime, 4, 9));
   }
 
   takeDamage(amount: number): boolean {
     if (this.role === 'quest_giver' || this.role === 'shop_clerk') return false;
     this.hp -= amount;
-    this.sprite.setTint(0xff0000);
-    this.sprite.scene.time.delayedCall(100, () => {
+    this.sprite.setTint(0xffffff);
+    this.sprite.scene.time.delayedCall(40, () => {
+      if (this.sprite.active) this.sprite.setTint(0xff4444);
+    });
+    this.sprite.scene.time.delayedCall(120, () => {
       if (this.sprite.active) this.sprite.clearTint();
     });
     if (this.hp <= 0) {

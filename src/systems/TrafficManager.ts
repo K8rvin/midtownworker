@@ -45,6 +45,7 @@ export class TrafficManager {
     for (let i = this.vehicles.length - 1; i >= 0; i--) {
       const v = this.vehicles[i];
       if (Phaser.Math.Distance.Between(nearX, nearY, v.sprite.x, v.sprite.y) > farPx) {
+        v.destroyExtras();
         v.sprite.destroy();
         this.vehicles.splice(i, 1);
       }
@@ -56,8 +57,11 @@ export class TrafficManager {
 
   update(dt: number): void {
     const nav = this.cityMap.navigation;
-    for (const v of this.vehicles) {
-      if (v.active && !v.occupied) v.updateTraffic(dt, nav, this.trafficLights, this.laneNav);
+    const moving = this.vehicles;
+    for (const v of moving) {
+      if (v.active && !v.occupied) {
+        v.updateTraffic(dt, nav, this.trafficLights, this.laneNav, moving);
+      }
     }
     this.vehicles = this.vehicles.filter((v) => v.active);
     this.parkedVehicles = this.parkedVehicles.filter((v) => v.active);
@@ -109,6 +113,7 @@ export class TrafficManager {
         idx = i;
       }
     }
+    this.vehicles[idx].destroyExtras();
     this.vehicles[idx].sprite.destroy();
     this.vehicles.splice(idx, 1);
   }

@@ -91,7 +91,8 @@ export class JobApplicationUI {
       : null;
     if (current) this.rows.push(current);
 
-    const jobs = this.jobManager.jobs;
+    // Office / phone / laptop: civilian jobs only (violent roles are map/HR specials)
+    const jobs = this.jobManager.jobs.filter((j) => !j.violent);
     jobs.forEach((job, i) => {
       const y = GAME_HEIGHT / 2 - 140 + i * 58;
       const violent = job.violent ? ' · ⚠ оружие' : '';

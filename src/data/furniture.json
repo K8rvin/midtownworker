@@ -1,5 +1,10 @@
 [
   { "id": "bed_basic", "name": "Кровать", "price": 120, "sleepBonus": 80, "slotType": "bed" },
+  { "id": "bed_comfort", "name": "Мягкая кровать", "price": 280, "sleepBonus": 95, "slotType": "bed" },
   { "id": "fridge_basic", "name": "Холодильник", "price": 350, "foodCapacity": 10, "slotType": "fridge" },
-  { "id": "desk_basic", "name": "Рабочий стол", "price": 180, "remoteBonus": true, "slotType": "desk" }
+  { "id": "fridge_large", "name": "Большой холодильник", "price": 550, "foodCapacity": 18, "slotType": "fridge" },
+  { "id": "desk_basic", "name": "Рабочий стол", "price": 180, "remoteBonus": true, "slotType": "desk" },
+  { "id": "chair_basic", "name": "Стул", "price": 45, "slotType": "chair" },
+  { "id": "lamp_basic", "name": "Торшер", "price": 60, "slotType": "lamp" },
+  { "id": "cabinet_basic", "name": "Шкаф", "price": 150, "slotType": "cabinet" }
 ]

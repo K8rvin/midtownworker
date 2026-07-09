@@ -36,6 +36,9 @@ export class HUD {
   private p2HealthBar: Phaser.GameObjects.Graphics;
   private p2Label: Phaser.GameObjects.Text;
   private coordsText: Phaser.GameObjects.Text;
+  private needsBars: Phaser.GameObjects.Graphics;
+  private needsLabels: Phaser.GameObjects.Text;
+  private storyPanel: Phaser.GameObjects.Graphics;
   private weaponManager: WeaponManager;
 
   constructor(
@@ -48,22 +51,37 @@ export class HUD {
     this.weaponManager = new WeaponManager(state);
     this.container = scene.add.container(0, 0).setScrollFactor(0).setDepth(100);
 
-    const panel = scene.add.rectangle(0, 0, GAME_WIDTH, 56, 0x0d0d14, 0.85).setOrigin(0, 0);
-    this.livesText = scene.add.text(12, 8, '', { fontFamily: 'monospace', fontSize: '16px', color: '#c8f542' });
-    this.moneyText = scene.add.text(12, 30, '', { fontFamily: 'monospace', fontSize: '16px', color: '#ffd600' });
+    const panel = scene.add.rectangle(0, 0, GAME_WIDTH, LIFE_SIM ? 64 : 56, 0x0d0d14, 0.88).setOrigin(0, 0);
+    this.livesText = scene.add.text(12, 8, '', {
+      fontFamily: 'monospace',
+      fontSize: LIFE_SIM ? '18px' : '16px',
+      color: '#c8f542',
+    });
+    this.moneyText = scene.add.text(12, LIFE_SIM ? 34 : 30, '', {
+      fontFamily: 'monospace',
+      fontSize: '16px',
+      color: '#ffd600',
+    });
     this.wantedText = scene.add.text(200, 8, '', { fontFamily: 'monospace', fontSize: '16px', color: '#ff2d55' });
-    this.weaponSlotsText = scene.add.text(400, 8, '', {
+    this.weaponSlotsText = scene.add.text(LIFE_SIM ? 200 : 400, LIFE_SIM ? 34 : 8, '', {
       fontFamily: 'monospace',
       fontSize: '13px',
-      color: '#6b7280',
+      color: '#9ca3af',
     });
     this.healthBar = scene.add.graphics();
     this.vehicleBar = scene.add.graphics();
-    this.questText = scene.add.text(16, GAME_HEIGHT - 130, '', {
+    this.needsBars = scene.add.graphics();
+    this.needsLabels = scene.add.text(200, 8, '', {
+      fontFamily: 'monospace',
+      fontSize: '11px',
+      color: '#9ca3af',
+    });
+    this.storyPanel = scene.add.graphics();
+    this.questText = scene.add.text(24, GAME_HEIGHT - 126, '', {
       fontFamily: 'monospace',
       fontSize: '14px',
       color: '#c8f542',
-      wordWrap: { width: 500 },
+      wordWrap: { width: 480 },
     });
     this.gangBars = scene.add.graphics();
     this.gangLabels = scene.add.text(GAME_WIDTH - 310, GAME_HEIGHT - 66, '', {
@@ -77,7 +95,7 @@ export class HUD {
       fontSize: '16px',
       color: '#00e676',
     }).setOrigin(0.5);
-    this.dailyQuestText = scene.add.text(16, GAME_HEIGHT - 88, '', {
+    this.dailyQuestText = scene.add.text(24, GAME_HEIGHT - 84, '', {
       wordWrap: { width: 420 },
       fontFamily: 'monospace',
       fontSize: '12px',
@@ -108,6 +126,9 @@ export class HUD {
       this.weaponSlotsText,
       this.healthBar,
       this.vehicleBar,
+      this.needsBars,
+      this.needsLabels,
+      this.storyPanel,
       this.questText,
       this.dailyQuestText,
       this.p2HealthBar,
@@ -129,11 +150,8 @@ export class HUD {
     if (LIFE_SIM) {
       this.livesText.setText(timeManager?.formatClock(this.state) ?? `День ${this.state.day}`);
       this.moneyText.setText(`$${this.state.money}`);
-      const drunkLine =
-        this.state.drunkLevel > 8 ? ` · 🍺 ${Math.round(this.state.drunkLevel)}%` : '';
-      this.wantedText.setText(
-        `Голод ${this.state.hunger}% · Сон ${this.state.sleep}%${drunkLine}`
-      );
+      this.wantedText.setText('');
+      this.drawNeedsBars();
       const jobCfg = this.state.job
         ? (jobsData as { id: string; jobType?: string; violent?: boolean }[]).find(
             (j) => j.id === this.state.job!.id
@@ -156,6 +174,7 @@ export class HUD {
           ? `Дом: ${this.state.housing.type === 'owned' ? 'свой' : 'аренда'}`
           : 'Жильё: нет'
       );
+      this.drawStoryPanel(!!storyLine);
       this.questText.setText(storyLine);
       if (jobCfg?.violent) {
         const w = weaponName(this.state.currentWeapon);
@@ -182,6 +201,9 @@ export class HUD {
       }
       return;
     }
+    this.needsBars.clear();
+    this.needsLabels.setText('');
+    this.storyPanel.clear();
     this.coordsText.setText('');
 
     this.livesText.setText(`Жизни: ${'♥'.repeat(this.state.lives)}`);
@@ -226,6 +248,48 @@ export class HUD {
       this.dailyQuestText.setText(this.dailyQuest.getProgressText());
       this.dailyQuestText.setColor(this.dailyQuest.isDone() ? '#00e676' : '#00b4ff');
     }
+  }
+
+  private drawNeedsBars(): void {
+    this.needsBars.clear();
+    const startX = 200;
+    const barW = 110;
+    const barH = 10;
+    const rows: { label: string; value: number; color: number; y: number }[] = [
+      { label: 'Голод', value: this.state.hunger, color: 0xff8a3d, y: 10 },
+      { label: 'Сон', value: this.state.sleep, color: 0x5b9dff, y: 28 },
+    ];
+    if (this.state.drunkLevel > 8) {
+      rows.push({ label: 'Алк', value: this.state.drunkLevel, color: 0xc77dff, y: 46 });
+    }
+    const labels: string[] = [];
+    for (const row of rows) {
+      const pct = Phaser.Math.Clamp(row.value / 100, 0, 1);
+      this.needsBars.fillStyle(0x1a1a28, 0.95);
+      this.needsBars.fillRoundedRect(startX, row.y, barW, barH, 3);
+      this.needsBars.fillStyle(row.color, 1);
+      this.needsBars.fillRoundedRect(startX, row.y, barW * pct, barH, 3);
+      this.needsBars.lineStyle(1, 0xc8f542, 0.35);
+      this.needsBars.strokeRoundedRect(startX, row.y, barW, barH, 3);
+      labels.push(`${row.label} ${Math.round(row.value)}`);
+    }
+    this.needsLabels.setPosition(startX + barW + 8, 8);
+    this.needsLabels.setText(labels.join('\n'));
+  }
+
+  private drawStoryPanel(hasText: boolean): void {
+    this.storyPanel.clear();
+    if (!hasText) return;
+    const x = 12;
+    const y = GAME_HEIGHT - 142;
+    const w = 520;
+    const h = 72;
+    this.storyPanel.fillStyle(0x0d0d14, 0.82);
+    this.storyPanel.fillRoundedRect(x, y, w, h, 6);
+    this.storyPanel.lineStyle(1, 0xc8f542, 0.35);
+    this.storyPanel.strokeRoundedRect(x, y, w, h, 6);
+    this.storyPanel.lineStyle(2, 0xff2d55, 0.55);
+    this.storyPanel.lineBetween(x + 4, y + 8, x + 4, y + h - 8);
   }
 
   private courierStatusLine(d: CourierDeliveryState | null): string {

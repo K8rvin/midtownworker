@@ -479,17 +479,63 @@ export class SpriteGenerator {
       { key: 'npc_police', body: COLORS.police, police: true },
       { key: 'npc_target', body: 0xaa44cc, target: true },
     ];
+    // Always regenerate walk sheets so ped/NPC animation works (PNG static overrides break frames).
     for (const t of types) {
-      if (!this.shouldGen(t.key)) continue;
-      this.makeTexture(t.key, 24, 28, (g) => {
-        this.drawNpcStanding(g, t.body, t.accent ?? 0x2a3a5c, !!t.police, !!t.target);
-      });
+      this.genNpcWalkSheet(t.key, t.body, t.accent ?? 0x2a3a5c, !!t.police, !!t.target);
     }
   }
 
-  /** NPC смотрит вниз (к камере), статичная поза. */
-  private drawNpcStanding(
+  /** 4 dirs × 4 frames — same row order as player: up, down, left, right. */
+  private genNpcWalkSheet(
+    key: string,
+    bodyColor: number,
+    pantsColor: number,
+    police: boolean,
+    target: boolean
+  ): void {
+    const frameW = 24;
+    const frameH = 28;
+    const walkFrames = 4;
+    const walkRows = 4;
+    const axes: Array<'v_up' | 'v_down' | 'h_left' | 'h_right'> = [
+      'v_up',
+      'v_down',
+      'h_left',
+      'h_right',
+    ];
+    const canvas = document.createElement('canvas');
+    canvas.width = frameW * walkFrames;
+    canvas.height = frameH * walkRows;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    for (let row = 0; row < walkRows; row++) {
+      for (let phase = 0; phase < walkFrames; phase++) {
+        const g = this.scene.make.graphics({ x: 0, y: 0 });
+        this.drawNpcWalkFrame(g, axes[row], phase, bodyColor, pantsColor, police, target);
+        const idx = row * walkFrames + phase;
+        const tmpKey = `__${key}_f${idx}`;
+        g.generateTexture(tmpKey, frameW, frameH);
+        const src = this.scene.textures.get(tmpKey).getSourceImage() as HTMLCanvasElement;
+        ctx.drawImage(src, 0, 0, frameW, frameH, phase * frameW, row * frameH, frameW, frameH);
+        g.destroy();
+        this.scene.textures.remove(tmpKey);
+      }
+    }
+
+    if (this.scene.textures.exists(key)) {
+      this.scene.textures.remove(key);
+    }
+    this.scene.textures.addSpriteSheet(key, canvas as unknown as HTMLImageElement, {
+      frameWidth: frameW,
+      frameHeight: frameH,
+    });
+  }
+
+  private drawNpcWalkFrame(
     g: Phaser.GameObjects.Graphics,
+    axis: 'v_up' | 'v_down' | 'h_left' | 'h_right',
+    phase: number,
     bodyColor: number,
     pantsColor: number,
     police: boolean,
@@ -497,49 +543,69 @@ export class SpriteGenerator {
   ): void {
     const cx = 12;
     const cy = 13;
+    const t = (phase / 4) * Math.PI * 2;
+    const legL = Math.sin(t) * 3.5;
+    const legR = Math.sin(t + Math.PI) * 3.5;
+    const bob = Math.abs(Math.sin(t * 2)) * 0.6;
 
-    g.fillStyle(0x000000, 0.35);
-    g.fillEllipse(cx, 23, 9, 4);
+    g.fillStyle(0x000000, 0.3);
+    g.fillEllipse(cx, 24, 8, 3.5);
 
-    const foot = (x: number) => {
-      g.lineStyle(2, pantsColor, 1);
-      g.lineBetween(cx, cy + 4, x, 21);
-      g.fillStyle(0x1a1a28, 1);
-      g.fillCircle(x, 21, 2.2);
-    };
-    foot(cx - 4);
-    foot(cx + 4);
+    const legOff =
+      axis === 'h_left' || axis === 'h_right'
+        ? { lx: legL * 0.3, ly: Math.abs(legL) * 0.4, rx: legR * 0.3, ry: Math.abs(legR) * 0.4 }
+        : { lx: -3 + legL * 0.15, ly: 7 + Math.max(0, -legL) * 0.3, rx: 3 + legR * 0.15, ry: 7 + Math.max(0, -legR) * 0.3 };
 
-    g.lineStyle(2, bodyColor, 1);
-    g.lineBetween(cx - 5, cy, cx - 7, cy + 5);
-    g.lineBetween(cx + 5, cy, cx + 7, cy + 5);
-    g.fillStyle(0xffcc99, 1);
-    g.fillCircle(cx - 7, cy + 5, 1.6);
-    g.fillCircle(cx + 7, cy + 5, 1.6);
+    g.lineStyle(2.2, pantsColor, 1);
+    g.lineBetween(cx - 2, cy + 3 + bob, cx + legOff.lx, cy + legOff.ly + bob);
+    g.lineBetween(cx + 2, cy + 3 + bob, cx + legOff.rx, cy + legOff.ry + bob);
+    g.fillStyle(0x1a1a28, 1);
+    g.fillCircle(cx + legOff.lx, cy + legOff.ly + bob, 1.8);
+    g.fillCircle(cx + legOff.rx, cy + legOff.ry + bob, 1.8);
 
     g.fillStyle(pantsColor, 1);
-    g.fillRoundedRect(cx - 4, cy + 1, 8, 5, 2);
+    g.fillRoundedRect(cx - 3.5, cy + 1 + bob, 7, 4.5, 2);
     g.fillStyle(bodyColor, 1);
-    g.fillRoundedRect(cx - 5, cy - 4, 10, 10, 3);
+    g.fillRoundedRect(cx - 4.5, cy - 4 + bob, 9, 9, 2.5);
     if (police) {
       g.fillStyle(0x1a1a28, 1);
-      g.fillRect(cx - 4, cy - 3, 8, 2);
+      g.fillRect(cx - 3.5, cy - 3 + bob, 7, 2);
       g.fillStyle(0x303040, 1);
-      g.fillRect(cx - 1, cy - 1, 2, 6);
+      g.fillRect(cx - 1, cy - 1 + bob, 2, 5);
     }
 
+    // Arms swing
+    const armSwing = Math.sin(t) * 2.5;
+    g.lineStyle(2, bodyColor, 1);
+    if (axis === 'h_left') {
+      g.lineBetween(cx, cy - 1 + bob, cx - 6, cy + 2 + bob + armSwing);
+      g.lineBetween(cx, cy - 1 + bob, cx - 2, cy + 4 + bob - armSwing);
+    } else if (axis === 'h_right') {
+      g.lineBetween(cx, cy - 1 + bob, cx + 6, cy + 2 + bob + armSwing);
+      g.lineBetween(cx, cy - 1 + bob, cx + 2, cy + 4 + bob - armSwing);
+    } else {
+      g.lineBetween(cx - 4, cy - 1 + bob, cx - 5, cy + 4 + bob + armSwing);
+      g.lineBetween(cx + 4, cy - 1 + bob, cx + 5, cy + 4 + bob - armSwing);
+    }
+
+    const hy = cy - 8 + bob + (axis === 'v_down' ? 1 : axis === 'v_up' ? -0.5 : 0);
     g.fillStyle(0xffcc99, 1);
-    g.fillCircle(cx, cy - 8, 4);
+    g.fillCircle(cx, hy, 3.8);
     g.fillStyle(0x2a2a40, 1);
-    g.fillRect(cx - 3, cy - 11, 5, 3);
-    g.fillRect(cx - 1, cy - 8, 1.5, 1.5);
-    g.fillRect(cx + 1, cy - 7, 1.5, 1.5);
+    g.fillRect(cx - 2.5, hy - 3.5, 5, 2.5);
+    if (axis !== 'v_down') {
+      g.fillStyle(0x1a1a28, 1);
+      if (axis === 'h_left') g.fillCircle(cx - 1.5, hy, 0.9);
+      else if (axis === 'h_right') g.fillCircle(cx + 1.5, hy, 0.9);
+      else {
+        g.fillCircle(cx - 1.2, hy, 0.8);
+        g.fillCircle(cx + 1.2, hy, 0.8);
+      }
+    }
 
     if (target) {
-      g.lineStyle(2, 0xff2d55, 0.9);
-      g.strokeCircle(cx, cy + 2, 11);
-      g.fillStyle(0xff2d55, 0.25);
-      g.fillCircle(cx, cy + 2, 11);
+      g.lineStyle(1.5, 0xff2d55, 0.85);
+      g.strokeCircle(cx, cy + 1 + bob, 10);
     }
   }
 

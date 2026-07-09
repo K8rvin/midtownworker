@@ -48,4 +48,24 @@ export class TimeManager {
     }
     return state.hour >= shiftStart || state.hour < shiftEnd;
   }
+
+  /**
+   * Advance game clock by whole hours (sleep, etc.).
+   * Returns how many day boundaries crossed and hours advanced.
+   */
+  advanceHours(state: GameState, hours: number): { daysAdvanced: number; hoursAdvanced: number } {
+    const n = Math.max(0, Math.floor(hours));
+    let daysAdvanced = 0;
+    for (let i = 0; i < n; i++) {
+      state.hour += 1;
+      if (state.hour >= HOURS_PER_DAY) {
+        state.hour = 0;
+        state.day += 1;
+        daysAdvanced += 1;
+        if (state.job) state.job.workedToday = false;
+      }
+    }
+    this.minuteAccumulator = 0;
+    return { daysAdvanced, hoursAdvanced: n };
+  }
 }

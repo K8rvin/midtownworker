@@ -10,9 +10,11 @@
     "interiorW": 8,
     "interiorH": 6,
     "furnitureSlots": [
-      { "id": "bed_slot", "x": 2, "y": 2, "accepts": ["bed_basic"] },
-      { "id": "fridge_slot", "x": 5, "y": 2, "accepts": ["fridge_basic"] },
-      { "id": "desk_slot", "x": 2, "y": 4, "accepts": ["desk_basic"] }
+      { "id": "bed_slot", "x": 2, "y": 2, "accepts": ["bed_basic", "bed_comfort"] },
+      { "id": "fridge_slot", "x": 5, "y": 2, "accepts": ["fridge_basic", "fridge_large"] },
+      { "id": "desk_slot", "x": 2, "y": 4, "accepts": ["desk_basic"] },
+      { "id": "chair_slot", "x": 4, "y": 4, "accepts": ["chair_basic"] },
+      { "id": "lamp_slot", "x": 6, "y": 1, "accepts": ["lamp_basic"] }
     ]
   },
   {
@@ -26,8 +28,10 @@
     "interiorW": 7,
     "interiorH": 5,
     "furnitureSlots": [
-      { "id": "bed_slot", "x": 2, "y": 2, "accepts": ["bed_basic"] },
-      { "id": "desk_slot", "x": 4, "y": 2, "accepts": ["desk_basic"] }
+      { "id": "bed_slot", "x": 2, "y": 2, "accepts": ["bed_basic", "bed_comfort"] },
+      { "id": "fridge_slot", "x": 5, "y": 2, "accepts": ["fridge_basic", "fridge_large"] },
+      { "id": "desk_slot", "x": 4, "y": 3, "accepts": ["desk_basic"] },
+      { "id": "lamp_slot", "x": 1, "y": 1, "accepts": ["lamp_basic"] }
     ]
   }
 ]

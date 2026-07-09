@@ -23,7 +23,9 @@ for (const file of [
 const spriteGen = readFileSync(join(root, 'src', 'graphics', 'SpriteGenerator.ts'), 'utf8');
 if (!spriteGen.includes('addSpriteSheet')) throw new Error('Player spritesheet missing');
 if (!spriteGen.includes('drawPlayerFaceUpWalk')) throw new Error('Face-up walk poses missing');
-if (!spriteGen.includes('drawNpcStanding')) throw new Error('NPC human sprites missing');
+if (!spriteGen.includes('drawNpcWalkFrame') && !spriteGen.includes('genNpcWalkSheet')) {
+  throw new Error('NPC walk sprites missing');
+}
 
 const player = readFileSync(join(root, 'src', 'entities', 'Player.ts'), 'utf8');
 if (!player.includes('resolveWalkFrame')) throw new Error('Face-up frame resolve missing');

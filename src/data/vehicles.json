@@ -6,6 +6,9 @@
     "maxSpeed": 220,
     "acceleration": 180,
     "handling": 2.8,
+    "friction": 2.4,
+    "grip": 9,
+    "brakePower": 320,
     "hp": 80,
     "price": 0
   },
@@ -16,6 +19,9 @@
     "maxSpeed": 320,
     "acceleration": 280,
     "handling": 3.5,
+    "friction": 2.1,
+    "grip": 7.5,
+    "brakePower": 420,
     "hp": 60,
     "price": 3000
   },
@@ -26,6 +32,9 @@
     "maxSpeed": 160,
     "acceleration": 100,
     "handling": 1.8,
+    "friction": 3.2,
+    "grip": 11,
+    "brakePower": 260,
     "hp": 150,
     "price": 1500
   },
@@ -36,6 +45,9 @@
     "maxSpeed": 280,
     "acceleration": 220,
     "handling": 3.0,
+    "friction": 2.5,
+    "grip": 8.5,
+    "brakePower": 380,
     "hp": 100,
     "price": 0
   }

@@ -74,18 +74,21 @@ export class InputManager {
     return Phaser.Math.Clamp(steer * this.settings.steerSensitivity, -1, 1);
   }
 
+  /**
+   * Throttle for vehicles. Positive = gas, negative = brake/reverse.
+   * VehiclePhysics maps negative while moving forward to brake, reverse when slow.
+   */
   getThrottleInput(): number {
     let throttle = 0;
     if (this.isDown('W') || this.isDown('UP')) throttle += 1;
-    if (this.isDown('S') || this.isDown('DOWN')) throttle -= 0.5;
+    if (this.isDown('S') || this.isDown('DOWN')) throttle -= 1;
 
     const mobile = this.mobile?.getMovementVector();
     if (mobile && (mobile.x !== 0 || mobile.y !== 0)) {
       const angle = Math.atan2(mobile.y, mobile.x);
       throttle = Math.cos(angle) * this.settings.moveSensitivity;
-      if (throttle < -0.2) throttle *= 0.5;
     }
-    return throttle;
+    return Phaser.Math.Clamp(throttle, -1, 1);
   }
 
   getSettings(): ControlSettingsData {

@@ -78,6 +78,26 @@
     "shiftEnd": 22
   },
   {
+    "id": "janitor",
+    "name": "Уборщик",
+    "employer": "ЖЭК «Чистота»",
+    "description": "Уборка подъездов и дворов. Смена днём.",
+    "mapId": "city",
+    "doorX": 88,
+    "doorY": 118,
+    "interiorX": 87,
+    "interiorY": 116,
+    "interiorW": 3,
+    "interiorH": 2,
+    "hrX": 88,
+    "hrY": 116,
+    "salary": 55,
+    "remote": false,
+    "remoteAfterDays": 0,
+    "shiftStart": 6,
+    "shiftEnd": 14
+  },
+  {
     "id": "killer",
     "name": "Киллер",
     "employer": "Агентство «Тень»",

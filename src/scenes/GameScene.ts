@@ -53,6 +53,7 @@ import { steerNPCAlongPath } from '../world/NPCSteering';
 import { FullMapOverlay } from '../ui/FullMapOverlay';
 import { VfxManager } from '../graphics/VfxManager';
 import { AtmosphereOverlay } from '../graphics/AtmosphereOverlay';
+import { StreetLights } from '../graphics/StreetLights';
 import { TireMarkManager } from '../graphics/TireMarkManager';
 import { ControlSettings } from '../systems/ControlSettings';
 import { RunStats } from '../systems/RunStats';
@@ -160,11 +161,14 @@ export class GameScene extends Phaser.Scene {
   private fullMap!: FullMapOverlay;
   private vfx!: VfxManager;
   private atmosphere!: AtmosphereOverlay;
+  private streetLights: StreetLights | null = null;
   private tireMarks!: TireMarkManager;
   private smokeTimer = 0;
   private playTimeSeconds = 0;
   private needsEffects: NeedsEffectsOverlay | null = null;
   private cameraFollowTarget: Phaser.GameObjects.GameObject | null = null;
+  private cameraLookTarget: Phaser.GameObjects.Zone | null = null;
+  private cameraZoomTween: Phaser.Tweens.Tween | null = null;
   private sprintBlockedCooldown = 0;
   private mobileControls: MobileControls | null = null;
   private garageManager!: GarageManager;
@@ -347,6 +351,7 @@ export class GameScene extends Phaser.Scene {
 
     this.setupCamera();
     this.atmosphere = new AtmosphereOverlay(this);
+    this.streetLights = new StreetLights(this);
     this.timeOfDay = new TimeOfDayManager(this.atmosphere);
     if (LIFE_SIM) {
       this.timeOfDay.enableGameClock();
@@ -694,6 +699,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     const pos = this.player.getPosition();
+    this.streetLights?.update(pos.x, pos.y, this.timeOfDay.getPhase());
     const p2pos = this.player2?.getPosition();
     this.minimap.update(pos.x, pos.y, p2pos?.x, p2pos?.y, this.getLifeSimMinimapMarkers());
     this.updateCourierWaypoint();
@@ -925,10 +931,12 @@ export class GameScene extends Phaser.Scene {
       steer,
       dt
     );
-    if (Math.abs(vehicle.state.speed) > 90 && Math.abs(throttle) > 0.2) {
+    const hardSteer = Math.abs(steer) > 0.45 && Math.abs(vehicle.state.speed) > 80;
+    const braking = throttle < -0.2 && vehicle.state.speed > 40;
+    if (hardSteer || braking) {
       this.smokeTimer -= dt;
       if (this.smokeTimer <= 0) {
-        this.smokeTimer = 0.15;
+        this.smokeTimer = hardSteer ? 0.1 : 0.14;
         const rad = Phaser.Math.DegToRad(vehicle.state.angle + 180);
         this.vfx.tireSmoke(
           vehicle.sprite.x + Math.cos(rad) * 14,
@@ -2373,12 +2381,27 @@ export class GameScene extends Phaser.Scene {
 
   private setCameraFollow(target: Phaser.GameObjects.GameObject, zoom: number): void {
     const cam = this.cameras.main;
+    if (!this.cameraLookTarget) {
+      this.cameraLookTarget = this.add.zone(0, 0, 1, 1);
+    }
+    const lerp = this.player?.inVehicle ? 0.12 : 0.1;
     if (this.cameraFollowTarget !== target) {
       cam.stopFollow();
-      cam.startFollow(target, true, 0.045, 0.045);
+      cam.startFollow(this.cameraLookTarget, true, lerp, lerp);
       this.cameraFollowTarget = target;
+    } else {
+      // Keep lerp responsive if mode changed
+      cam.setLerp(lerp, lerp);
     }
-    if (Math.abs(cam.zoom - zoom) > 0.001) cam.setZoom(zoom);
+    if (Math.abs(cam.zoom - zoom) > 0.001) {
+      this.cameraZoomTween?.stop();
+      this.cameraZoomTween = this.tweens.add({
+        targets: cam,
+        zoom,
+        duration: 260,
+        ease: 'Sine.easeInOut',
+      });
+    }
   }
 
   private updateSmoothCamera(): void {
@@ -2387,6 +2410,24 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.setCameraFollow(this.player.sprite, 1);
     }
+
+    // Look-ahead along velocity so high-speed driving reads the road ahead
+    if (!this.cameraLookTarget || !this.cameraFollowTarget) return;
+    const follow = this.cameraFollowTarget as unknown as { x: number; y: number };
+    let vx = 0;
+    let vy = 0;
+    if (this.player.inVehicle && this.player.currentVehicle) {
+      vx = this.player.currentVehicle.state.vx;
+      vy = this.player.currentVehicle.state.vy;
+    } else {
+      const body = this.player.sprite.body as Phaser.Physics.Arcade.Body | null;
+      if (body) {
+        vx = body.velocity.x;
+        vy = body.velocity.y;
+      }
+    }
+    const look = this.player.inVehicle ? 0.18 : 0.1;
+    this.cameraLookTarget.setPosition(follow.x + vx * look, follow.y + vy * look);
   }
 
   private updateNPCs(dt: number, speedMul = 1): void {
@@ -2590,6 +2631,8 @@ export class GameScene extends Phaser.Scene {
     this.dynamicEvents?.cleanup();
     this.cityMap?.destroy();
     this.atmosphere?.destroy();
+    this.streetLights?.destroy();
+    this.streetLights = null;
     this.tireMarks?.clear();
     this.mobileControls?.destroy();
     this.mobileControls = null;

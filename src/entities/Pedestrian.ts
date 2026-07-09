@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { TILE_SIZE } from '../config';
 import { PathFollower } from '../world/PathFollower';
 import type { NavigationGrid } from '../world/NavigationGrid';
+import { walkFrameIndex } from './walkAnim';
 
 const PEDESTRIAN_TINTS = [0xffffff, 0xd4e4ff, 0xffe0cc, 0xe8ffd4, 0xffd4f0, 0xfff0c8];
 
@@ -15,10 +16,11 @@ export class Pedestrian {
   private stuckTimer = 0;
   private wanderTimer = 0;
   private wanderDir = { x: 0, y: 1 };
+  private animTime = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, speed = 42) {
     this.speed = speed;
-    this.sprite = scene.physics.add.sprite(x, y, 'npc_civilian');
+    this.sprite = scene.physics.add.sprite(x, y, 'npc_civilian', 0);
     this.sprite.setOrigin(0.5, 0.5);
     this.sprite.setDepth(3);
     this.sprite.setScale(0.88);
@@ -26,7 +28,7 @@ export class Pedestrian {
     this.sprite.setTint(Phaser.Utils.Array.GetRandom(PEDESTRIAN_TINTS));
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
     body.setSize(14, 14);
-    body.setOffset(3, 6);
+    body.setOffset(5, 8);
     this.retargetTimer = Phaser.Math.FloatBetween(0, 0.5);
     this.pickWanderDir();
   }
@@ -37,6 +39,7 @@ export class Pedestrian {
     if (this.waitTimer > 0) {
       this.waitTimer -= dt;
       this.sprite.setVelocity(0, 0);
+      this.syncWalkFrame(dt);
       return;
     }
 
@@ -46,6 +49,7 @@ export class Pedestrian {
       this.retargetTimer = 0.2;
       this.stuckTimer = 0;
       this.wanderTimer = 0;
+      this.syncWalkFrame(dt);
       return;
     }
 
@@ -70,6 +74,7 @@ export class Pedestrian {
         this.stuckTimer = 0;
         this.pickNewDestination(navigation);
       }
+      this.syncWalkFrame(dt);
       return;
     }
 
@@ -91,6 +96,15 @@ export class Pedestrian {
       this.pathFollower.clear();
       this.retargetTimer = 0;
     }
+    this.syncWalkFrame(dt);
+  }
+
+  private syncWalkFrame(dt: number): void {
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    const vx = body?.velocity.x ?? 0;
+    const vy = body?.velocity.y ?? 0;
+    this.animTime += dt;
+    this.sprite.setFrame(walkFrameIndex(vx, vy, this.animTime, 4, 8));
   }
 
   destroy(): void {

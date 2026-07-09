@@ -15,6 +15,9 @@ export interface VehicleConfig {
   maxSpeed: number;
   acceleration: number;
   handling: number;
+  friction?: number;
+  grip?: number;
+  brakePower?: number;
   hp: number;
   price: number;
 }
@@ -28,6 +31,8 @@ export class Vehicle {
   public active = true;
   public state: VehicleState;
   public pathFollower = new PathFollower();
+  /** Last throttle used (for brake lights / smoke). */
+  public lastThrottle = 0;
   private textureKey: string;
   private steerSmoothed = 0;
   private readonly steerSmoothRate = 6;
@@ -35,6 +40,8 @@ export class Vehicle {
   private laneSegmentId: string | null = null;
   private laneWaypointIndex = 0;
   private trafficStuckTimer = 0;
+  private shadow: Phaser.GameObjects.Ellipse | null = null;
+  private brakeLights: Phaser.GameObjects.Graphics | null = null;
 
   constructor(scene: Phaser.Scene, x: number, y: number, type: string, isTraffic = false) {
     const config = (vehiclesData as VehicleConfig[]).find((v) => v.id === type) ?? vehiclesData[0];
@@ -52,10 +59,18 @@ export class Vehicle {
     const hitbox = this.getHitbox(type);
     body.setSize(hitbox.w, hitbox.h);
     body.setOffset(hitbox.ox, hitbox.oy);
-    body.setDrag(isTraffic ? 30 : 120, isTraffic ? 30 : 120);
-    body.setMaxVelocity(config.maxSpeed, config.maxSpeed);
+    // Custom VehiclePhysics owns deceleration — no Arcade drag fight
+    body.setDrag(0, 0);
+    body.setMaxVelocity(config.maxSpeed * 1.15, config.maxSpeed * 1.15);
 
     this.state = { x, y, angle: 0, speed: 0, vx: 0, vy: 0 };
+
+    // Soft ground shadow
+    this.shadow = scene.add.ellipse(x, y + 4, hitbox.w + 4, 10, 0x000000, 0.28);
+    this.shadow.setDepth(1);
+
+    this.brakeLights = scene.add.graphics();
+    this.brakeLights.setDepth(2.1);
   }
 
   syncFromPhysics(): void {
@@ -67,8 +82,14 @@ export class Vehicle {
 
     const blocked = body.blocked.up || body.blocked.down || body.blocked.left || body.blocked.right;
     if (blocked && !this.isTraffic) {
-      this.state.speed *= 0.35;
+      // Slide along walls: kill normal component, keep tangential
+      let vx = this.state.vx;
+      let vy = this.state.vy;
+      if (body.blocked.left || body.blocked.right) vx *= 0.15;
+      if (body.blocked.up || body.blocked.down) vy *= 0.15;
       const rad = Phaser.Math.DegToRad(this.state.angle);
+      const along = vx * Math.cos(rad) + vy * Math.sin(rad);
+      this.state.speed = along * 0.55;
       this.state.vx = Math.cos(rad) * this.state.speed;
       this.state.vy = Math.sin(rad) * this.state.speed;
       body.setVelocity(this.state.vx, this.state.vy);
@@ -77,18 +98,29 @@ export class Vehicle {
       const vy = body.velocity.y;
       const actualSpeed = Math.sqrt(vx * vx + vy * vy);
       if (actualSpeed > 1) {
-        this.state.speed = actualSpeed * Math.sign(this.state.speed || 1);
+        this.state.vx = vx;
+        this.state.vy = vy;
+        const rad = Phaser.Math.DegToRad(this.state.angle);
+        const along = vx * Math.cos(rad) + vy * Math.sin(rad);
+        if (Math.abs(along) > 1) {
+          this.state.speed = along;
+        }
       }
     }
   }
 
   updateDriving(throttle: number, steer: number, dt: number): void {
     this.syncFromPhysics();
+    this.lastThrottle = throttle;
 
     const steerTarget = Math.abs(steer) < 0.04 ? 0 : steer;
     const rate = steerTarget === 0 ? this.steerDecayRate : this.steerSmoothRate;
     const steerBlend = 1 - Math.exp(-rate * dt);
     this.steerSmoothed = Phaser.Math.Linear(this.steerSmoothed, steerTarget, steerBlend);
+
+    const friction = this.config.friction ?? 2.5;
+    const grip = this.config.grip ?? 8;
+    const brakePower = this.config.brakePower ?? this.config.acceleration * 1.4;
 
     this.state = VehiclePhysics.update(
       this.state,
@@ -96,7 +128,9 @@ export class Vehicle {
         maxSpeed: this.config.maxSpeed,
         acceleration: this.config.acceleration,
         handling: this.config.handling,
-        friction: 2.5,
+        friction,
+        grip,
+        brakePower,
       },
       throttle,
       steer,
@@ -109,6 +143,37 @@ export class Vehicle {
       body.setVelocity(this.state.vx, this.state.vy);
     }
     this.sprite.setAngle(this.state.angle);
+    this.updateVisuals();
+  }
+
+  /** Soft separation brake when another vehicle is ahead on the same lane path. */
+  getFrontBrakeThrottle(
+    others: Vehicle[],
+    lookDist = 72,
+    stopDist = 28
+  ): number {
+    const rad = Phaser.Math.DegToRad(this.state.angle);
+    const fx = Math.cos(rad);
+    const fy = Math.sin(rad);
+    let nearest = Infinity;
+
+    for (const other of others) {
+      if (other === this || !other.active || !other.sprite.active) continue;
+      const dx = other.sprite.x - this.sprite.x;
+      const dy = other.sprite.y - this.sprite.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > lookDist || dist < 1) continue;
+      const along = (dx * fx + dy * fy) / dist;
+      if (along < 0.72) continue; // not roughly in front
+      const lateral = Math.abs(dx * -fy + dy * fx);
+      if (lateral > 22) continue;
+      if (dist < nearest) nearest = dist;
+    }
+
+    if (nearest === Infinity) return 1;
+    if (nearest <= stopDist) return 0;
+    // Linear ease from full throttle at lookDist to 0 at stopDist
+    return Phaser.Math.Clamp((nearest - stopDist) / (lookDist - stopDist), 0, 1);
   }
 
   initLaneDriving(segment: LaneSegment, laneNav: LaneNavigation, wx: number, wy: number): void {
@@ -125,6 +190,8 @@ export class Vehicle {
     }
     this.state.angle = laneNav.directionToAngle(useSegment.direction);
     this.state.speed = this.config.maxSpeed * 0.35;
+    this.state.vx = 0;
+    this.state.vy = 0;
     this.sprite.setAngle(this.state.angle);
     this.trafficStuckTimer = 0;
   }
@@ -133,7 +200,8 @@ export class Vehicle {
     dt: number,
     navigation?: NavigationGrid,
     trafficLights?: TrafficLightManager,
-    laneNav?: LaneNavigation
+    laneNav?: LaneNavigation,
+    otherVehicles?: Vehicle[]
   ): void {
     if (!this.isTraffic) return;
 
@@ -143,13 +211,13 @@ export class Vehicle {
         if (nearest) this.initLaneDriving(nearest.segment, laneNav, this.sprite.x, this.sprite.y);
       }
       if (this.laneSegmentId) {
-        this.updateLaneTraffic(dt, trafficLights, laneNav, navigation);
+        this.updateLaneTraffic(dt, trafficLights, laneNav, navigation, otherVehicles);
         return;
       }
     }
 
     if (navigation) {
-      this.updateRoadPathTraffic(dt, navigation, trafficLights);
+      this.updateRoadPathTraffic(dt, navigation, trafficLights, otherVehicles);
       return;
     }
 
@@ -161,7 +229,8 @@ export class Vehicle {
   private updateRoadPathTraffic(
     dt: number,
     navigation: NavigationGrid,
-    trafficLights?: TrafficLightManager
+    trafficLights?: TrafficLightManager,
+    otherVehicles?: Vehicle[]
   ): void {
     this.pathFollower.tickRetarget(dt);
     if (this.pathFollower.getRetargetTimer() <= 0 || !this.pathFollower.hasPath()) {
@@ -185,6 +254,9 @@ export class Vehicle {
     if (trafficLights?.shouldStop(this.sprite.x, this.sprite.y, this.state.angle)) {
       throttle = 0;
     }
+    if (otherVehicles) {
+      throttle *= this.getFrontBrakeThrottle(otherVehicles);
+    }
     this.updateDriving(throttle, steer, dt);
     this.tickTrafficStuck(dt, throttle);
   }
@@ -193,7 +265,8 @@ export class Vehicle {
     dt: number,
     trafficLights: TrafficLightManager | undefined,
     laneNav: LaneNavigation,
-    navigation?: NavigationGrid
+    navigation?: NavigationGrid,
+    otherVehicles?: Vehicle[]
   ): void {
     const segment = laneNav.segments.get(this.laneSegmentId!);
     if (!segment) {
@@ -213,7 +286,7 @@ export class Vehicle {
       const next = laneNav.pickNextSegment(segment.id);
       if (!next) {
         this.laneSegmentId = null;
-        if (navigation) this.updateRoadPathTraffic(dt, navigation, trafficLights);
+        if (navigation) this.updateRoadPathTraffic(dt, navigation, trafficLights, otherVehicles);
         return;
       }
       this.laneSegmentId = next.id;
@@ -236,6 +309,9 @@ export class Vehicle {
     if (trafficLights?.shouldStop(this.sprite.x, this.sprite.y, this.state.angle)) {
       throttle = 0;
     }
+    if (otherVehicles) {
+      throttle *= this.getFrontBrakeThrottle(otherVehicles);
+    }
 
     this.updateDriving(throttle, steer, dt);
     this.tickTrafficStuck(dt, throttle);
@@ -249,14 +325,15 @@ export class Vehicle {
     } else {
       this.trafficStuckTimer = 0;
     }
-    if (this.trafficStuckTimer < 1.4) return;
+    // Longer threshold — prefer front-brake over teleport
+    if (this.trafficStuckTimer < 2.6) return;
 
     this.trafficStuckTimer = 0;
     this.laneWaypointIndex += 1;
     const rad = Phaser.Math.DegToRad(this.state.angle);
-    const nudge = TILE_SIZE * 0.6;
+    const nudge = TILE_SIZE * 0.55;
     this.sprite.setPosition(this.sprite.x + Math.cos(rad) * nudge, this.sprite.y + Math.sin(rad) * nudge);
-    this.state.speed = Math.max(this.state.speed, this.config.maxSpeed * 0.3);
+    this.state.speed = Math.max(this.state.speed, this.config.maxSpeed * 0.25);
   }
 
   private findNearestWaypointIndex(segment: LaneSegment, wx: number, wy: number): number {
@@ -271,6 +348,42 @@ export class Vehicle {
       }
     }
     return best;
+  }
+
+  private updateVisuals(): void {
+    if (this.shadow?.active) {
+      const rad = Phaser.Math.DegToRad(this.state.angle);
+      this.shadow.setPosition(
+        this.sprite.x + Math.sin(rad) * 2,
+        this.sprite.y + 5 + Math.abs(Math.cos(rad)) * 1
+      );
+      this.shadow.setAngle(this.state.angle);
+    }
+
+    // Damage tint
+    const hpRatio = this.hp / this.config.hp;
+    if (hpRatio < 0.35) {
+      this.sprite.setTint(0xff6644);
+    } else if (hpRatio < 0.65) {
+      this.sprite.setTint(0xffaa66);
+    } else if (!this.isTraffic) {
+      this.sprite.clearTint();
+    }
+
+    // Brake lights when braking or reverse throttle
+    if (this.brakeLights?.active) {
+      this.brakeLights.clear();
+      const braking = this.lastThrottle < -0.05 || (this.lastThrottle <= 0 && Math.abs(this.state.speed) > 40);
+      if (braking && Math.abs(this.state.speed) > 5) {
+        const rad = Phaser.Math.DegToRad(this.state.angle);
+        const bx = this.sprite.x - Math.cos(rad) * 12;
+        const by = this.sprite.y - Math.sin(rad) * 12;
+        const perp = rad + Math.PI / 2;
+        this.brakeLights.fillStyle(0xff2222, 0.85);
+        this.brakeLights.fillCircle(bx + Math.cos(perp) * 5, by + Math.sin(perp) * 5, 2.2);
+        this.brakeLights.fillCircle(bx - Math.cos(perp) * 5, by - Math.sin(perp) * 5, 2.2);
+      }
+    }
   }
 
   takeDamage(amount: number): boolean {
@@ -292,6 +405,8 @@ export class Vehicle {
     getAudio(scene).playSfx('explode');
     const vfx = scene.registry.get('vfx') as { explosion?: (x: number, y: number, s?: number) => void } | undefined;
     vfx?.explosion?.(x, y, this.isTraffic ? 1 : 1.2);
+    this.shadow?.destroy();
+    this.brakeLights?.destroy();
     this.sprite.destroy();
   }
 
@@ -299,12 +414,19 @@ export class Vehicle {
     this.state.speed = 0;
     this.state.vx = 0;
     this.state.vy = 0;
+    this.lastThrottle = 0;
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
     if (body) body.setVelocity(0, 0);
+    this.updateVisuals();
   }
 
   getType(): string {
     return this.config.id;
+  }
+
+  destroyExtras(): void {
+    this.shadow?.destroy();
+    this.brakeLights?.destroy();
   }
 
   private getHitbox(type: string): { w: number; h: number; ox: number; oy: number } {

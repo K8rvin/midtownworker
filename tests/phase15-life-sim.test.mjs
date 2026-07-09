@@ -149,9 +149,23 @@ if (!gameScene.includes('enableGameClock')) throw new Error('Life-sim game clock
 
 const vehicle = readFileSync(join(root, 'src', 'entities', 'Vehicle.ts'), 'utf8');
 if (!vehicle.includes('tickTrafficStuck')) throw new Error('Traffic stuck recovery missing');
+if (!vehicle.includes('getFrontBrakeThrottle')) throw new Error('Traffic front-brake missing');
 if (!gameScene.includes('isTraffic && b.isTraffic')) throw new Error('Traffic gridlock guard missing');
 if (!gameScene.includes('enforceShopInteriorBounds')) throw new Error('Shop interior wall clamp missing');
 if (!gameScene.includes('LIFE_SIM) return false')) throw new Error('Roofs should be disabled in life sim');
+if (!gameScene.includes('StreetLights')) throw new Error('Street lights atmosphere missing');
+if (!gameScene.includes('cameraLookTarget')) throw new Error('Camera look-ahead missing');
+
+const atm = readFileSync(join(root, 'src', 'graphics', 'AtmosphereOverlay.ts'), 'utf8');
+if (!atm.includes('lerpColor')) throw new Error('Atmosphere phase blend missing');
+
+const hud = readFileSync(join(root, 'src', 'ui', 'HUD.ts'), 'utf8');
+if (!hud.includes('drawNeedsBars')) throw new Error('Life-sim needs bars missing');
+
+const homes = JSON.parse(readFileSync(join(root, 'src', 'data', 'homes.json'), 'utf8'));
+if (!homes.find((h) => h.id === 'apt_oldtown_1')?.furnitureSlots?.some((s) => s.id === 'fridge_slot')) {
+  throw new Error('Starter home fridge slot missing');
+}
 
 const pedestrian = readFileSync(join(root, 'src', 'entities', 'Pedestrian.ts'), 'utf8');
 if (!pedestrian.includes('findNearbySidewalkTile')) throw new Error('Pedestrian nearby walking missing');

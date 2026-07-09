@@ -7,7 +7,8 @@ import {
 } from '../config';
 import { HousingManager } from '../systems/HousingManager';
 import { JobManager } from '../systems/JobManager';
-import { NeedsManager } from '../systems/NeedsManager';
+import { NeedsManager, SLEEP_HOURS_DEFAULT } from '../systems/NeedsManager';
+import { TimeManager } from '../systems/TimeManager';
 import { GroceryManager } from '../systems/GroceryManager';
 import { LifeTaskManager } from '../systems/LifeTaskManager';
 import { SaveManager } from '../systems/SaveManager';
@@ -27,13 +28,30 @@ const SLOT_COLORS: Record<string, number> = {
   bed: 0x9b59b6,
   fridge: 0x3498db,
   desk: 0xb8860b,
+  chair: 0x7ee787,
+  lamp: 0xffd600,
+  cabinet: 0x8b6914,
 };
 
 function furnitureColor(furnitureId: string): number {
   if (furnitureId.startsWith('bed_')) return SLOT_COLORS.bed;
   if (furnitureId.startsWith('fridge_')) return SLOT_COLORS.fridge;
   if (furnitureId.startsWith('desk_')) return SLOT_COLORS.desk;
+  if (furnitureId.startsWith('chair_')) return SLOT_COLORS.chair;
+  if (furnitureId.startsWith('lamp_')) return SLOT_COLORS.lamp;
+  if (furnitureId.startsWith('cabinet_')) return SLOT_COLORS.cabinet;
   return 0x7ee787;
+}
+
+function slotHintFromAccepts(accepts: string[]): string {
+  const a = accepts[0] ?? '';
+  if (a.startsWith('bed_')) return 'кровать';
+  if (a.startsWith('fridge_')) return 'холодильник';
+  if (a.startsWith('desk_')) return 'стол';
+  if (a.startsWith('chair_')) return 'стул';
+  if (a.startsWith('lamp_')) return 'лампа';
+  if (a.startsWith('cabinet_')) return 'шкаф';
+  return 'слот';
 }
 
 export class HomeScene extends Phaser.Scene {
@@ -41,6 +59,7 @@ export class HomeScene extends Phaser.Scene {
   private housing!: HousingManager;
   private jobManager!: JobManager;
   private needs = new NeedsManager();
+  private timeManager = new TimeManager();
   private grocery!: GroceryManager;
   private lifeTasks!: LifeTaskManager;
   private storyManager!: LifeSimStoryManager;
@@ -118,14 +137,7 @@ export class HomeScene extends Phaser.Scene {
           .setOrigin(0.5);
         this.drawFurnitureIcon(sx, sy, placed);
       } else {
-        const slotHint =
-          slot.accepts[0]?.startsWith('bed_')
-            ? 'кровать'
-            : slot.accepts[0]?.startsWith('fridge_')
-              ? 'холодильник'
-              : slot.accepts[0]?.startsWith('desk_')
-                ? 'стол'
-                : 'слот';
+        const slotHint = slotHintFromAccepts(slot.accepts);
         this.add
           .text(sx, sy, '+', {
             fontFamily: 'monospace',
@@ -305,6 +317,24 @@ export class HomeScene extends Phaser.Scene {
       g.fillRect(-12, -2, 24, 4);
       g.fillRect(-10, 2, 3, 8);
       g.fillRect(7, 2, 3, 8);
+    } else if (furnitureId.startsWith('chair_')) {
+      g.fillStyle(0x2d6a4f, 1);
+      g.fillRect(-6, -2, 12, 5);
+      g.fillRect(-5, 3, 2, 7);
+      g.fillRect(3, 3, 2, 7);
+      g.fillRect(-6, -8, 12, 6);
+    } else if (furnitureId.startsWith('lamp_')) {
+      g.fillStyle(0x444455, 1);
+      g.fillRect(-1, -2, 2, 12);
+      g.fillStyle(0xffe566, 0.95);
+      g.fillCircle(0, -6, 5);
+    } else if (furnitureId.startsWith('cabinet_')) {
+      g.fillStyle(0x6b4f2a, 1);
+      g.fillRect(-9, -10, 18, 20);
+      g.lineStyle(1, 0x3d2a12, 1);
+      g.lineBetween(0, -10, 0, 10);
+      g.fillStyle(0xffd600, 1);
+      g.fillCircle(3, 0, 1.2);
     }
   }
 
@@ -466,6 +496,16 @@ export class HomeScene extends Phaser.Scene {
       return;
     }
     this.needs.sleep(this.state, this.housing.getSleepBonus());
+    this.needs.applySleepHunger(this.state, SLEEP_HOURS_DEFAULT);
+    const { daysAdvanced, hoursAdvanced } = this.timeManager.advanceHours(
+      this.state,
+      SLEEP_HOURS_DEFAULT
+    );
+    let rentMsg = '';
+    for (let d = 0; d < daysAdvanced; d++) {
+      const msg = this.housing.onDayAdvanced();
+      if (msg) rentMsg = msg;
+    }
     const completed = this.lifeTasks.onLifeEvent('sleep_home');
     if (completed) {
       const story = this.storyManager.onTaskCompleted(completed.id);
@@ -479,7 +519,9 @@ export class HomeScene extends Phaser.Scene {
         return;
       }
     }
-    this.showHint('Вы отдохнули');
+    const clock = this.timeManager.formatClock(this.state);
+    const extra = rentMsg ? ` ${rentMsg}` : '';
+    this.showHint(`Вы проспали ${hoursAdvanced} ч. Сейчас: ${clock}.${extra}`);
     this.refreshStatus();
   }
 
