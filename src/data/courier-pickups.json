@@ -3,7 +3,7 @@
   { "id": "grocery_24", "name": "Магазин «24/7»", "category": "shop", "x": 88, "y": 95 },
   { "id": "grocery_farm", "name": "«Фермерский»", "category": "shop", "x": 120, "y": 85 },
   { "id": "grocery_eco", "name": "«Эконом»", "category": "shop", "x": 72, "y": 119 },
-  { "id": "grocery_center", "name": "Гастроном «Центр»", "category": "shop", "x": 98, "y": 101 },
+  { "id": "grocery_center", "name": "Гастроном «Центр»", "category": "shop", "x": 113, "y": 106 },
   { "id": "furniture", "name": "Мебельный «Дом»", "category": "shop", "x": 118, "y": 119 },
   { "id": "cafe", "name": "Кафе «Причал»", "category": "cafe", "x": 180, "y": 100 },
   { "id": "cafe_mid", "name": "Кофейня «Быстро»", "category": "cafe", "x": 110, "y": 96 },
