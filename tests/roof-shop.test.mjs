@@ -23,6 +23,26 @@ const shopMgr = readFileSync(join(root, 'src', 'systems', 'ShopManager.ts'), 'ut
 if (!shopMgr.includes('getShopAtDoor')) throw new Error('Shop door entry missing');
 if (!shopMgr.includes('isInsideShop')) throw new Error('Shop interior check missing');
 if (!shopMgr.includes('getShopNearClerk')) throw new Error('Shop clerk proximity missing');
+if (!shopMgr.includes('maxDist = 40')) throw new Error('Shop door radius should allow south sidewalk tile');
+
+const TILE_SIZE = 32;
+const DOOR_RADIUS = 40;
+const grocery = shops.find((s) => s.id === 'grocery_1');
+if (!grocery) throw new Error('Grocery shop missing');
+const doorCx = grocery.doorX * TILE_SIZE + TILE_SIZE / 2;
+const doorCy = grocery.doorY * TILE_SIZE + TILE_SIZE / 2;
+const southCx = grocery.doorX * TILE_SIZE + TILE_SIZE / 2;
+const southCy = (grocery.doorY + 1) * TILE_SIZE + TILE_SIZE / 2;
+const southDist = Math.hypot(southCx - doorCx, southCy - doorCy);
+if (southDist >= DOOR_RADIUS) {
+  throw new Error(`Grocery door unreachable from south tile (${grocery.doorX}, ${grocery.doorY + 1})`);
+}
+
+const jobs = JSON.parse(readFileSync(join(root, 'src', 'data', 'jobs.json'), 'utf8'));
+const cashier = jobs.find((j) => j.id === 'cashier');
+if (!cashier || cashier.doorX !== grocery.doorX || cashier.doorY !== grocery.doorY) {
+  throw new Error('Cashier job door must match grocery shop door');
+}
 
 const player = readFileSync(join(root, 'src', 'entities', 'Player.ts'), 'utf8');
 if (!player.includes('WALK_ROW_H_LEFT')) throw new Error('Horizontal left walk row missing');

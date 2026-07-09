@@ -68,7 +68,7 @@ export class ShopManager {
     return this.shops.find((s) => s.id === id);
   }
 
-  getShopAtDoor(px: number, py: number, maxDist = 28): ShopConfig | null {
+  getShopAtDoor(px: number, py: number, maxDist = 40): ShopConfig | null {
     let nearest: ShopConfig | null = null;
     let minDist = maxDist;
     for (const shop of this.shops) {
@@ -117,7 +117,7 @@ export class ShopManager {
     return nearest;
   }
 
-  isAtDoor(shop: ShopConfig, px: number, py: number, maxDist = 28): boolean {
+  isAtDoor(shop: ShopConfig, px: number, py: number, maxDist = 40): boolean {
     const dx = shop.doorX * TILE_SIZE + TILE_SIZE / 2;
     const dy = shop.doorY * TILE_SIZE + TILE_SIZE / 2;
     return Phaser.Math.Distance.Between(px, py, dx, dy) < maxDist;

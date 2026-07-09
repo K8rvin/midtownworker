@@ -145,7 +145,7 @@ export class JobManager {
     return best;
   }
 
-  isAtJobDoor(job: JobConfig, px: number, py: number, maxDist = 28): boolean {
+  isAtJobDoor(job: JobConfig, px: number, py: number, maxDist = 40): boolean {
     const dx = job.doorX * TILE_SIZE + TILE_SIZE / 2;
     const dy = job.doorY * TILE_SIZE + TILE_SIZE / 2;
     return Math.hypot(px - dx, py - dy) < maxDist;
