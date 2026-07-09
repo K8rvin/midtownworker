@@ -16,6 +16,9 @@ if (!config.includes('courierDeliveries')) throw new Error('Courier deliveries s
 
 const storyMgr = readFileSync(join(root, 'src', 'systems', 'LifeSimStoryManager.ts'), 'utf8');
 if (!storyMgr.includes('LifeSimStoryManager')) throw new Error('Story manager missing');
+if (!storyMgr.includes('getBedSleepStep')) throw new Error('Dynamic bed tutorial marker missing');
+if (!storyMgr.includes('buildTutorialDialogLines')) throw new Error('Tutorial dialog lines builder missing');
+if (!storyMgr.includes('getBedPurchasedStepMessage')) throw new Error('Bed purchase step message missing');
 
 const storyData = readFileSync(join(root, 'src', 'data', 'life-sim-story.json'), 'utf8');
 if (!storyData.includes('task_rent_home')) throw new Error('Story chapters missing');
@@ -54,6 +57,8 @@ if (!housingMgr.includes('getUnplacedForSlot')) throw new Error('Furniture slot 
 if (!housingMgr.includes('getSleepBonus')) throw new Error('Bed sleep bonus missing');
 
 const homeScene = readFileSync(join(root, 'src', 'scenes', 'HomeScene.ts'), 'utf8');
+if (!homeScene.includes('DialogBox')) throw new Error('Home scene tutorial dialog missing');
+if (!homeScene.includes('getBedPlacedStepMessage')) throw new Error('Bed placed ack dialog missing');
 if (!homeScene.includes('showFurniturePicker')) throw new Error('Furniture picker missing');
 if (!homeScene.includes('drawFurnitureIcon')) throw new Error('Furniture visuals missing');
 if (!homeScene.includes('openJobBoard')) throw new Error('Home job board missing');
@@ -92,6 +97,13 @@ if (!gameScene.includes('courier_take_order')) throw new Error('Courier take ord
 if (!gameScene.includes('handleCourierDeliver')) throw new Error('Courier deliver handler missing');
 if (!gameScene.includes('WaypointArrow')) throw new Error('Screen waypoint arrow missing');
 if (!gameScene.includes('getLifeSimMinimapMarkers')) throw new Error('Courier minimap markers missing');
+if (!gameScene.includes('showTutorialDialog')) throw new Error('Tutorial ack dialog missing');
+if (!gameScene.includes('buildTutorialDialogLines')) throw new Error('Tutorial dialog builder usage missing');
+const notifyBlock = gameScene.slice(
+  gameScene.indexOf('private notifyLifeEvent'),
+  gameScene.indexOf('private refreshTutorialMarkers')
+);
+if (notifyBlock.includes('delayedCall')) throw new Error('notifyLifeEvent should not use delayedCall toasts');
 if (!gameScene.includes('spawnHomeDoorMarkers')) throw new Error('Home door markers missing');
 if (!gameScene.includes('shop_grocery')) throw new Error('Grocery shop sprite missing');
 

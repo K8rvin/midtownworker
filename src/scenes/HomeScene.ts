@@ -13,6 +13,7 @@ import { LifeTaskManager } from '../systems/LifeTaskManager';
 import { SaveManager } from '../systems/SaveManager';
 import { JobApplicationUI } from '../ui/JobApplicationUI';
 import { LifeSimStoryManager } from '../systems/LifeSimStoryManager';
+import { DialogBox } from '../ui/DialogBox';
 
 export interface HomeSceneData {
   state: GameState;
@@ -43,6 +44,7 @@ export class HomeScene extends Phaser.Scene {
   private grocery!: GroceryManager;
   private lifeTasks!: LifeTaskManager;
   private storyManager!: LifeSimStoryManager;
+  private dialogBox = new DialogBox();
   private returnData!: HomeSceneData;
   private hintText!: Phaser.GameObjects.Text;
   private statusText!: Phaser.GameObjects.Text;
@@ -386,17 +388,50 @@ export class HomeScene extends Phaser.Scene {
 
   private placeFurniture(fid: string, slotId: string): void {
     const err = this.housing.placeFurniture(fid, slotId);
-    if (err) this.showHint(err);
-    else {
-      this.notifyLifeEvent('place_furniture', { furnitureId: fid });
-      this.scene.restart({ ...this.returnData, state: this.state });
+    if (err) {
+      this.showHint(err);
+      return;
     }
+
+    const completed = this.lifeTasks.onLifeEvent('place_furniture', { furnitureId: fid });
+    if (completed) {
+      const story = this.storyManager.onTaskCompleted(completed.id);
+      const lines = story
+        ? this.storyManager.buildTutorialDialogLines({
+            task: completed,
+            story,
+          })
+        : [`✓ ${completed.title} (+$${completed.reward})`];
+      this.dialogBox.showSequence(
+        this,
+        lines.map((text) => ({ speaker: 'Обучение', text })),
+        () => this.scene.restart({ ...this.returnData, state: this.state })
+      );
+      return;
+    }
+
+    const stepMsg = this.storyManager.getBedPlacedStepMessage();
+    if (stepMsg) {
+      this.dialogBox.showSequence(
+        this,
+        [{ speaker: 'Обучение', text: stepMsg }],
+        () => this.scene.restart({ ...this.returnData, state: this.state })
+      );
+      return;
+    }
+
+    this.scene.restart({ ...this.returnData, state: this.state });
   }
 
   private notifyLifeEvent(event: string, payload?: Record<string, unknown>): void {
     const result = this.storyManager.handleLifeEvent(event, payload);
     if (!result) return;
-    this.showHint(`${result.task.title} — готово!`);
+    const lines = this.storyManager.buildTutorialDialogLines(result);
+    this.dialogBox.showSequence(
+      this,
+      lines.map((text) => ({ speaker: 'Обучение', text })),
+      () => this.refreshStatus()
+    );
   }
 
   private openJobBoard(source: 'phone' | 'laptop'): void {
@@ -431,7 +466,19 @@ export class HomeScene extends Phaser.Scene {
       return;
     }
     this.needs.sleep(this.state, this.housing.getSleepBonus());
-    this.notifyLifeEvent('sleep_home');
+    const completed = this.lifeTasks.onLifeEvent('sleep_home');
+    if (completed) {
+      const story = this.storyManager.onTaskCompleted(completed.id);
+      if (story) {
+        const lines = this.storyManager.buildTutorialDialogLines({ task: completed, story });
+        this.dialogBox.showSequence(
+          this,
+          lines.map((text) => ({ speaker: 'Обучение', text })),
+          () => this.refreshStatus()
+        );
+        return;
+      }
+    }
     this.showHint('Вы отдохнули');
     this.refreshStatus();
   }

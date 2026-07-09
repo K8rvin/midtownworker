@@ -384,18 +384,28 @@ export class GameScene extends Phaser.Scene {
       if (LifeSimIntro.shouldShow()) {
         this.lifeSimIntro.show(() => {
           const msg = this.lifeSimStory.beginAfterIntro();
-          this.showMessage(msg);
-          this.refreshTutorialMarkers();
+          this.showTutorialDialog([msg], () => {
+            this.refreshTutorialMarkers();
+            this.hudUpdate(this.getInteractHint());
+          });
         });
       } else if (this.state.storyChapter === 0) {
         const msg = this.lifeSimStory.beginAfterIntro();
-        this.showMessage(msg);
-        this.refreshTutorialMarkers();
+        this.showTutorialDialog([msg], () => {
+          this.refreshTutorialMarkers();
+          this.hudUpdate(this.getInteractHint());
+        });
       }
     } else if (LIFE_SIM) {
       const resume = this.lifeSimStory.syncTutorialTask();
-      if (resume) this.showMessage(resume);
-      this.refreshTutorialMarkers();
+      if (resume) {
+        this.showTutorialDialog([resume], () => {
+          this.refreshTutorialMarkers();
+          this.hudUpdate(this.getInteractHint());
+        });
+      } else {
+        this.refreshTutorialMarkers();
+      }
     }
 
     this.events.off('resume', this.onResumeFromHome);
@@ -1842,17 +1852,10 @@ export class GameScene extends Phaser.Scene {
   private notifyLifeEvent(event: string, payload?: Record<string, unknown>): void {
     const result = this.lifeSimStory.handleLifeEvent(event, payload);
     if (!result) return;
-    this.showMessage(`✓ ${result.task.title} (+$${result.task.reward})`);
-    this.time.delayedCall(400, () => {
-      this.showMessage(result.story.message);
-      if (result.story.nextMessage) {
-        this.time.delayedCall(1200, () => {
-          this.showMessage(result.story.nextMessage!);
-          this.refreshTutorialMarkers();
-        });
-      } else {
-        this.refreshTutorialMarkers();
-      }
+    const lines = this.lifeSimStory.buildTutorialDialogLines(result);
+    this.showTutorialDialog(lines, () => {
+      this.refreshTutorialMarkers();
+      this.hudUpdate(this.getInteractHint());
     });
   }
 
@@ -1927,7 +1930,15 @@ export class GameScene extends Phaser.Scene {
           if (!err) this.notifyLifeEvent('buy_food');
           return err;
         }
-        return this.groceryManager.buyFurniture(id);
+        const err = this.groceryManager.buyFurniture(id);
+        if (!err && id === 'bed_basic') {
+          this.refreshTutorialMarkers();
+          const stepMsg = this.lifeSimStory.getBedPurchasedStepMessage();
+          if (stepMsg) {
+            this.showTutorialDialog([stepMsg], () => this.hudUpdate(this.getInteractHint()));
+          }
+        }
+        return err;
       },
       (id) => {
         const err = this.groceryManager.eatNow(id);
@@ -2576,6 +2587,21 @@ export class GameScene extends Phaser.Scene {
     this.state.currentMapId = this.cityMap.mapId;
     this.state.questSnapshot = this.questManager.captureSnapshot();
     return this.state;
+  }
+
+  private showTutorialDialog(lines: string[], onDone?: () => void): void {
+    const flat = lines.flatMap((line) =>
+      line.split('\n').map((s) => s.trim()).filter((s) => s.length > 0)
+    );
+    if (flat.length === 0) {
+      onDone?.();
+      return;
+    }
+    this.dialogBox.showSequence(
+      this,
+      flat.map((text) => ({ speaker: 'Обучение', text })),
+      onDone
+    );
   }
 
   private showMessage(text: string): void {

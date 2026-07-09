@@ -1,5 +1,6 @@
 import type { GameState } from '../config';
 import storyData from '../data/life-sim-story.json';
+import homesData from '../data/homes.json';
 import type { LifeTaskManager } from './LifeTaskManager';
 
 export interface StoryMarker {
@@ -7,6 +8,8 @@ export interface StoryMarker {
   y: number;
   label: string;
 }
+
+export type BedSleepStep = 'buy' | 'place' | 'sleep';
 
 interface StoryChapter {
   id: number;
@@ -34,18 +37,80 @@ export class LifeSimStoryManager {
     return chapters.find((c) => c.id === this.state.storyChapter) ?? null;
   }
 
+  getBedSleepStep(): BedSleepStep | null {
+    const task = this.lifeTasks.getActiveTask();
+    if (task?.type !== 'bed_and_sleep') return null;
+    if ((this.state.questProgress[task.id] ?? 0) >= 1) return 'sleep';
+    if (this.state.homeFurniture.includes(task.furnitureId ?? 'bed_basic')) return 'place';
+    return 'buy';
+  }
+
+  private getHomeDoorMarker(): StoryMarker | null {
+    const homeId = this.state.housing.homeId;
+    if (!homeId) return null;
+    const home = (homesData as { id: string; doorX: number; doorY: number; name: string }[]).find(
+      (h) => h.id === homeId
+    );
+    if (!home) return null;
+    return { x: home.doorX, y: home.doorY, label: home.name };
+  }
+
   getMarker(): StoryMarker | null {
     if (!this.isTutorialActive()) return null;
-    return this.getChapter()?.marker ?? null;
+    const ch = this.getChapter();
+    if (!ch) return null;
+
+    const bedStep = this.getBedSleepStep();
+    if (bedStep === 'buy') return ch.marker;
+
+    const homeMarker = this.getHomeDoorMarker();
+    if (!homeMarker) return ch.marker;
+
+    if (bedStep === 'place') {
+      return { ...homeMarker, label: 'Домой — поставьте кровать' };
+    }
+    if (bedStep === 'sleep') {
+      return { ...homeMarker, label: 'Домой — поспите' };
+    }
+
+    return ch.marker;
   }
 
   getObjectiveText(): string {
     const ch = this.getChapter();
     if (!ch) return 'J — доска заданий · свободная игра';
-    const loc = `▶ ${ch.marker.label} (${ch.marker.x}, ${ch.marker.y})`;
+
+    const marker = this.getMarker();
+    const loc = marker ? `▶ ${marker.label} (${marker.x}, ${marker.y})` : '';
+
+    const bedStep = this.getBedSleepStep();
+    if (bedStep === 'buy') {
+      return `${ch.title}: Купите кровать в мебельном\n${loc}`;
+    }
+    if (bedStep === 'place') {
+      return `${ch.title}: Зайдите домой и поставьте кровать [E] на слот\n${loc}`;
+    }
+    if (bedStep === 'sleep') {
+      return `${ch.title}: Войдите домой и нажмите «Спать»\n${loc}`;
+    }
+
     const task = this.lifeTasks.getActiveTask();
     if (task?.id === ch.taskId) return `${ch.title}: ${task.description}\n${loc}`;
     return `${ch.title}\n${loc}`;
+  }
+
+  /** Message after placing bed (step 1 of bed_and_sleep, task not yet complete). */
+  getBedPlacedStepMessage(): string | null {
+    const task = this.lifeTasks.getActiveTask();
+    if (task?.type !== 'bed_and_sleep') return null;
+    if ((this.state.questProgress[task.id] ?? 0) < 1) return null;
+    return 'Кровать на месте! В меню дома нажмите «Спать», чтобы отдохнуть.';
+  }
+
+  /** Message after buying bed during tutorial chapter 2. */
+  getBedPurchasedStepMessage(): string | null {
+    if (this.getBedSleepStep() !== 'place') return null;
+    return 'Кровать куплена! Идите к двери дома и поставьте её на слот кровати.';
   }
 
   /** Called after intro overlay — chapter 1, first task. */
@@ -97,6 +162,21 @@ export class LifeSimStoryManager {
     }
 
     return { message: completeMsg, nextMessage };
+  }
+
+  buildTutorialDialogLines(
+    result: { task: import('./LifeTaskManager').LifeTaskConfig; story: { message: string; nextMessage: string | null } }
+  ): string[] {
+    const lines: string[] = [`✓ ${result.task.title} (+$${result.task.reward})`];
+    for (const part of result.story.message.split('\n')) {
+      if (part.trim()) lines.push(part.trim());
+    }
+    if (result.story.nextMessage) {
+      for (const part of result.story.nextMessage.split('\n')) {
+        if (part.trim()) lines.push(part.trim());
+      }
+    }
+    return lines;
   }
 
   /** Restore tutorial task if save has chapter but no active task. */
