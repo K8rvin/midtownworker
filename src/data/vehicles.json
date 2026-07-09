@@ -1,16 +1,59 @@
 [
   {
+    "id": "bicycle",
+    "name": "Велосипед",
+    "color": "#2ecc71",
+    "maxSpeed": 190,
+    "acceleration": 140,
+    "handling": 4.2,
+    "friction": 3.5,
+    "grip": 12,
+    "brakePower": 280,
+    "hp": 40,
+    "price": 120,
+    "wheels": 2
+  },
+  {
+    "id": "moped",
+    "name": "Мопед",
+    "color": "#f1c40f",
+    "maxSpeed": 220,
+    "acceleration": 160,
+    "handling": 3.8,
+    "friction": 2.8,
+    "grip": 10,
+    "brakePower": 300,
+    "hp": 45,
+    "price": 450,
+    "wheels": 2
+  },
+  {
+    "id": "motorcycle",
+    "name": "Мотоцикл",
+    "color": "#9b59b6",
+    "maxSpeed": 300,
+    "acceleration": 260,
+    "handling": 3.6,
+    "friction": 2.3,
+    "grip": 8,
+    "brakePower": 360,
+    "hp": 50,
+    "price": 1800,
+    "wheels": 2
+  },
+  {
     "id": "sedan",
     "name": "Седан",
     "color": "#4a90d9",
-    "maxSpeed": 220,
-    "acceleration": 180,
+    "maxSpeed": 250,
+    "acceleration": 190,
     "handling": 2.8,
     "friction": 2.4,
     "grip": 9,
-    "brakePower": 320,
+    "brakePower": 340,
     "hp": 80,
-    "price": 0
+    "price": 2200,
+    "wheels": 4
   },
   {
     "id": "sports",
@@ -23,20 +66,36 @@
     "grip": 7.5,
     "brakePower": 420,
     "hp": 60,
-    "price": 3000
+    "price": 5000,
+    "wheels": 4
   },
   {
     "id": "truck",
     "name": "Грузовик",
     "color": "#8b7355",
-    "maxSpeed": 160,
-    "acceleration": 100,
+    "maxSpeed": 185,
+    "acceleration": 110,
     "handling": 1.8,
     "friction": 3.2,
     "grip": 11,
-    "brakePower": 260,
+    "brakePower": 280,
     "hp": 150,
-    "price": 1500
+    "price": 3500,
+    "wheels": 4
+  },
+  {
+    "id": "van",
+    "name": "Фургон",
+    "color": "#7f8c8d",
+    "maxSpeed": 200,
+    "acceleration": 130,
+    "handling": 2.2,
+    "friction": 2.9,
+    "grip": 10,
+    "brakePower": 300,
+    "hp": 110,
+    "price": 2800,
+    "wheels": 4
   },
   {
     "id": "police",
@@ -49,6 +108,7 @@
     "grip": 8.5,
     "brakePower": 380,
     "hp": 100,
-    "price": 0
+    "price": 0,
+    "wheels": 4
   }
 ]

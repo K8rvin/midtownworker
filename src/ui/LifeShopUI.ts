@@ -15,7 +15,9 @@ export class LifeShopUI {
     private onEat: (id: string) => string | null,
     private onDrink: (id: string) => string | null,
     private onMessage: (msg: string) => void,
-    private onClose: () => void
+    private onClose: () => void,
+    /** If set, only these grocery/furniture ids appear. */
+    private allowedIds: string[] | null = null
   ) {}
 
   show(): void {
@@ -102,8 +104,11 @@ export class LifeShopUI {
     }
 
     if (this.shopType === 'grocery') {
-      this.grocery.getGroceries().forEach((item, i) => {
-        const y = GAME_HEIGHT / 2 - 168 + i * 46;
+      const list = this.grocery
+        .getGroceries()
+        .filter((item) => !this.allowedIds || this.allowedIds.includes(item.id));
+      list.forEach((item, i) => {
+        const y = GAME_HEIGHT / 2 - 168 + i * 38;
         const label = this.scene.add
           .text(GAME_WIDTH / 2 - 200, y - 8, `${item.name} — $${item.price}`, {
             fontFamily: 'monospace',
@@ -140,8 +145,11 @@ export class LifeShopUI {
         }
       });
     } else {
-      this.grocery.getFurniture().forEach((item, i) => {
-        const y = GAME_HEIGHT / 2 - 148 + i * 52;
+      const flist = this.grocery
+        .getFurniture()
+        .filter((item) => !this.allowedIds || this.allowedIds.includes(item.id));
+      flist.forEach((item, i) => {
+        const y = GAME_HEIGHT / 2 - 148 + i * 48;
         const isOwned = this.grocery.ownsFurniture(item.id);
         const detail = this.grocery.getFurnitureBonusText(item);
         const label = this.scene.add

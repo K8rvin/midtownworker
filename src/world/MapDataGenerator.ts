@@ -346,10 +346,13 @@ function placeHomeBuildings(tiles: TileType[][], mapW: number, mapH: number): vo
 }
 
 function placeShopBuildings(tiles: TileType[][], mapW: number, mapH: number): void {
-  for (const shop of shopsData as { doorX: number; doorY: number }[]) {
+  for (const shop of shopsData as { doorX: number; doorY: number; type?: string }[]) {
     const bx = shop.doorX - 1;
     const by = shop.doorY - 2;
-    placeBlock(tiles, [], bx, by, 3, 3, mapW, mapH, false);
+    // Dealers slightly larger façade
+    const bw = shop.type === 'vehicle' ? 5 : 4;
+    const bh = shop.type === 'vehicle' ? 4 : 3;
+    placeBlock(tiles, [], bx, by, bw, bh, mapW, mapH, false);
   }
 }
 

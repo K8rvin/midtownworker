@@ -75,6 +75,8 @@ export interface JobState {
   workedToday: boolean;
 }
 
+export type CourierOrderCategory = 'food' | 'parcel' | 'fragile' | 'express';
+
 export interface CourierDeliveryState {
   orderId: string;
   pickupId: string;
@@ -87,6 +89,14 @@ export interface CourierDeliveryState {
   dropoffY: number;
   distanceTiles: number;
   hasPackage: boolean;
+  /** Base pay before bonuses/penalties. */
+  basePay: number;
+  /** Game minutes allowed from order start. */
+  timeLimitMinutes: number;
+  /** Absolute deadline as day*24*60 + hour*60 + minute. */
+  deadlineAbsMin: number;
+  startedAbsMin: number;
+  category: CourierOrderCategory;
 }
 
 export interface LifeStats {
@@ -97,6 +107,8 @@ export interface LifeStats {
   rentPaid: number;
   contractKills: number;
   courierDeliveries: number;
+  /** Consecutive successful on-time deliveries. */
+  courierCombo: number;
 }
 
 export interface GameState {
@@ -179,6 +191,7 @@ export const DEFAULT_LIFE_STATS: LifeStats = {
   rentPaid: 0,
   contractKills: 0,
   courierDeliveries: 0,
+  courierCombo: 0,
 };
 
 export const DEFAULT_HOUSING: HousingState = {

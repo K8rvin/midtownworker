@@ -207,6 +207,7 @@ docs/
 - **HUD life-sim:** бары голод/сон, панель сюжета
 - **Дом:** сон +7 ч игрового времени; fridge на стартовой студии; больше мебели; работа «Уборщик»
 - **Пиксельные здания:** варианты фасадов по style района (brick/glass/industrial/suburban/…), tileset 21 GID (`src/data/tile-gids.json`, `TileGids.ts`)
+- **Логистика/транспорт (2026-07):** стрелка от персонажа; пешком медленнее ТС; bike/moped/moto/van; RHT полосы; 5 grocery + автосалон; курьер timer/combo; soft carjack
 
 ---
 

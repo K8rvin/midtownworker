@@ -80,7 +80,17 @@ export class TrafficManager {
 
     const tile = Phaser.Utils.Array.GetRandom(roadTiles);
     const pos = this.cityMap.tileToWorld(tile.tx, tile.ty);
-    const types = ['sedan', 'sedan', 'sedan', 'truck', 'sports'];
+    const types = [
+      'sedan',
+      'sedan',
+      'sedan',
+      'truck',
+      'van',
+      'sports',
+      'moped',
+      'motorcycle',
+      'bicycle',
+    ];
     const type = Phaser.Utils.Array.GetRandom(types);
     const v = new Vehicle(this.scene, pos.x, pos.y, type, true);
     if (this.laneNav) {

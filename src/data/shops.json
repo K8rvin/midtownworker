@@ -12,7 +12,67 @@
     "interiorW": 3,
     "interiorH": 2,
     "clerk": { "name": "Кассир", "x": 106, "y": 107 },
-    "items": ["bread", "water", "sandwich", "meal"]
+    "items": ["bread", "water", "sandwich", "meal", "milk", "eggs", "apple"]
+  },
+  {
+    "id": "grocery_2",
+    "type": "grocery",
+    "name": "Магазин «24/7»",
+    "x": 88,
+    "y": 94,
+    "doorX": 88,
+    "doorY": 95,
+    "interiorX": 87,
+    "interiorY": 93,
+    "interiorW": 3,
+    "interiorH": 2,
+    "clerk": { "name": "Ночной кассир", "x": 88, "y": 93 },
+    "items": ["chips", "chocolate", "energy", "coffee", "water", "beer", "wine", "vodka", "sandwich"]
+  },
+  {
+    "id": "grocery_3",
+    "type": "grocery",
+    "name": "«Фермерский»",
+    "x": 120,
+    "y": 84,
+    "doorX": 120,
+    "doorY": 85,
+    "interiorX": 119,
+    "interiorY": 83,
+    "interiorW": 3,
+    "interiorH": 2,
+    "clerk": { "name": "Продавец", "x": 120, "y": 83 },
+    "items": ["apple", "banana", "salad", "steak", "milk", "cheese", "eggs", "bread"]
+  },
+  {
+    "id": "grocery_4",
+    "type": "grocery",
+    "name": "«Эконом»",
+    "x": 72,
+    "y": 118,
+    "doorX": 72,
+    "doorY": 119,
+    "interiorX": 71,
+    "interiorY": 117,
+    "interiorW": 3,
+    "interiorH": 2,
+    "clerk": { "name": "Кассирша", "x": 72, "y": 117 },
+    "items": ["bread", "water", "noodles", "rice", "soup", "chips"]
+  },
+  {
+    "id": "grocery_5",
+    "type": "grocery",
+    "name": "Гастроном «Центр»",
+    "x": 98,
+    "y": 100,
+    "doorX": 98,
+    "doorY": 101,
+    "interiorX": 97,
+    "interiorY": 99,
+    "interiorW": 3,
+    "interiorH": 2,
+    "clerk": { "name": "Менеджер", "x": 98, "y": 99 },
+    "items": ["meal", "steak", "salad", "wine", "cheese", "coffee", "sandwich", "milk"]
   },
   {
     "id": "furniture_1",
@@ -27,7 +87,22 @@
     "interiorW": 3,
     "interiorH": 2,
     "clerk": { "name": "Консультант", "x": 118, "y": 117 },
-    "items": ["bed_basic", "fridge_basic", "desk_basic"]
+    "items": ["bed_basic", "bed_comfort", "fridge_basic", "fridge_large", "desk_basic", "chair_basic", "lamp_basic", "cabinet_basic"]
+  },
+  {
+    "id": "dealer_1",
+    "type": "vehicle",
+    "name": "Автосалон «Колёса»",
+    "x": 140,
+    "y": 110,
+    "doorX": 140,
+    "doorY": 111,
+    "interiorX": 139,
+    "interiorY": 109,
+    "interiorW": 3,
+    "interiorH": 2,
+    "clerk": { "name": "Менеджер", "x": 140, "y": 109 },
+    "items": ["bicycle", "moped", "motorcycle", "sedan", "van", "truck", "sports"]
   },
   {
     "id": "armory_1",

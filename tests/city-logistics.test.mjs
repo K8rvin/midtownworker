@@ -1,0 +1,61 @@
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+const arrow = readFileSync(join(root, 'src/ui/WaypointArrow.ts'), 'utf8');
+if (!arrow.includes('fromPlayer') && !arrow.includes('origin')) {
+  throw new Error('WaypointArrow should use player origin');
+}
+if (arrow.includes('setScrollFactor(0)') && !arrow.includes('setScrollFactor(1)')) {
+  throw new Error('Waypoint should be world-space (scrollFactor 1)');
+}
+
+const player = readFileSync(join(root, 'src/entities/Player.ts'), 'utf8');
+if (!player.includes('footSpeed = 100')) throw new Error('Foot speed should be reduced');
+
+const vehicles = JSON.parse(readFileSync(join(root, 'src/data/vehicles.json'), 'utf8'));
+for (const id of ['bicycle', 'moped', 'motorcycle', 'van', 'sedan', 'truck']) {
+  if (!vehicles.some((v) => v.id === id)) throw new Error(`Missing vehicle ${id}`);
+}
+const walk = 100;
+const bike = vehicles.find((v) => v.id === 'bicycle').maxSpeed;
+const sedan = vehicles.find((v) => v.id === 'sedan').maxSpeed;
+if (!(walk < bike && bike < sedan)) {
+  throw new Error(`Speed ladder broken: walk ${walk} bike ${bike} sedan ${sedan}`);
+}
+
+const lanes = readFileSync(join(root, 'src/world/LaneNavigation.ts'), 'utf8');
+if (!lanes.includes("east', 1") && !lanes.includes('east", 1')) {
+  // accept either quote style
+  if (!lanes.includes("'east', 1")) throw new Error('RHT: east should use +1 lane offset');
+}
+if (!lanes.includes("'west', -1")) throw new Error('RHT: west should use -1 lane offset');
+
+const shops = JSON.parse(readFileSync(join(root, 'src/data/shops.json'), 'utf8'));
+const groceries = shops.filter((s) => s.type === 'grocery');
+if (groceries.length < 4) throw new Error(`Need ≥4 grocery shops, got ${groceries.length}`);
+if (!shops.some((s) => s.type === 'vehicle')) throw new Error('Vehicle dealer missing');
+
+const groceriesData = JSON.parse(readFileSync(join(root, 'src/data/groceries.json'), 'utf8'));
+if (groceriesData.length < 12) throw new Error('Expanded grocery catalog missing');
+
+const courier = readFileSync(join(root, 'src/systems/CourierManager.ts'), 'utf8');
+if (!courier.includes('timeLimitMinutes')) throw new Error('Courier timer missing');
+if (!courier.includes('courierCombo')) throw new Error('Courier combo missing');
+if (!courier.includes('getTimerLabel')) throw new Error('Courier timer label missing');
+
+const soft = readFileSync(join(root, 'src/systems/SoftCrimeManager.ts'), 'utf8');
+if (!soft.includes('onCarjack')) throw new Error('SoftCrime carjack missing');
+if (!soft.includes('resolveFine')) throw new Error('SoftCrime fine missing');
+
+const game = readFileSync(join(root, 'src/scenes/GameScene.ts'), 'utf8');
+if (!game.includes('softCrime')) throw new Error('SoftCrime not wired in GameScene');
+if (!game.includes('handleCarjackCaught')) throw new Error('Carjack catch dialog missing');
+
+const config = readFileSync(join(root, 'src/config.ts'), 'utf8');
+if (!config.includes('CourierOrderCategory')) throw new Error('Courier categories missing');
+if (!config.includes('courierCombo')) throw new Error('lifeStats.courierCombo missing');
+
+console.log('City logistics checks passed');

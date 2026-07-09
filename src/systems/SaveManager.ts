@@ -70,6 +70,7 @@ function parseState(raw: string): GameState | null {
         ...parsed.lifeStats,
         contractKills: parsed.lifeStats?.contractKills ?? 0,
         courierDeliveries: parsed.lifeStats?.courierDeliveries ?? 0,
+        courierCombo: parsed.lifeStats?.courierCombo ?? 0,
       },
       courierDelivery: parsed.courierDelivery ?? null,
       completedLifeTasks: parsed.completedLifeTasks ?? [],

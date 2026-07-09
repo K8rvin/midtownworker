@@ -32,8 +32,9 @@ export class Player {
   public currentVehicle: Vehicle | null = null;
   public facingAngle = 0;
   private lastFireTime = 0;
-  private footSpeed = 160;
-  private sprintMultiplier = 1.6;
+  /** Walk slower than any wheeled vehicle (bike ~190+, sedan ~250). */
+  private footSpeed = 100;
+  private sprintMultiplier = 1.45;
   private hidden = false;
   private animFrame = 0;
   private animTimer = 0;

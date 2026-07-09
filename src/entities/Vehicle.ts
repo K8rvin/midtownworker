@@ -20,6 +20,7 @@ export interface VehicleConfig {
   brakePower?: number;
   hp: number;
   price: number;
+  wheels?: number;
 }
 
 export class Vehicle {
@@ -431,7 +432,12 @@ export class Vehicle {
 
   private getHitbox(type: string): { w: number; h: number; ox: number; oy: number } {
     switch (type) {
+      case 'bicycle':
+      case 'moped':
+      case 'motorcycle':
+        return { w: 22, h: 10, ox: 3, oy: 3 };
       case 'truck':
+      case 'van':
         return { w: 34, h: 16, ox: 3, oy: 3 };
       case 'sports':
         return { w: 28, h: 12, ox: 3, oy: 3 };

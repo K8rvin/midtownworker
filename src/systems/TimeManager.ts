@@ -40,6 +40,15 @@ export class TimeManager {
     return `День ${state.day} · ${h}:${m}`;
   }
 
+  /** Absolute game minutes since day 1 00:00. */
+  getAbsMinutes(state: GameState): number {
+    return (state.day - 1) * 24 * 60 + state.hour * 60 + Math.floor(this.minuteAccumulator);
+  }
+
+  getMinuteOfHour(): number {
+    return Math.floor(this.minuteAccumulator);
+  }
+
   isWithinShift(state: GameState): boolean {
     if (!state.job) return false;
     const { shiftStart, shiftEnd } = state.job;

@@ -107,13 +107,15 @@ export class LaneNavigation {
       end: 'start' | 'end';
     }[] = [];
 
+    // Right-hand traffic (y increases south): east on south side, west on north.
     for (const band of this.network.horizontalBands) {
-      this.buildHorizontalLane(band, 'east', -1, pendingLinks);
-      this.buildHorizontalLane(band, 'west', 1, pendingLinks);
+      this.buildHorizontalLane(band, 'east', 1, pendingLinks);
+      this.buildHorizontalLane(band, 'west', -1, pendingLinks);
     }
+    // Southbound uses west side (right), northbound uses east side.
     for (const band of this.network.verticalBands) {
-      this.buildVerticalLane(band, 'south', 1, pendingLinks);
-      this.buildVerticalLane(band, 'north', -1, pendingLinks);
+      this.buildVerticalLane(band, 'south', -1, pendingLinks);
+      this.buildVerticalLane(band, 'north', 1, pendingLinks);
     }
 
     this.resolveLinks(pendingLinks);

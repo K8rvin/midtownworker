@@ -90,6 +90,7 @@ import { applyLifeSimNewGameStart } from '../systems/LifeSimStart';
 import { LifeSimStoryManager } from '../systems/LifeSimStoryManager';
 import { EmploymentOfficeManager, type EmploymentOfficeConfig } from '../systems/EmploymentOfficeManager';
 import { isScopedWeapon } from '../systems/WeaponManager';
+import { SoftCrimeManager } from '../systems/SoftCrimeManager';
 
 export class GameScene extends Phaser.Scene {
   private state!: GameState;
@@ -136,6 +137,7 @@ export class GameScene extends Phaser.Scene {
   private needsManager = new NeedsManager();
   private jobManager!: JobManager;
   private courierManager!: CourierManager;
+  private softCrime: SoftCrimeManager | null = null;
   private courierMarkerGfx: Phaser.GameObjects.Graphics | null = null;
   private courierMarkerLabels: Phaser.GameObjects.Text[] = [];
   private courierWaypointArrow: WaypointArrow | null = null;
@@ -306,6 +308,8 @@ export class GameScene extends Phaser.Scene {
     this.shopManager = new ShopManager(this.state);
     this.jobManager = new JobManager(this.state);
     this.courierManager = new CourierManager(this.state);
+    this.courierManager.setTimeManager(this.timeManager);
+    if (LIFE_SIM) this.softCrime = new SoftCrimeManager(this, this.state, this.cityMap);
     this.housingManager = new HousingManager(this.state);
     this.lifeTaskManager = new LifeTaskManager(this.state);
     this.lifeSimStory = new LifeSimStoryManager(this.state, this.lifeTaskManager);
@@ -697,6 +701,12 @@ export class GameScene extends Phaser.Scene {
       if (this.player2) this.handlePlayerDeath(this.player2, 'Игрок 2 выбит!');
     }
 
+    if (LIFE_SIM && this.softCrime) {
+      this.softCrime.update(dt, this.player, ({ fine, arrestFine }) => {
+        this.handleCarjackCaught(fine, arrestFine);
+      });
+    }
+
     if (this.isCoop) this.updateCoopCamera();
     else this.updateSmoothCamera();
 
@@ -712,9 +722,9 @@ export class GameScene extends Phaser.Scene {
     this.hudUpdate(this.getInteractHint());
   }
 
-  private getLifeSimMinimapMarkers(): { x: number; y: number; kind: 'target' | 'objective' }[] {
+  private getLifeSimMinimapMarkers(): { x: number; y: number; kind: 'target' | 'objective' | 'giver' }[] {
     if (!LIFE_SIM) return [];
-    const markers: { x: number; y: number; kind: 'target' | 'objective' }[] = [];
+    const markers: { x: number; y: number; kind: 'target' | 'objective' | 'giver' }[] = [];
     const story = this.lifeSimStory.getMarker();
     if (story) {
       markers.push({
@@ -729,6 +739,15 @@ export class GameScene extends Phaser.Scene {
         x: wp.tileX * TILE_SIZE + TILE_SIZE / 2,
         y: wp.tileY * TILE_SIZE + TILE_SIZE / 2,
         kind: 'objective',
+      });
+    }
+    // Grocery / dealer doors as fixed POI markers
+    for (const shop of shopsData as { type: string; doorX: number; doorY: number }[]) {
+      if (shop.type !== 'grocery' && shop.type !== 'vehicle') continue;
+      markers.push({
+        x: shop.doorX * TILE_SIZE + TILE_SIZE / 2,
+        y: shop.doorY * TILE_SIZE + TILE_SIZE / 2,
+        kind: shop.type === 'vehicle' ? 'giver' : 'objective',
       });
     }
     return markers;
@@ -747,13 +766,26 @@ export class GameScene extends Phaser.Scene {
       dropoff: { fill: 0xff6b35, text: '#ff6b35' },
     } as const;
     const c = colors[wp.phase];
-    this.courierWaypointArrow.update({
-      x: wp.tileX * TILE_SIZE + TILE_SIZE / 2,
-      y: wp.tileY * TILE_SIZE + TILE_SIZE / 2,
-      label: wp.label,
-      color: c.fill,
-      labelColor: c.text,
-    });
+    const tx = wp.tileX * TILE_SIZE + TILE_SIZE / 2;
+    const ty = wp.tileY * TILE_SIZE + TILE_SIZE / 2;
+    const pos = this.player.getPosition();
+    const distM = Math.round(Math.hypot(tx - pos.x, ty - pos.y) / 8);
+    const timer = this.courierManager.getTimerLabel?.() ?? '';
+    const phaseLabel =
+      wp.phase === 'warehouse' ? 'Склад' : wp.phase === 'pickup' ? 'Забрать' : 'Доставить';
+    const label = timer
+      ? `${phaseLabel} · ${distM}м · ${timer}`
+      : `${phaseLabel} · ${distM}м · ${wp.label}`;
+    this.courierWaypointArrow.update(
+      {
+        x: tx,
+        y: ty,
+        label,
+        color: c.fill,
+        labelColor: c.text,
+      },
+      { x: pos.x, y: pos.y }
+    );
   }
 
   private handlePlayerDeath(player: Player, msg: string): void {
@@ -1499,7 +1531,9 @@ export class GameScene extends Phaser.Scene {
           break;
         }
         if (LIFE_SIM && (shop.type === 'grocery' || shop.type === 'furniture')) {
-          this.openLifeShop(shop.type as 'grocery' | 'furniture');
+          this.openLifeShop(shop.type as 'grocery' | 'furniture', shop);
+        } else if (LIFE_SIM && shop.type === 'vehicle') {
+          this.shopUI.show(shop);
         } else {
           this.shopUI.show(shop);
         }
@@ -1553,7 +1587,12 @@ export class GameScene extends Phaser.Scene {
       case 'traffic_vehicle':
       case 'garage_vehicle': {
         const vehicle = payload!.vehicle as Vehicle;
+        const isOwned = this.state.ownedVehicles.includes(vehicle.getType()) && !vehicle.isTraffic;
         player.enterVehicle(vehicle);
+        if (LIFE_SIM && kind === 'traffic_vehicle' && !isOwned && this.softCrime) {
+          const r = this.softCrime.onCarjack(vehicle, player.getPosition(), this.state.ownedVehicles);
+          if (r.message) this.showMessage(r.message);
+        }
         if (player.slot === 1) {
           this.setCameraFollow(vehicle.sprite, 0.9);
           this.setupCollisions();
@@ -1817,6 +1856,42 @@ export class GameScene extends Phaser.Scene {
     this.showMessage('Устройство — через телефон, ноутбук или офис занятости');
   }
 
+  private handleCarjackCaught(fine: number, arrestFine: number): void {
+    // Eject from stolen car
+    if (this.player.inVehicle && this.player.currentVehicle) {
+      const v = this.player.currentVehicle;
+      this.player.exitVehicle();
+      v.stopMovement();
+      v.destroyExtras();
+      v.sprite.destroy();
+      v.active = false;
+    }
+    this.dialogBox.showSequence(
+      this,
+      [
+        {
+          speaker: 'Полиция',
+          text: `Вас остановили за угон. Штраф $${fine} или арест (−$${arrestFine})?`,
+        },
+      ],
+      () => {
+        // Simple two-button via confirm: OK = fine, Cancel = arrest
+        const payFine = window.confirm(
+          `Оплатить штраф $${fine} и отпустить?\n\nОК = штраф\nОтмена = арест (−$${arrestFine})`
+        );
+        if (payFine) {
+          this.showMessage(this.softCrime!.resolveFine(fine));
+        } else {
+          this.showMessage(this.softCrime!.resolveArrest(arrestFine));
+          const spawn = this.softCrime!.getArrestSpawn();
+          this.player.sprite.setPosition(spawn.x, spawn.y);
+          this.setCameraFollow(this.player.sprite, 1);
+        }
+        this.setupCollisions();
+      }
+    );
+  }
+
   private handleCourierTakeOrder(): void {
     const err = this.courierManager.takeOrder();
     if (err) {
@@ -1824,8 +1899,17 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     const d = this.courierManager.getDelivery()!;
-    const pay = this.courierManager.estimatePay(d.distanceTiles);
-    this.showMessage(`Заказ: ${d.pickupName} → ${d.dropoffName} (~$${pay})`);
+    const cat =
+      d.category === 'express'
+        ? '⚡ срочный'
+        : d.category === 'fragile'
+          ? '📦 хрупкое'
+          : d.category === 'food'
+            ? '🍔 еда'
+            : 'посылка';
+    this.showMessage(
+      `Заказ (${cat}): ${d.pickupName} → ${d.dropoffName} · ~$${d.basePay} · ${d.timeLimitMinutes}м`
+    );
     this.refreshCourierMarkers();
     this.hudUpdate(this.getInteractHint());
   }
@@ -1850,7 +1934,7 @@ export class GameScene extends Phaser.Scene {
       this.showMessage(result);
       return;
     }
-    this.showMessage(`Доставлено! +$${result.pay}`);
+    this.showMessage(result.message);
     this.notifyLifeEvent('courier_delivery');
     this.lifeTaskManager.onLifeEvent('courier_delivery');
     this.refreshCourierMarkers();
@@ -2002,7 +2086,7 @@ export class GameScene extends Phaser.Scene {
     } satisfies import('./HomeScene').HomeSceneData);
   }
 
-  private openLifeShop(type: 'grocery' | 'furniture'): void {
+  private openLifeShop(type: 'grocery' | 'furniture', shop?: { items?: string[] }): void {
     this.lifeShopUI?.close();
     this.lifeShopUI = new LifeShopUI(
       this,
@@ -2015,7 +2099,7 @@ export class GameScene extends Phaser.Scene {
           return err;
         }
         const err = this.groceryManager.buyFurniture(id);
-        if (!err && id === 'bed_basic') {
+        if (!err && id.startsWith('bed_')) {
           this.refreshTutorialMarkers();
           const stepMsg = this.lifeSimStory.getBedPurchasedStepMessage();
           if (stepMsg) {
@@ -2031,7 +2115,8 @@ export class GameScene extends Phaser.Scene {
       },
       (id) => this.groceryManager.drinkNow(id),
       (msg) => this.showMessage(msg),
-      () => {}
+      () => {},
+      shop?.items ?? null
     );
     this.lifeShopUI.show();
   }
@@ -2640,6 +2725,8 @@ export class GameScene extends Phaser.Scene {
     this.atmosphere?.destroy();
     this.streetLights?.destroy();
     this.streetLights = null;
+    this.softCrime?.destroy();
+    this.softCrime = null;
     this.tireMarks?.clear();
     this.mobileControls?.destroy();
     this.mobileControls = null;

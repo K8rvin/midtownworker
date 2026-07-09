@@ -945,10 +945,66 @@ export class SpriteGenerator {
   }
 
   private genVehicles(): void {
-    if (this.shouldGen('vehicle_sedan')) this.genCarTopDown('vehicle_sedan', 0x3a7cc9, 0x2a5a96, 'sedan');
-    if (this.shouldGen('vehicle_sports')) this.genCarTopDown('vehicle_sports', 0xe04030, 0xa02018, 'sports');
-    if (this.shouldGen('vehicle_truck')) this.genCarTopDown('vehicle_truck', 0x9a7a50, 0x6a5030, 'truck');
-    if (this.shouldGen('vehicle_police')) this.genCarTopDown('vehicle_police', 0xf0f0f0, 0x303040, 'police');
+    // Always regen so new types appear even if PNG mode is on
+    for (const k of [
+      'vehicle_sedan',
+      'vehicle_sports',
+      'vehicle_truck',
+      'vehicle_van',
+      'vehicle_police',
+      'vehicle_bicycle',
+      'vehicle_moped',
+      'vehicle_motorcycle',
+    ]) {
+      if (this.scene.textures.exists(k)) this.scene.textures.remove(k);
+    }
+    this.genCarTopDown('vehicle_sedan', 0x3a7cc9, 0x2a5a96, 'sedan');
+    this.genCarTopDown('vehicle_sports', 0xe04030, 0xa02018, 'sports');
+    this.genCarTopDown('vehicle_truck', 0x9a7a50, 0x6a5030, 'truck');
+    this.genCarTopDown('vehicle_van', 0x6a7a80, 0x4a5a60, 'van');
+    this.genCarTopDown('vehicle_police', 0xf0f0f0, 0x303040, 'police');
+    this.genTwoWheeler('vehicle_bicycle', 0x2ecc71, 0x1a8a40, 'bicycle');
+    this.genTwoWheeler('vehicle_moped', 0xf1c40f, 0xb8960a, 'moped');
+    this.genTwoWheeler('vehicle_motorcycle', 0x9b59b6, 0x6a3a88, 'motorcycle');
+  }
+
+  private genTwoWheeler(
+    key: string,
+    bodyColor: number,
+    darkColor: number,
+    variant: 'bicycle' | 'moped' | 'motorcycle'
+  ): void {
+    const w = variant === 'motorcycle' ? 30 : 26;
+    const h = variant === 'bicycle' ? 12 : 14;
+    this.makeTexture(key, w, h, (g) => {
+      g.fillStyle(0x000000, 0.25);
+      g.fillEllipse(w / 2, h - 1, w - 8, 4);
+      // wheels
+      g.fillStyle(0x151520, 1);
+      g.fillCircle(5, h / 2, 4);
+      g.fillCircle(w - 5, h / 2, 4);
+      g.fillStyle(0x444455, 1);
+      g.fillCircle(5, h / 2, 2);
+      g.fillCircle(w - 5, h / 2, 2);
+      // frame / body
+      g.fillStyle(bodyColor, 1);
+      if (variant === 'bicycle') {
+        g.fillRect(6, h / 2 - 1, w - 12, 2);
+        g.fillStyle(darkColor, 1);
+        g.fillRect(w / 2 - 1, 2, 2, h / 2);
+        g.fillRect(w - 10, 2, 6, 2);
+      } else {
+        g.fillRoundedRect(7, 3, w - 14, h - 6, 3);
+        g.fillStyle(darkColor, 1);
+        g.fillRect(w - 10, h / 2 - 3, 5, 6);
+        g.fillStyle(0xffee88, 0.9);
+        g.fillCircle(w - 3, h / 2, 1.5);
+        if (variant === 'motorcycle') {
+          g.fillStyle(0x222233, 1);
+          g.fillRect(10, 2, 8, 3);
+        }
+      }
+    });
   }
 
   /** Вид сверху, нос машины смотрит вправо (угол 0°). */
@@ -956,10 +1012,10 @@ export class SpriteGenerator {
     key: string,
     bodyColor: number,
     darkColor: number,
-    variant: 'sedan' | 'sports' | 'truck' | 'police'
+    variant: 'sedan' | 'sports' | 'truck' | 'police' | 'van'
   ): void {
-    const w = variant === 'truck' ? 40 : variant === 'sports' ? 34 : 36;
-    const h = variant === 'truck' ? 22 : variant === 'sports' ? 18 : 20;
+    const w = variant === 'truck' || variant === 'van' ? 40 : variant === 'sports' ? 34 : 36;
+    const h = variant === 'truck' || variant === 'van' ? 22 : variant === 'sports' ? 18 : 20;
 
     this.makeTexture(key, w, h, (g) => {
       const cx = h / 2;
@@ -973,7 +1029,7 @@ export class SpriteGenerator {
       g.fillStyle(0x000000, 0.25);
       g.fillEllipse(w / 2, h - 1, w - 6, 5);
 
-      if (variant === 'truck') {
+      if (variant === 'truck' || variant === 'van') {
         g.fillStyle(darkColor, 1);
         g.fillRoundedRect(4, 4, 14, h - 8, 2);
         g.fillStyle(bodyColor, 1);

@@ -1,30 +1,13 @@
 [
-  {
-    "id": "grocery",
-    "name": "Супермаркет «Уголок»",
-    "category": "shop",
-    "x": 106,
-    "y": 109
-  },
-  {
-    "id": "furniture",
-    "name": "Мебельный «Дом»",
-    "category": "shop",
-    "x": 118,
-    "y": 119
-  },
-  {
-    "id": "cafe",
-    "name": "Кафе «Причал»",
-    "category": "cafe",
-    "x": 180,
-    "y": 100
-  },
-  {
-    "id": "warehouse",
-    "name": "Склад «Быстрая доставка»",
-    "category": "warehouse",
-    "x": 132,
-    "y": 72
-  }
+  { "id": "grocery", "name": "Супермаркет «Уголок»", "category": "shop", "x": 106, "y": 109 },
+  { "id": "grocery_24", "name": "Магазин «24/7»", "category": "shop", "x": 88, "y": 95 },
+  { "id": "grocery_farm", "name": "«Фермерский»", "category": "shop", "x": 120, "y": 85 },
+  { "id": "grocery_eco", "name": "«Эконом»", "category": "shop", "x": 72, "y": 119 },
+  { "id": "grocery_center", "name": "Гастроном «Центр»", "category": "shop", "x": 98, "y": 101 },
+  { "id": "furniture", "name": "Мебельный «Дом»", "category": "shop", "x": 118, "y": 119 },
+  { "id": "cafe", "name": "Кафе «Причал»", "category": "cafe", "x": 180, "y": 100 },
+  { "id": "cafe_mid", "name": "Кофейня «Быстро»", "category": "cafe", "x": 110, "y": 96 },
+  { "id": "restaurant", "name": "Бистро «Уголёк»", "category": "restaurant", "x": 128, "y": 104 },
+  { "id": "office_pkg", "name": "Офис «Пиксель»", "category": "office", "x": 98, "y": 93 },
+  { "id": "warehouse", "name": "Склад «Быстрая доставка»", "category": "warehouse", "x": 132, "y": 72 }
 ]
