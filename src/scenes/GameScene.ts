@@ -193,6 +193,7 @@ export class GameScene extends Phaser.Scene {
 
   init(data: {
     loadSave?: boolean;
+    saveSlot?: number;
     ngPlus?: boolean;
     coop?: boolean;
     pvp?: boolean;
@@ -204,10 +205,15 @@ export class GameScene extends Phaser.Scene {
     this.isPvp = data.pvp ?? false;
     this.isOnline = data.online ?? false;
     this.isNewGame = !data.loadSave && !data.passedState && !data.lifeSimReturn;
+    if (typeof data.saveSlot === 'number') {
+      SaveManager.setActiveSlot(data.saveSlot);
+    }
     if (data.passedState) {
       this.state = data.passedState;
     } else if (data.loadSave && !this.isOnline) {
-      this.state = SaveManager.load() ?? structuredClone(DEFAULT_GAME_STATE);
+      const slot = typeof data.saveSlot === 'number' ? data.saveSlot : SaveManager.getActiveSlot();
+      this.state =
+        SaveManager.loadFromSlot(slot) ?? SaveManager.load() ?? structuredClone(DEFAULT_GAME_STATE);
     } else if (data.ngPlus) {
       const meta = MetaProgress.load();
       this.state = structuredClone(DEFAULT_GAME_STATE);
@@ -886,13 +892,14 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (this.inputMgr.justPressed('F5')) {
-      SaveManager.save(this.syncState());
-      this.showMessage('Сохранено');
+      const slot = SaveManager.getActiveSlot();
+      SaveManager.saveToSlot(slot, this.syncState());
+      this.showMessage(`Сохранено · ячейка ${slot + 1}`);
     }
 
     if (this.inputMgr.justPressed('F9')) {
       const loaded = SaveManager.load();
-      if (loaded) this.scene.restart({ loadSave: true });
+      if (loaded) this.scene.restart({ loadSave: true, saveSlot: SaveManager.getActiveSlot() });
     }
 
     if (this.canUseScope() && this.inputMgr.justPressed('Q')) {
@@ -2647,6 +2654,14 @@ export class GameScene extends Phaser.Scene {
   };
 
   private ensureSceneRunning(): void {
+    // Never auto-resume while pause/settings/slots overlay is open
+    if (
+      this.scene.isActive('PauseScene') ||
+      this.scene.isActive('SettingsScene') ||
+      this.scene.isActive('SaveSlotsScene')
+    ) {
+      return;
+    }
     if (this.sys.isPaused()) {
       this.sys.resume();
     }
@@ -2656,7 +2671,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   private pauseGame(): void {
-    if (this.scene.isActive('PauseScene')) return;
+    if (
+      this.scene.isActive('PauseScene') ||
+      this.scene.isActive('SaveSlotsScene') ||
+      this.scene.isActive('SettingsScene')
+    ) {
+      return;
+    }
     getAudio(this).stopEngine();
     this.scene.pause();
     this.scene.launch('PauseScene');
@@ -2702,7 +2723,8 @@ export class GameScene extends Phaser.Scene {
     return null;
   }
 
-  private syncState(): GameState {
+  /** Used by PauseScene save slots. */
+  syncState(): GameState {
     const pos = this.player.getPosition();
     this.state.playerX = pos.x;
     this.state.playerY = pos.y;

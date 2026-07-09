@@ -6,6 +6,7 @@ import { AchievementManager, ACHIEVEMENTS } from '../systems/AchievementManager'
 import { DailyQuestManager } from '../systems/DailyQuestManager';
 import { RunStats } from '../systems/RunStats';
 import { getAudio } from '../systems/AudioManager';
+import { stopGameplayScenes } from '../systems/SceneNav';
 import {
   createMenuBackdrop,
   createMenuButton,
@@ -19,25 +20,28 @@ export class MainMenuScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Ensure no paused GameScene steals focus
+    stopGameplayScenes(this);
+
     const audio = getAudio(this);
     audio.ensureContext();
     audio.startMusic();
 
     createMenuBackdrop(this);
 
-    const hasSave = SaveManager.hasSave();
+    const hasSave = SaveManager.hasAnySave();
     const meta = MetaProgress.load();
     const achCount = AchievementManager.loadGlobal().length;
 
     const buttons: { label: string; action: () => void }[] = LIFE_SIM
       ? [
-          { label: 'НОВАЯ ИГРА', action: () => this.startGame(false) },
-          ...(hasSave ? [{ label: 'ПРОДОЛЖИТЬ', action: () => this.startGame(true) }] : []),
+          { label: 'НОВАЯ ИГРА', action: () => this.openNewGameSlots() },
+          ...(hasSave ? [{ label: 'ЗАГРУЗИТЬ', action: () => this.openLoadSlots() }] : []),
           { label: 'НАСТРОЙКИ', action: () => this.openSettings() },
         ]
       : [
-          { label: 'НОВАЯ ИГРА', action: () => this.startGame(false) },
-          ...(hasSave ? [{ label: 'ПРОДОЛЖИТЬ', action: () => this.startGame(true) }] : []),
+          { label: 'НОВАЯ ИГРА', action: () => this.openNewGameSlots() },
+          ...(hasSave ? [{ label: 'ЗАГРУЗИТЬ', action: () => this.openLoadSlots() }] : []),
           ...(meta.hasBeatenGame
             ? [{ label: `NEW GAME+ (ур. ${meta.ngPlusLevel})`, action: () => this.startNgPlus() }]
             : []),
@@ -84,7 +88,7 @@ export class MainMenuScene extends Phaser.Scene {
     createMenuDivider(this, GAME_WIDTH / 2, topY + 102, panelW - 56).setDepth(2);
 
     const hintText = LIFE_SIM
-      ? 'Симулятор жизни — жильё, работа, еда, сон'
+      ? 'Симулятор жизни — жильё, работа, еда, сон · 3 ячейки'
       : new DailyQuestManager().getProgressText();
     this.add
       .text(GAME_WIDTH / 2, topY + 124, hintText, {
@@ -124,7 +128,7 @@ export class MainMenuScene extends Phaser.Scene {
     }
 
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 48, 'WASD · 1–4 · E · J · M', {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 48, 'WASD · E · J · M · F5 сохранение', {
         fontFamily: 'monospace',
         fontSize: '13px',
         color: '#6b7280',
@@ -144,15 +148,23 @@ export class MainMenuScene extends Phaser.Scene {
     }
   }
 
+  private openNewGameSlots(): void {
+    this.scene.start('SaveSlotsScene', { mode: 'new', returnScene: 'MainMenuScene' });
+  }
+
+  private openLoadSlots(): void {
+    this.scene.start('SaveSlotsScene', { mode: 'load', returnScene: 'MainMenuScene' });
+  }
+
   private startCoop(pvp: boolean): void {
     getAudio(this).stopMusic();
-    if (this.scene.isActive('GameScene')) this.scene.stop('GameScene');
+    stopGameplayScenes(this);
     this.scene.start('GameScene', { coop: true, pvp, loadSave: false });
   }
 
   private startNgPlus(): void {
     getAudio(this).stopMusic();
-    if (this.scene.isActive('GameScene')) this.scene.stop('GameScene');
+    stopGameplayScenes(this);
     this.scene.start('GameScene', { ngPlus: true });
   }
 
@@ -168,20 +180,5 @@ export class MainMenuScene extends Phaser.Scene {
   private openLeaderboard(): void {
     getAudio(this).stopMusic();
     this.scene.start('LeaderboardScene');
-  }
-
-  private startGame(loadSave: boolean): void {
-    getAudio(this).stopMusic();
-    if (!loadSave) SaveManager.clear();
-    if (this.scene.isPaused('GameScene')) {
-      this.scene.resume('GameScene');
-    }
-    if (this.scene.isActive('GameScene')) {
-      this.scene.stop('GameScene');
-    }
-    if (this.scene.isActive('HomeScene')) {
-      this.scene.stop('HomeScene');
-    }
-    this.scene.start('GameScene', { loadSave });
   }
 }

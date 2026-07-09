@@ -11,6 +11,7 @@ import { VictoryScene } from './scenes/VictoryScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { LeaderboardScene } from './scenes/LeaderboardScene';
 import { LobbyScene } from './scenes/LobbyScene';
+import { SaveSlotsScene } from './scenes/SaveSlotsScene';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -26,6 +27,7 @@ const config: Phaser.Types.Core.GameConfig = {
     BootScene,
     PreloadScene,
     MainMenuScene,
+    SaveSlotsScene,
     SettingsScene,
     LeaderboardScene,
     LobbyScene,

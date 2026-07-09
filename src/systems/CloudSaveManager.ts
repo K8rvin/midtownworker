@@ -11,6 +11,9 @@ const BUNDLE_VERSION = 1;
 export interface CloudSaveBundle {
   version: number;
   gameState: GameState | null;
+  /** All save slots when available (v1 may only have active slot in gameState). */
+  slots?: (GameState | null)[];
+  activeSlot?: number;
   meta: MetaProgressData;
   achievements: string[];
   runStats: RunStatsData;
@@ -32,9 +35,12 @@ const STORAGE_KEYS = {
 
 export class CloudSaveManager {
   static exportBundle(): string {
+    const slots = [0, 1, 2].map((i) => SaveManager.loadFromSlot(i));
     const bundle: CloudSaveBundle = {
       version: BUNDLE_VERSION,
       gameState: SaveManager.load(),
+      slots,
+      activeSlot: SaveManager.getActiveSlot(),
       meta: MetaProgress.load(),
       achievements: AchievementManager.loadGlobal(),
       runStats: RunStats.load(),
@@ -60,7 +66,25 @@ export class CloudSaveManager {
       return { ok: false, error: 'Несовместимая версия сохранения' };
     }
 
-    if (bundle.gameState) {
+    if (bundle.slots && Array.isArray(bundle.slots)) {
+      for (let i = 0; i < 3; i++) {
+        const st = bundle.slots[i];
+        if (st) {
+          const merged: GameState = {
+            ...DEFAULT_GAME_STATE,
+            ...st,
+            respect: { ...DEFAULT_GAME_STATE.respect, ...st.respect },
+            ammo: { ...DEFAULT_GAME_STATE.ammo, ...st.ammo },
+            stats: { ...DEFAULT_GAME_STATE.stats, ...st.stats },
+            questProgress: { ...DEFAULT_GAME_STATE.questProgress, ...st.questProgress },
+          };
+          SaveManager.saveToSlot(i, merged);
+        } else {
+          SaveManager.clearSlot(i);
+        }
+      }
+      if (typeof bundle.activeSlot === 'number') SaveManager.setActiveSlot(bundle.activeSlot);
+    } else if (bundle.gameState) {
       const merged: GameState = {
         ...DEFAULT_GAME_STATE,
         ...bundle.gameState,
@@ -69,9 +93,9 @@ export class CloudSaveManager {
         stats: { ...DEFAULT_GAME_STATE.stats, ...bundle.gameState.stats },
         questProgress: { ...DEFAULT_GAME_STATE.questProgress, ...bundle.gameState.questProgress },
       };
-      SaveManager.save(merged);
+      SaveManager.saveToSlot(0, merged);
     } else {
-      SaveManager.clear();
+      SaveManager.clearAll();
     }
 
     MetaProgress.save(bundle.meta ?? { hasBeatenGame: false, ngPlusLevel: 0 });

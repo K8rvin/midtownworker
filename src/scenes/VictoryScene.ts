@@ -12,6 +12,7 @@ import {
   createMenuPanel,
   createStatLines,
 } from '../ui/MenuTheme';
+import { goToMainMenu, stopGameplayScenes } from '../systems/SceneNav';
 
 export class VictoryScene extends Phaser.Scene {
   constructor() {
@@ -83,11 +84,10 @@ export class VictoryScene extends Phaser.Scene {
     createStatLines(this, lines, 230).forEach((t) => t.setDepth(2));
 
     getAudio(this).playSfx('victory');
-    createMenuButton(this, GAME_WIDTH / 2, 530, 'ГЛАВНОЕ МЕНЮ', () =>
-      this.scene.start('MainMenuScene')
-    ).setDepth(2);
-    createMenuButton(this, GAME_WIDTH / 2, 596, 'НОВАЯ ИГРА', () =>
-      this.scene.start('GameScene', { loadSave: false })
-    ).setDepth(2);
+    createMenuButton(this, GAME_WIDTH / 2, 530, 'ГЛАВНОЕ МЕНЮ', () => goToMainMenu(this)).setDepth(2);
+    createMenuButton(this, GAME_WIDTH / 2, 596, 'НОВАЯ ИГРА', () => {
+      stopGameplayScenes(this);
+      this.scene.start('SaveSlotsScene', { mode: 'new', returnScene: 'MainMenuScene' });
+    }).setDepth(2);
   }
 }

@@ -8,6 +8,7 @@ import {
   createMenuPanel,
   createStatLines,
 } from '../ui/MenuTheme';
+import { goToMainMenu, stopGameplayScenes } from '../systems/SceneNav';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() {
@@ -60,11 +61,10 @@ export class GameOverScene extends Phaser.Scene {
 
     createStatLines(this, lines, 250).forEach((t) => t.setDepth(2));
 
-    createMenuButton(this, GAME_WIDTH / 2, 520, 'ГЛАВНОЕ МЕНЮ', () =>
-      this.scene.start('MainMenuScene')
-    ).setDepth(2);
-    createMenuButton(this, GAME_WIDTH / 2, 586, 'НОВАЯ ИГРА', () =>
-      this.scene.start('GameScene', { loadSave: false })
-    ).setDepth(2);
+    createMenuButton(this, GAME_WIDTH / 2, 520, 'ГЛАВНОЕ МЕНЮ', () => goToMainMenu(this)).setDepth(2);
+    createMenuButton(this, GAME_WIDTH / 2, 586, 'НОВАЯ ИГРА', () => {
+      stopGameplayScenes(this);
+      this.scene.start('SaveSlotsScene', { mode: 'new', returnScene: 'MainMenuScene' });
+    }).setDepth(2);
   }
 }
