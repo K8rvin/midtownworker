@@ -26,6 +26,17 @@ if (!(walk < bike && bike < sedan)) {
   throw new Error(`Speed ladder broken: walk ${walk} bike ${bike} sedan ${sedan}`);
 }
 
+const vehicle = readFileSync(join(root, 'src/entities/Vehicle.ts'), 'utf8');
+if (!vehicle.includes('applyCarFollowing')) throw new Error('Traffic car-following missing');
+if (!vehicle.includes('separateFrom')) throw new Error('Traffic soft separation missing');
+
+const traffic = readFileSync(join(root, 'src/systems/TrafficManager.ts'), 'utf8');
+if (!traffic.includes('minSpacing') && !traffic.includes('minSpacing')) {
+  // spawn spacing
+  if (!traffic.includes('70')) throw new Error('Traffic spawn spacing missing');
+}
+if (!traffic.includes('separateFrom')) throw new Error('TrafficManager separation pass missing');
+
 const lanes = readFileSync(join(root, 'src/world/LaneNavigation.ts'), 'utf8');
 if (!lanes.includes("east', 1") && !lanes.includes('east", 1')) {
   // accept either quote style

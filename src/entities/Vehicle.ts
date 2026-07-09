@@ -147,34 +147,104 @@ export class Vehicle {
     this.updateVisuals();
   }
 
-  /** Soft separation brake when another vehicle is ahead on the same lane path. */
-  getFrontBrakeThrottle(
-    others: Vehicle[],
-    lookDist = 72,
-    stopDist = 28
-  ): number {
+  /**
+   * Car-following: brake for vehicles ahead in the same lane corridor.
+   * Returns throttle in [-1, desired] (negative = brake). Also clamps speed
+   * so coasting cannot plow through the car ahead.
+   */
+  applyCarFollowing(others: Vehicle[], desiredThrottle: number): number {
+    const lookDist = 150;
+    const stopDist = 42;
+    const slowDist = 95;
     const rad = Phaser.Math.DegToRad(this.state.angle);
     const fx = Math.cos(rad);
     const fy = Math.sin(rad);
+
     let nearest = Infinity;
+    let leadSpeed = 0;
 
     for (const other of others) {
-      if (other === this || !other.active || !other.sprite.active) continue;
+      if (other === this || !other.active || !other.sprite?.active) continue;
       const dx = other.sprite.x - this.sprite.x;
       const dy = other.sprite.y - this.sprite.y;
       const dist = Math.hypot(dx, dy);
       if (dist > lookDist || dist < 1) continue;
-      const along = (dx * fx + dy * fy) / dist;
-      if (along < 0.72) continue; // not roughly in front
+      // Must be ahead along our heading
+      const along = dx * fx + dy * fy;
+      if (along < 12) continue;
       const lateral = Math.abs(dx * -fy + dy * fx);
-      if (lateral > 22) continue;
-      if (dist < nearest) nearest = dist;
+      // Same-lane corridor (~ one car width + margin)
+      if (lateral > 30) continue;
+      // Prefer cars roughly same heading (not oncoming)
+      const otherRad = Phaser.Math.DegToRad(other.state.angle);
+      const headingDot = Math.cos(otherRad) * fx + Math.sin(otherRad) * fy;
+      if (headingDot < -0.25) continue; // oncoming
+      if (dist < nearest) {
+        nearest = dist;
+        leadSpeed = Math.abs(other.state.speed);
+      }
     }
 
-    if (nearest === Infinity) return 1;
-    if (nearest <= stopDist) return 0;
-    // Linear ease from full throttle at lookDist to 0 at stopDist
-    return Phaser.Math.Clamp((nearest - stopDist) / (lookDist - stopDist), 0, 1);
+    if (nearest === Infinity) return desiredThrottle;
+
+    // Emergency: almost touching — hard brake and match/stop
+    if (nearest <= stopDist) {
+      const cap = Math.min(leadSpeed * 0.35, 12);
+      if (this.state.speed > cap) {
+        this.state.speed = Phaser.Math.Linear(this.state.speed, cap, 0.55);
+        this.state.vx = fx * this.state.speed;
+        this.state.vy = fy * this.state.speed;
+      }
+      return -1;
+    }
+
+    // Close: ease throttle + cap speed near leader
+    if (nearest <= slowDist) {
+      const t = (nearest - stopDist) / (slowDist - stopDist); // 0 at stop, 1 at slowDist
+      const speedCap = Phaser.Math.Linear(Math.max(leadSpeed * 0.85, 20), this.config.maxSpeed, t);
+      if (this.state.speed > speedCap) {
+        this.state.speed = Phaser.Math.Linear(this.state.speed, speedCap, 0.35);
+        this.state.vx = fx * this.state.speed;
+        this.state.vy = fy * this.state.speed;
+      }
+      if (this.state.speed > leadSpeed + 15 && leadSpeed > 5) {
+        return -0.4 * (1 - t); // brake to match
+      }
+      return desiredThrottle * Math.max(0.05, t);
+    }
+
+    // Far but in sight: gentle slow if much faster than lead
+    if (this.state.speed > leadSpeed + 40 && leadSpeed > 8) {
+      return desiredThrottle * 0.55;
+    }
+    return desiredThrottle;
+  }
+
+  /** Push this car backward slightly if overlapping another (soft, no solid gridlock). */
+  separateFrom(other: Vehicle, minDist = 36): void {
+    if (!other.active || !other.sprite?.active) return;
+    const dx = this.sprite.x - other.sprite.x;
+    const dy = this.sprite.y - other.sprite.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist >= minDist || dist < 0.1) return;
+    // Who is behind? Push rear car back
+    const rad = Phaser.Math.DegToRad(this.state.angle);
+    const fx = Math.cos(rad);
+    const fy = Math.sin(rad);
+    const along = (other.sprite.x - this.sprite.x) * fx + (other.sprite.y - this.sprite.y) * fy;
+    // If other is ahead of us, we are the rear car — move back
+    if (along > 0) {
+      const push = (minDist - dist) * 0.55;
+      this.sprite.x -= fx * push;
+      this.sprite.y -= fy * push;
+      this.state.x = this.sprite.x;
+      this.state.y = this.sprite.y;
+      this.state.speed = Math.min(this.state.speed, Math.abs(other.state.speed) * 0.7);
+      this.state.vx = fx * this.state.speed;
+      this.state.vy = fy * this.state.speed;
+      const body = this.sprite.body as Phaser.Physics.Arcade.Body | null;
+      body?.setVelocity(this.state.vx, this.state.vy);
+    }
   }
 
   initLaneDriving(segment: LaneSegment, laneNav: LaneNavigation, wx: number, wy: number): void {
@@ -256,7 +326,7 @@ export class Vehicle {
       throttle = 0;
     }
     if (otherVehicles) {
-      throttle *= this.getFrontBrakeThrottle(otherVehicles);
+      throttle = this.applyCarFollowing(otherVehicles, throttle);
     }
     this.updateDriving(throttle, steer, dt);
     this.tickTrafficStuck(dt, throttle);
@@ -311,7 +381,7 @@ export class Vehicle {
       throttle = 0;
     }
     if (otherVehicles) {
-      throttle *= this.getFrontBrakeThrottle(otherVehicles);
+      throttle = this.applyCarFollowing(otherVehicles, throttle);
     }
 
     this.updateDriving(throttle, steer, dt);
@@ -321,20 +391,25 @@ export class Vehicle {
   private tickTrafficStuck(dt: number, throttle: number): void {
     const body = this.sprite.body as Phaser.Physics.Arcade.Body | null;
     const actualSpeed = body ? Math.hypot(body.velocity.x, body.velocity.y) : 0;
-    if (throttle > 0.2 && actualSpeed < 18) {
+    // Don't count as stuck when intentionally stopped behind traffic
+    if (throttle > 0.25 && actualSpeed < 18) {
       this.trafficStuckTimer += dt;
     } else {
       this.trafficStuckTimer = 0;
     }
-    // Longer threshold — prefer front-brake over teleport
-    if (this.trafficStuckTimer < 2.6) return;
+    // Rare recovery only — prefer following, not warping through cars
+    if (this.trafficStuckTimer < 4.5) return;
 
     this.trafficStuckTimer = 0;
     this.laneWaypointIndex += 1;
-    const rad = Phaser.Math.DegToRad(this.state.angle);
-    const nudge = TILE_SIZE * 0.55;
-    this.sprite.setPosition(this.sprite.x + Math.cos(rad) * nudge, this.sprite.y + Math.sin(rad) * nudge);
-    this.state.speed = Math.max(this.state.speed, this.config.maxSpeed * 0.25);
+    // Slight lateral lane re-snap instead of forward plow
+    const rad = Phaser.Math.DegToRad(this.state.angle + 90);
+    const side = Math.random() < 0.5 ? 1 : -1;
+    this.sprite.setPosition(
+      this.sprite.x + Math.cos(rad) * TILE_SIZE * 0.25 * side,
+      this.sprite.y + Math.sin(rad) * TILE_SIZE * 0.25 * side
+    );
+    this.state.speed = Math.min(this.state.speed, this.config.maxSpeed * 0.2);
   }
 
   private findNearestWaypointIndex(segment: LaneSegment, wx: number, wy: number): number {

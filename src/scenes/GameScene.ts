@@ -662,7 +662,12 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.trafficLights?.update(dt);
-    this.trafficManager.update(dt);
+    const trafficBlockers: Vehicle[] = [];
+    if (this.player.currentVehicle) trafficBlockers.push(this.player.currentVehicle);
+    if (this.player2?.currentVehicle) trafficBlockers.push(this.player2.currentVehicle);
+    const chase = this.softCrime?.getChaseVehicle?.();
+    if (chase) trafficBlockers.push(chase);
+    this.trafficManager.update(dt, trafficBlockers);
     const speedMul = this.timeOfDay.getNpcSpeedMultiplier();
     const trafficVehicles = this.trafficManager.getAllVehicles().filter((v) => v.active);
     this.pedestrianManager?.update(dt, speedMul, trafficVehicles);

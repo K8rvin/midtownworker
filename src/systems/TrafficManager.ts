@@ -55,12 +55,29 @@ export class TrafficManager {
     }
   }
 
-  update(dt: number): void {
+  update(dt: number, extraBlockers: Vehicle[] = []): void {
     const nav = this.cityMap.navigation;
     const moving = this.vehicles;
+    // Include parked + any player/chase cars so traffic queues behind them too
+    const blockers = [
+      ...moving,
+      ...this.parkedVehicles.filter((v) => v.active && !v.occupied),
+      ...extraBlockers.filter((v) => v.active),
+    ];
     for (const v of moving) {
       if (v.active && !v.occupied) {
-        v.updateTraffic(dt, nav, this.trafficLights, this.laneNav, moving);
+        v.updateTraffic(dt, nav, this.trafficLights, this.laneNav, blockers);
+      }
+    }
+    // Soft separation so cars never stack on the same pixel
+    for (let i = 0; i < moving.length; i++) {
+      const a = moving[i];
+      if (!a.active || a.occupied) continue;
+      for (let j = i + 1; j < moving.length; j++) {
+        const b = moving[j];
+        if (!b.active || b.occupied) continue;
+        a.separateFrom(b, 38);
+        b.separateFrom(a, 38);
       }
     }
     this.vehicles = this.vehicles.filter((v) => v.active);
@@ -78,34 +95,49 @@ export class TrafficManager {
       this.findRoadTiles();
     if (roadTiles.length === 0) return false;
 
-    const tile = Phaser.Utils.Array.GetRandom(roadTiles);
-    const pos = this.cityMap.tileToWorld(tile.tx, tile.ty);
-    const types = [
-      'sedan',
-      'sedan',
-      'sedan',
-      'truck',
-      'van',
-      'sports',
-      'moped',
-      'motorcycle',
-      'bicycle',
-    ];
-    const type = Phaser.Utils.Array.GetRandom(types);
-    const v = new Vehicle(this.scene, pos.x, pos.y, type, true);
-    if (this.laneNav) {
-      const nearest = this.laneNav.findNearestSegment(pos.x, pos.y);
-      if (nearest) {
-        v.initLaneDriving(nearest.segment, this.laneNav, pos.x, pos.y);
+    const minSpacing = 70;
+    // Try several tiles so we don't spawn on top of another car
+    for (let attempt = 0; attempt < 12; attempt++) {
+      const tile = Phaser.Utils.Array.GetRandom(roadTiles);
+      const pos = this.cityMap.tileToWorld(tile.tx, tile.ty);
+      let blocked = false;
+      for (const other of this.vehicles) {
+        if (!other.active) continue;
+        if (Phaser.Math.Distance.Between(pos.x, pos.y, other.sprite.x, other.sprite.y) < minSpacing) {
+          blocked = true;
+          break;
+        }
+      }
+      if (blocked) continue;
+
+      const types = [
+        'sedan',
+        'sedan',
+        'sedan',
+        'truck',
+        'van',
+        'sports',
+        'moped',
+        'motorcycle',
+        'bicycle',
+      ];
+      const type = Phaser.Utils.Array.GetRandom(types);
+      const v = new Vehicle(this.scene, pos.x, pos.y, type, true);
+      if (this.laneNav) {
+        const nearest = this.laneNav.findNearestSegment(pos.x, pos.y);
+        if (nearest) {
+          v.initLaneDriving(nearest.segment, this.laneNav, pos.x, pos.y);
+        } else {
+          v.state.angle = Phaser.Math.Between(0, 3) * 90;
+          v.state.speed = v.config.maxSpeed * 0.35;
+        }
       } else {
         v.state.angle = Phaser.Math.Between(0, 3) * 90;
-        v.state.speed = v.config.maxSpeed * 0.35;
       }
-    } else {
-      v.state.angle = Phaser.Math.Between(0, 3) * 90;
+      this.vehicles.push(v);
+      return true;
     }
-    this.vehicles.push(v);
-    return true;
+    return false;
   }
 
   private despawnFarthestMoving(nearX?: number, nearY?: number): void {
