@@ -85,6 +85,7 @@ export class TrafficManager {
         v.initLaneDriving(nearest.segment, this.laneNav, pos.x, pos.y);
       } else {
         v.state.angle = Phaser.Math.Between(0, 3) * 90;
+        v.state.speed = v.config.maxSpeed * 0.35;
       }
     } else {
       v.state.angle = Phaser.Math.Between(0, 3) * 90;

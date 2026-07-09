@@ -2299,8 +2299,11 @@ export class GameScene extends Phaser.Scene {
     }
     for (let i = 0; i < allVehicles.length; i++) {
       for (let j = i + 1; j < allVehicles.length; j++) {
+        const a = allVehicles[i];
+        const b = allVehicles[j];
+        if (a.isTraffic && b.isTraffic) continue;
         this.colliders.push(
-          this.physics.add.collider(allVehicles[i].sprite, allVehicles[j].sprite, undefined, undefined, this)
+          this.physics.add.collider(a.sprite, b.sprite, undefined, undefined, this)
         );
       }
     }

@@ -12,6 +12,9 @@ export class Pedestrian {
   private retargetTimer = 0;
   private readonly speed: number;
   private waitTimer = 0;
+  private stuckTimer = 0;
+  private wanderTimer = 0;
+  private wanderDir = { x: 0, y: 1 };
 
   constructor(scene: Phaser.Scene, x: number, y: number, speed = 42) {
     this.speed = speed;
@@ -24,7 +27,8 @@ export class Pedestrian {
     const body = this.sprite.body as Phaser.Physics.Arcade.Body;
     body.setSize(14, 14);
     body.setOffset(3, 6);
-    this.retargetTimer = Phaser.Math.FloatBetween(0, 2);
+    this.retargetTimer = Phaser.Math.FloatBetween(0, 0.5);
+    this.pickWanderDir();
   }
 
   update(dt: number, navigation: NavigationGrid, vehicles: { sprite: Phaser.Physics.Arcade.Sprite }[]): void {
@@ -39,7 +43,33 @@ export class Pedestrian {
     const flee = this.fleeFromVehicles(vehicles);
     if (flee) {
       this.sprite.setVelocity(flee.x * this.speed * 1.4, flee.y * this.speed * 1.4);
-      this.retargetTimer = 0.4;
+      this.retargetTimer = 0.2;
+      this.stuckTimer = 0;
+      this.wanderTimer = 0;
+      return;
+    }
+
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body;
+    const actualSpeed = Math.hypot(body.velocity.x, body.velocity.y);
+    if (actualSpeed < 6) {
+      this.stuckTimer += dt;
+    } else {
+      this.stuckTimer = 0;
+    }
+
+    if (this.stuckTimer > 0.5) {
+      this.wanderTimer -= dt;
+      if (this.wanderTimer <= 0) {
+        this.pickWanderDir();
+        this.wanderTimer = Phaser.Math.FloatBetween(0.6, 1.1);
+        this.pathFollower.clear();
+        this.retargetTimer = 0;
+      }
+      this.sprite.setVelocity(this.wanderDir.x * this.speed, this.wanderDir.y * this.speed);
+      if (this.stuckTimer > 1.2) {
+        this.stuckTimer = 0;
+        this.pickNewDestination(navigation);
+      }
       return;
     }
 
@@ -50,12 +80,14 @@ export class Pedestrian {
       this.pickNewDestination(navigation);
     }
 
-    const dir = this.pathFollower.getSteerDirection(this.sprite.x, this.sprite.y, TILE_SIZE, 10);
+    const dir = this.pathFollower.getSteerDirection(this.sprite.x, this.sprite.y, TILE_SIZE, 12);
     if (dir) {
       this.sprite.setVelocity(dir.x * this.speed, dir.y * this.speed);
+    } else if (!this.pathFollower.hasPath()) {
+      this.pickNewDestination(navigation);
     } else {
       this.sprite.setVelocity(0, 0);
-      this.waitTimer = Phaser.Math.FloatBetween(0.4, 1.2);
+      this.waitTimer = Phaser.Math.FloatBetween(0.1, 0.25);
       this.pathFollower.clear();
       this.retargetTimer = 0;
     }
@@ -66,6 +98,11 @@ export class Pedestrian {
     this.sprite.destroy();
   }
 
+  private pickWanderDir(): void {
+    const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+    this.wanderDir = { x: Math.cos(angle), y: Math.sin(angle) };
+  }
+
   private pickNewDestination(navigation: NavigationGrid): void {
     const start = navigation.worldToTile(this.sprite.x, this.sprite.y, TILE_SIZE);
     if (!navigation.isSidewalk(start.tx, start.ty)) {
@@ -73,23 +110,45 @@ export class Pedestrian {
       if (nearest) {
         this.pathFollower.setPath(navigation.findSidewalkPath(start, nearest));
       }
-      this.retargetTimer = 1.5;
+      this.retargetTimer = 0.6;
       return;
     }
 
-    for (let attempt = 0; attempt < 8; attempt++) {
-      const dest = navigation.findRandomSidewalkTile();
+    for (let attempt = 0; attempt < 14; attempt++) {
+      const dest = this.findNearbySidewalkTile(navigation, start, 24);
       if (!dest) break;
       const path = navigation.findSidewalkPath(start, dest);
-      if (path && path.length > 2) {
+      if (path && path.length > 1) {
         this.pathFollower.setPath(path);
-        this.retargetTimer = Phaser.Math.FloatBetween(6, 14);
+        this.retargetTimer = Phaser.Math.FloatBetween(8, 18);
         return;
       }
     }
 
-    this.retargetTimer = 2;
+    this.retargetTimer = 0.35;
     this.pathFollower.clear();
+    this.pickWanderDir();
+    this.wanderTimer = 0.5;
+  }
+
+  private findNearbySidewalkTile(
+    navigation: NavigationGrid,
+    start: { tx: number; ty: number },
+    radius: number
+  ): { tx: number; ty: number } | null {
+    const tiles: { tx: number; ty: number }[] = [];
+    for (let dy = -radius; dy <= radius; dy++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        if (dx * dx + dy * dy > radius * radius) continue;
+        const tx = start.tx + dx;
+        const ty = start.ty + dy;
+        if (!navigation.isSidewalk(tx, ty)) continue;
+        if (dx === 0 && dy === 0) continue;
+        tiles.push({ tx, ty });
+      }
+    }
+    if (tiles.length === 0) return navigation.findRandomSidewalkTile();
+    return Phaser.Utils.Array.GetRandom(tiles);
   }
 
   private nearestSidewalk(
@@ -98,8 +157,8 @@ export class Pedestrian {
   ): { tx: number; ty: number } | null {
     let best: { tx: number; ty: number } | null = null;
     let bestDist = Infinity;
-    for (let dy = -6; dy <= 6; dy++) {
-      for (let dx = -6; dx <= 6; dx++) {
+    for (let dy = -8; dy <= 8; dy++) {
+      for (let dx = -8; dx <= 8; dx++) {
         const tx = start.tx + dx;
         const ty = start.ty + dy;
         if (!navigation.isSidewalk(tx, ty)) continue;
@@ -120,7 +179,7 @@ export class Pedestrian {
       if (!v.sprite.active) continue;
       const body = v.sprite.body as Phaser.Physics.Arcade.Body | null;
       const speed = body ? Math.hypot(body.velocity.x, body.velocity.y) : 0;
-      if (speed < 35) continue;
+      if (speed < 25) continue;
       const dist = Phaser.Math.Distance.Between(
         this.sprite.x,
         this.sprite.y,

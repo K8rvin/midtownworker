@@ -147,4 +147,12 @@ if (!lifeStart.includes('state.hour = 9')) throw new Error('New game should star
 if (!gameScene.includes('applyCityActivity')) throw new Error('City activity hook missing');
 if (!gameScene.includes('enableGameClock')) throw new Error('Life-sim game clock lighting missing');
 
+const vehicle = readFileSync(join(root, 'src', 'entities', 'Vehicle.ts'), 'utf8');
+if (!vehicle.includes('tickTrafficStuck')) throw new Error('Traffic stuck recovery missing');
+if (!gameScene.includes('isTraffic && b.isTraffic')) throw new Error('Traffic gridlock guard missing');
+
+const pedestrian = readFileSync(join(root, 'src', 'entities', 'Pedestrian.ts'), 'utf8');
+if (!pedestrian.includes('findNearbySidewalkTile')) throw new Error('Pedestrian nearby walking missing');
+if (!pedestrian.includes('stuckTimer')) throw new Error('Pedestrian stuck recovery missing');
+
 console.log('Phase 15 life sim checks passed');

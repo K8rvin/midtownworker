@@ -34,6 +34,7 @@ export class Vehicle {
   private readonly steerDecayRate = 16;
   private laneSegmentId: string | null = null;
   private laneWaypointIndex = 0;
+  private trafficStuckTimer = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, type: string, isTraffic = false) {
     const config = (vehiclesData as VehicleConfig[]).find((v) => v.id === type) ?? vehiclesData[0];
@@ -51,7 +52,7 @@ export class Vehicle {
     const hitbox = this.getHitbox(type);
     body.setSize(hitbox.w, hitbox.h);
     body.setOffset(hitbox.ox, hitbox.oy);
-    body.setDrag(120, 120);
+    body.setDrag(isTraffic ? 30 : 120, isTraffic ? 30 : 120);
     body.setMaxVelocity(config.maxSpeed, config.maxSpeed);
 
     this.state = { x, y, angle: 0, speed: 0, vx: 0, vy: 0 };
@@ -65,7 +66,7 @@ export class Vehicle {
     this.state.y = this.sprite.y;
 
     const blocked = body.blocked.up || body.blocked.down || body.blocked.left || body.blocked.right;
-    if (blocked) {
+    if (blocked && !this.isTraffic) {
       this.state.speed *= 0.35;
       const rad = Phaser.Math.DegToRad(this.state.angle);
       this.state.vx = Math.cos(rad) * this.state.speed;
@@ -113,9 +114,19 @@ export class Vehicle {
   initLaneDriving(segment: LaneSegment, laneNav: LaneNavigation, wx: number, wy: number): void {
     this.laneSegmentId = segment.id;
     const nearest = laneNav.findNearestSegment(wx, wy);
-    this.laneWaypointIndex = nearest?.segment.id === segment.id ? nearest.index : 0;
-    this.state.angle = laneNav.directionToAngle(segment.direction);
+    const useSegment = nearest?.segment.id === segment.id ? nearest.segment : segment;
+    this.laneWaypointIndex =
+      nearest?.segment.id === segment.id ? nearest.index : this.findNearestWaypointIndex(useSegment, wx, wy);
+    const wp = useSegment.waypoints[this.laneWaypointIndex] ?? useSegment.waypoints[0];
+    if (wp) {
+      this.sprite.setPosition(wp.x, wp.y);
+      this.state.x = wp.x;
+      this.state.y = wp.y;
+    }
+    this.state.angle = laneNav.directionToAngle(useSegment.direction);
+    this.state.speed = this.config.maxSpeed * 0.35;
     this.sprite.setAngle(this.state.angle);
+    this.trafficStuckTimer = 0;
   }
 
   updateTraffic(
@@ -126,77 +137,92 @@ export class Vehicle {
   ): void {
     if (!this.isTraffic) return;
 
-    if (laneNav && this.laneSegmentId) {
-      this.updateLaneTraffic(dt, trafficLights, laneNav);
-      return;
+    if (laneNav) {
+      if (!this.laneSegmentId || !laneNav.segments.has(this.laneSegmentId)) {
+        const nearest = laneNav.findNearestSegment(this.sprite.x, this.sprite.y);
+        if (nearest) this.initLaneDriving(nearest.segment, laneNav, this.sprite.x, this.sprite.y);
+      }
+      if (this.laneSegmentId) {
+        this.updateLaneTraffic(dt, trafficLights, laneNav, navigation);
+        return;
+      }
     }
 
     if (navigation) {
-      this.pathFollower.tickRetarget(dt);
-      if (this.pathFollower.getRetargetTimer() <= 0 || !this.pathFollower.hasPath()) {
-        const dest = navigation.findRandomRoadTile();
-        if (dest) {
-          const start = navigation.worldToTile(this.sprite.x, this.sprite.y, TILE_SIZE);
-          const path = navigation.findPath(start, dest, true);
-          this.pathFollower.setPath(path);
-          this.pathFollower.setRetargetTimer(8 + Math.random() * 8);
-        }
-      }
-      const dir = this.pathFollower.getSteerDirection(this.sprite.x, this.sprite.y, TILE_SIZE, 20);
-      let throttle = 0.5;
-      let steer = 0;
-      if (dir) {
-        const targetAngle = Phaser.Math.RadToDeg(Math.atan2(dir.y, dir.x));
-        const diff = Phaser.Math.Angle.WrapDegrees(targetAngle - this.state.angle);
-        steer = Phaser.Math.Clamp(diff / 40, -1, 1);
-        throttle = 0.65;
-      }
-      if (trafficLights?.shouldStop(this.sprite.x, this.sprite.y, this.state.angle)) {
-        throttle = 0;
-      }
-      this.updateDriving(throttle, steer, dt);
+      this.updateRoadPathTraffic(dt, navigation, trafficLights);
       return;
     }
 
-    const throttle = 0.6;
-    const steer = Math.sin(this.sprite.scene.time.now / 1000) * 0.3;
+    const throttle = 0.7;
+    const steer = Math.sin(this.sprite.scene.time.now / 1000) * 0.2;
     this.updateDriving(throttle, steer, dt);
+  }
+
+  private updateRoadPathTraffic(
+    dt: number,
+    navigation: NavigationGrid,
+    trafficLights?: TrafficLightManager
+  ): void {
+    this.pathFollower.tickRetarget(dt);
+    if (this.pathFollower.getRetargetTimer() <= 0 || !this.pathFollower.hasPath()) {
+      const dest = navigation.findRandomRoadTile();
+      if (dest) {
+        const start = navigation.worldToTile(this.sprite.x, this.sprite.y, TILE_SIZE);
+        const path = navigation.findPath(start, dest, true);
+        this.pathFollower.setPath(path);
+        this.pathFollower.setRetargetTimer(8 + Math.random() * 8);
+      }
+    }
+    const dir = this.pathFollower.getSteerDirection(this.sprite.x, this.sprite.y, TILE_SIZE, 20);
+    let throttle = 0.65;
+    let steer = 0;
+    if (dir) {
+      const targetAngle = Phaser.Math.RadToDeg(Math.atan2(dir.y, dir.x));
+      const diff = Phaser.Math.Angle.WrapDegrees(targetAngle - this.state.angle);
+      steer = Phaser.Math.Clamp(diff / 40, -1, 1);
+      throttle = 0.78;
+    }
+    if (trafficLights?.shouldStop(this.sprite.x, this.sprite.y, this.state.angle)) {
+      throttle = 0;
+    }
+    this.updateDriving(throttle, steer, dt);
+    this.tickTrafficStuck(dt, throttle);
   }
 
   private updateLaneTraffic(
     dt: number,
     trafficLights: TrafficLightManager | undefined,
-    laneNav: LaneNavigation
+    laneNav: LaneNavigation,
+    navigation?: NavigationGrid
   ): void {
     const segment = laneNav.segments.get(this.laneSegmentId!);
-    if (!segment) return;
+    if (!segment) {
+      this.laneSegmentId = null;
+      return;
+    }
 
     let steerResult = laneNav.getSteerDirection(
       this.sprite.x,
       this.sprite.y,
       segment,
       this.laneWaypointIndex,
-      18
+      22
     );
 
     if (!steerResult) {
       const next = laneNav.pickNextSegment(segment.id);
       if (!next) {
-        this.updateDriving(0, 0, dt);
+        this.laneSegmentId = null;
+        if (navigation) this.updateRoadPathTraffic(dt, navigation, trafficLights);
         return;
       }
       this.laneSegmentId = next.id;
       this.laneWaypointIndex = 0;
       this.state.angle = laneNav.directionToAngle(next.direction);
-      steerResult = laneNav.getSteerDirection(
-        this.sprite.x,
-        this.sprite.y,
-        next,
-        0,
-        18
-      );
+      steerResult = laneNav.getSteerDirection(this.sprite.x, this.sprite.y, next, 0, 22);
       if (!steerResult) {
-        this.updateDriving(0.4, 0, dt);
+        this.updateDriving(0.55, 0, dt);
+        this.tickTrafficStuck(dt, 0.55);
         return;
       }
     }
@@ -204,14 +230,47 @@ export class Vehicle {
     this.laneWaypointIndex = steerResult.nextIndex;
     const targetAngle = Phaser.Math.RadToDeg(Math.atan2(steerResult.dir.y, steerResult.dir.x));
     const diff = Phaser.Math.Angle.WrapDegrees(targetAngle - this.state.angle);
-    const steer = Phaser.Math.Clamp(diff / 35, -1, 1);
-    let throttle = 0.6;
+    const steer = Phaser.Math.Clamp(diff / 30, -1, 1);
+    let throttle = 0.78;
 
     if (trafficLights?.shouldStop(this.sprite.x, this.sprite.y, this.state.angle)) {
       throttle = 0;
     }
 
     this.updateDriving(throttle, steer, dt);
+    this.tickTrafficStuck(dt, throttle);
+  }
+
+  private tickTrafficStuck(dt: number, throttle: number): void {
+    const body = this.sprite.body as Phaser.Physics.Arcade.Body | null;
+    const actualSpeed = body ? Math.hypot(body.velocity.x, body.velocity.y) : 0;
+    if (throttle > 0.2 && actualSpeed < 18) {
+      this.trafficStuckTimer += dt;
+    } else {
+      this.trafficStuckTimer = 0;
+    }
+    if (this.trafficStuckTimer < 1.4) return;
+
+    this.trafficStuckTimer = 0;
+    this.laneWaypointIndex += 1;
+    const rad = Phaser.Math.DegToRad(this.state.angle);
+    const nudge = TILE_SIZE * 0.6;
+    this.sprite.setPosition(this.sprite.x + Math.cos(rad) * nudge, this.sprite.y + Math.sin(rad) * nudge);
+    this.state.speed = Math.max(this.state.speed, this.config.maxSpeed * 0.3);
+  }
+
+  private findNearestWaypointIndex(segment: LaneSegment, wx: number, wy: number): number {
+    let best = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < segment.waypoints.length; i++) {
+      const wp = segment.waypoints[i];
+      const dist = Phaser.Math.Distance.Between(wx, wy, wp.x, wp.y);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = i;
+      }
+    }
+    return best;
   }
 
   takeDamage(amount: number): boolean {
