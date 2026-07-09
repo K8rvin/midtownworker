@@ -29,6 +29,11 @@ export class TimeManager {
     return { dayAdvanced, hourChanged };
   }
 
+  /** Fractional hour 0–24 for lighting and city activity. */
+  getClockFraction(state: GameState): number {
+    return (state.hour + this.minuteAccumulator / 60) % 24;
+  }
+
   formatClock(state: GameState): string {
     const h = String(state.hour).padStart(2, '0');
     const m = String(Math.floor(this.minuteAccumulator)).padStart(2, '0');

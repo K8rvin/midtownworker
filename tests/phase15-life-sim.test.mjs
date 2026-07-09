@@ -129,4 +129,22 @@ if (!jobUi.includes('JobApplicationUI')) throw new Error('Job application UI mis
 const empOffice = readFileSync(join(root, 'src', 'data', 'employment-office.json'), 'utf8');
 if (!empOffice.includes('employment_office')) throw new Error('Employment office missing');
 
+const timeOfDay = readFileSync(join(root, 'src', 'systems', 'TimeOfDayManager.ts'), 'utf8');
+if (!timeOfDay.includes('getTrafficCountForHour')) throw new Error('Hour-based traffic density missing');
+if (!timeOfDay.includes('getPedestrianCountForHour')) throw new Error('Hour-based pedestrian density missing');
+if (!timeOfDay.includes('syncFromHour')) throw new Error('Game-clock atmosphere sync missing');
+
+const trafficMgr = readFileSync(join(root, 'src', 'systems', 'TrafficManager.ts'), 'utf8');
+if (!trafficMgr.includes('syncMovingCount')) throw new Error('Dynamic traffic sync missing');
+if (!trafficMgr.includes('refreshNearPlayer')) throw new Error('Traffic refresh near player missing');
+
+const pedMgr = readFileSync(join(root, 'src', 'systems', 'PedestrianManager.ts'), 'utf8');
+if (!pedMgr.includes('syncToTarget')) throw new Error('Dynamic pedestrian sync missing');
+
+const lifeStart = readFileSync(join(root, 'src', 'systems', 'LifeSimStart.ts'), 'utf8');
+if (!lifeStart.includes('state.hour = 9')) throw new Error('New game should start in the morning');
+
+if (!gameScene.includes('applyCityActivity')) throw new Error('City activity hook missing');
+if (!gameScene.includes('enableGameClock')) throw new Error('Life-sim game clock lighting missing');
+
 console.log('Phase 15 life sim checks passed');

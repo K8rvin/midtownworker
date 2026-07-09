@@ -10,10 +10,10 @@ const PHASE_TINT: Record<DayPhase, number> = {
 };
 
 const PHASE_ALPHA: Record<DayPhase, number> = {
-  night: 0.22,
-  dawn: 0.12,
-  day: 0.06,
-  dusk: 0.14,
+  night: 0.1,
+  dawn: 0.07,
+  day: 0.03,
+  dusk: 0.09,
 };
 
 /** Neo-noir atmosphere with time-of-day tint. */
@@ -44,7 +44,7 @@ export class AtmosphereOverlay {
     );
 
     const vignette = scene.add.graphics();
-    vignette.fillStyle(0x000000, 0.45);
+    vignette.fillStyle(0x000000, 0.22);
     const pad = 80;
     vignette.fillRect(0, 0, GAME_WIDTH, pad);
     vignette.fillRect(0, GAME_HEIGHT - pad, GAME_WIDTH, pad);
@@ -58,12 +58,12 @@ export class AtmosphereOverlay {
     }
 
     this.container.add([this.tintRect, this.fogRect, vignette, scanlines]);
-    this.setPhase('night', 0);
+    this.setPhase('day', 0);
   }
 
   setPhase(phase: DayPhase, _blend: number): void {
     this.tintRect.setFillStyle(PHASE_TINT[phase], PHASE_ALPHA[phase]);
-    this.fogRect.setAlpha(phase === 'night' ? 0.14 : phase === 'day' ? 0.03 : 0.08);
+    this.fogRect.setAlpha(phase === 'night' ? 0.08 : phase === 'day' ? 0.02 : 0.05);
   }
 
   destroy(): void {

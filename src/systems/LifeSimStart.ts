@@ -8,7 +8,7 @@ export function applyLifeSimNewGameStart(state: GameState): void {
   state.drunkLevel = 0;
   state.health = 68;
   state.day = 1;
-  state.hour = 20;
+  state.hour = 9;
   state.housing = { type: 'none', homeId: null, rentDueDay: 0, lastRentPaidDay: 0 };
   state.job = null;
   state.homeFurniture = [];

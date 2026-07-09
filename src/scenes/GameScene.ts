@@ -62,7 +62,11 @@ import { GarageManager } from '../systems/GarageManager';
 import { MetaProgress } from '../systems/MetaProgress';
 import { AchievementManager } from '../systems/AchievementManager';
 import { DynamicEventManager } from '../systems/DynamicEventManager';
-import { TimeOfDayManager } from '../systems/TimeOfDayManager';
+import {
+  TimeOfDayManager,
+  getPedestrianCountForHour,
+  getTrafficCountForHour,
+} from '../systems/TimeOfDayManager';
 import { DailyQuestManager } from '../systems/DailyQuestManager';
 import { LeaderboardManager } from '../systems/LeaderboardManager';
 import { CoopInputManager } from '../systems/CoopInputManager';
@@ -149,6 +153,7 @@ export class GameScene extends Phaser.Scene {
   private contractTargetLabels: Phaser.GameObjects.Text[] = [];
   private employmentDoorMarkers: Phaser.GameObjects.Rectangle[] = [];
   private lastHour = -1;
+  private cityActivityTimer = 0;
   private stairMarkers: Phaser.GameObjects.Sprite[] = [];
   private districtFlags: Phaser.GameObjects.Sprite[] = [];
   private landmarkSprites: Phaser.GameObjects.Sprite[] = [];
@@ -322,9 +327,7 @@ export class GameScene extends Phaser.Scene {
     this.garageManager = new GarageManager(this, this.state);
     this.garageManager.refresh();
 
-    this.trafficManager.spawnInitial();
     this.pedestrianManager = new PedestrianManager(this, this.cityMap);
-    this.pedestrianManager.spawn();
     if (!LIFE_SIM) this.spawnNPCs();
     if (!LIFE_SIM) this.spawnQuestGivers();
     this.spawnShopClerks();
@@ -339,10 +342,17 @@ export class GameScene extends Phaser.Scene {
     }
     this.spawnTransitionMarkers();
 
-    this.setupCollisions();
     this.setupCamera();
     this.atmosphere = new AtmosphereOverlay(this);
     this.timeOfDay = new TimeOfDayManager(this.atmosphere);
+    if (LIFE_SIM) {
+      this.timeOfDay.enableGameClock();
+      this.applyCityActivity();
+    } else {
+      this.trafficManager.spawnInitial();
+      this.pedestrianManager.spawn();
+    }
+    this.setupCollisions();
     this.dynamicEvents = new DynamicEventManager(this, this.state, this.cityMap);
     if (!LIFE_SIM) {
       this.dailyQuest = new DailyQuestManager();
@@ -523,7 +533,9 @@ export class GameScene extends Phaser.Scene {
           this.needsEffects?.triggerCollapseBlink();
           this.showMessage(needs.message);
         }
+        this.applyCityActivity();
       }
+      this.timeOfDay.syncFromHour(this.timeManager.getClockFraction(this.state));
       if (dayAdvanced) {
         const rentMsg = this.housingManager.onDayAdvanced();
         if (rentMsg) this.showMessage(rentMsg);
@@ -546,7 +558,14 @@ export class GameScene extends Phaser.Scene {
     }
     this.playTimeSeconds += dt;
     this.tireMarks?.update(dt);
-    this.timeOfDay.update(dt);
+    if (!LIFE_SIM) this.timeOfDay.update(dt);
+    if (LIFE_SIM) {
+      this.cityActivityTimer -= dt;
+      if (this.cityActivityTimer <= 0) {
+        this.cityActivityTimer = 40;
+        this.applyCityActivity(true);
+      }
+    }
     this.transitionCooldown = Math.max(0, this.transitionCooldown - dt);
 
     const pointer = this.input.activePointer;
@@ -1650,6 +1669,23 @@ export class GameScene extends Phaser.Scene {
         .setDepth(2);
       this.shopDoorMarkers.push(door);
     }
+  }
+
+  private applyCityActivity(refreshOnly = false): void {
+    if (!LIFE_SIM || this.cityMap.mapId !== 'city') return;
+    const hour = this.timeManager.getClockFraction(this.state);
+    this.timeOfDay.syncFromHour(hour);
+    const pos = this.player.getPosition();
+    if (refreshOnly) {
+      this.trafficManager.refreshNearPlayer(pos.x, pos.y);
+      this.pedestrianManager.refreshNearPlayer(pos.x, pos.y);
+    } else {
+      const trafficCount = getTrafficCountForHour(hour);
+      const pedCount = getPedestrianCountForHour(hour);
+      this.trafficManager.syncMovingCount(trafficCount, pos.x, pos.y);
+      this.pedestrianManager.syncToTarget(pedCount, pos.x, pos.y);
+    }
+    this.setupCollisions();
   }
 
   private collectLifeSimCandidates(px: number, py: number, _player: Player): InteractCandidate[] {
