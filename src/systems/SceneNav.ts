@@ -13,10 +13,11 @@ const GAMEPLAY_SCENES = [
   'LobbyScene',
 ] as const;
 
-function forceStopScene(sm: Phaser.Scenes.ScenePlugin | Phaser.Scenes.SceneManager, key: string): void {
+function forceStopScene(game: Phaser.Game, key: string): void {
+  const sm = game.scene;
   try {
     // Phaser can leave a scene half-alive if stopped while paused
-    const scene = sm.getScene?.(key) as Phaser.Scene | undefined;
+    const scene = sm.getScene(key) as Phaser.Scene | undefined;
     if (scene?.sys?.isPaused?.()) {
       sm.resume(key);
     }
@@ -46,25 +47,24 @@ export function goToMainMenu(from: Phaser.Scene): void {
 
   // Defer one tick so we finish the pointer handler cleanly
   const run = () => {
-    const sm = game.scene;
     for (const key of GAMEPLAY_SCENES) {
-      forceStopScene(sm, key);
+      forceStopScene(game, key);
     }
 
     // Fresh menu on top — restart even if MainMenu was somehow still around
     try {
-      if (sm.isActive('MainMenuScene')) {
-        sm.stop('MainMenuScene');
+      if (game.scene.isActive('MainMenuScene')) {
+        game.scene.stop('MainMenuScene');
       }
     } catch {
       /* ignore */
     }
     try {
-      sm.start('MainMenuScene');
+      game.scene.start('MainMenuScene');
     } catch (e) {
       console.error('goToMainMenu failed', e);
       try {
-        sm.run('MainMenuScene');
+        game.scene.run('MainMenuScene');
       } catch {
         /* ignore */
       }
@@ -81,8 +81,7 @@ export function goToMainMenu(from: Phaser.Scene): void {
 
 /** Stop lingering gameplay before starting a new run / menu actions. */
 export function stopGameplayScenes(from: Phaser.Scene): void {
-  const sm = from.game.scene;
   for (const key of ['GameScene', 'HomeScene', 'PauseScene', 'SaveSlotsScene', 'SettingsScene'] as const) {
-    forceStopScene(sm, key);
+    forceStopScene(from.game, key);
   }
 }
