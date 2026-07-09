@@ -101,6 +101,29 @@ export class HousingManager {
     return null;
   }
 
+  /** Days until auto-rent (0 = due today / overdue). Null if not renting. */
+  daysUntilRent(): number | null {
+    if (this.state.housing.type !== 'rent' || !this.state.housing.homeId) return null;
+    return Math.max(0, this.state.housing.rentDueDay - this.state.day);
+  }
+
+  rentAmountDue(): number | null {
+    if (this.state.housing.type !== 'rent' || !this.state.housing.homeId) return null;
+    const home = this.getHomeById(this.state.housing.homeId);
+    return home?.rentPerWeek ?? null;
+  }
+
+  /** Warning 1–2 days before auto-charge (call on day/hour change). */
+  rentWarningMessage(): string | null {
+    const days = this.daysUntilRent();
+    const amount = this.rentAmountDue();
+    if (days === null || amount === null) return null;
+    if (days === 2) return `Через 2 дня списание аренды $${amount}`;
+    if (days === 1) return `Завтра списание аренды $${amount}`;
+    if (days === 0) return `Сегодня списание аренды $${amount}`;
+    return null;
+  }
+
   onDayAdvanced(): string | null {
     if (this.state.housing.type !== 'rent' || !this.state.housing.homeId) return null;
     if (this.state.day < this.state.housing.rentDueDay) return null;

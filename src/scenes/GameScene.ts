@@ -91,6 +91,8 @@ import { LifeSimStoryManager } from '../systems/LifeSimStoryManager';
 import { EmploymentOfficeManager, type EmploymentOfficeConfig } from '../systems/EmploymentOfficeManager';
 import { isScopedWeapon } from '../systems/WeaponManager';
 import { SoftCrimeManager } from '../systems/SoftCrimeManager';
+import { TaxiManager } from '../systems/TaxiManager';
+import { SmartphoneUI } from '../ui/SmartphoneUI';
 
 export class GameScene extends Phaser.Scene {
   private state!: GameState;
@@ -138,6 +140,10 @@ export class GameScene extends Phaser.Scene {
   private jobManager!: JobManager;
   private courierManager!: CourierManager;
   private softCrime: SoftCrimeManager | null = null;
+  private taxiManager!: TaxiManager;
+  private smartphone: SmartphoneUI | null = null;
+  private lastRentWarnDay = -1;
+  private taxiFineDay = -1;
   private courierMarkerGfx: Phaser.GameObjects.Graphics | null = null;
   private courierMarkerLabels: Phaser.GameObjects.Text[] = [];
   private courierWaypointArrow: WaypointArrow | null = null;
@@ -309,6 +315,8 @@ export class GameScene extends Phaser.Scene {
     this.jobManager = new JobManager(this.state);
     this.courierManager = new CourierManager(this.state);
     this.courierManager.setTimeManager(this.timeManager);
+    this.taxiManager = new TaxiManager(this.state);
+    this.taxiManager.setTimeManager(this.timeManager);
     if (LIFE_SIM) this.softCrime = new SoftCrimeManager(this, this.state, this.cityMap);
     this.housingManager = new HousingManager(this.state);
     this.lifeTaskManager = new LifeTaskManager(this.state);
@@ -557,6 +565,24 @@ export class GameScene extends Phaser.Scene {
       if (dayAdvanced) {
         const rentMsg = this.housingManager.onDayAdvanced();
         if (rentMsg) this.showMessage(rentMsg);
+        const warn = this.housingManager.rentWarningMessage();
+        if (warn && this.lastRentWarnDay !== this.state.day) {
+          this.lastRentWarnDay = this.state.day;
+          this.showMessage(warn);
+        }
+        if (this.jobManager.isTaxiJob()) {
+          const fine = this.taxiManager.checkParkRatingFine(this.taxiFineDay === this.state.day);
+          if (fine) {
+            this.taxiFineDay = this.state.day;
+            this.showMessage(fine);
+          }
+        }
+      } else if (hourChanged) {
+        const warn = this.housingManager.rentWarningMessage();
+        if (warn && this.state.hour === 9 && this.lastRentWarnDay !== this.state.day) {
+          this.lastRentWarnDay = this.state.day;
+          this.showMessage(warn);
+        }
       }
     }
 
@@ -755,37 +781,76 @@ export class GameScene extends Phaser.Scene {
 
   private updateCourierWaypoint(): void {
     if (!LIFE_SIM || !this.courierWaypointArrow) return;
-    const wp = this.courierManager.getWaypoint();
-    if (!wp) {
-      this.courierWaypointArrow.update(null);
+    const pos = this.player.getPosition();
+
+    // Priority: active courier → active taxi → nav pin
+    const cWp = this.courierManager.getWaypoint();
+    if (cWp) {
+      const colors = {
+        warehouse: { fill: 0xffd600, text: '#ffd600' },
+        pickup: { fill: 0x00b4ff, text: '#00b4ff' },
+        dropoff: { fill: 0xff6b35, text: '#ff6b35' },
+      } as const;
+      const c = colors[cWp.phase];
+      const tx = cWp.tileX * TILE_SIZE + TILE_SIZE / 2;
+      const ty = cWp.tileY * TILE_SIZE + TILE_SIZE / 2;
+      const distM = Math.round(Math.hypot(tx - pos.x, ty - pos.y) / 8);
+      const timer = this.courierManager.getTimerLabel();
+      const phaseLabel =
+        cWp.phase === 'warehouse' ? 'Склад' : cWp.phase === 'pickup' ? 'Забрать' : 'Доставить';
+      const label = timer
+        ? `${phaseLabel} · ${distM}м · ${timer}`
+        : `${phaseLabel} · ${distM}м · ${cWp.label}`;
+      this.courierWaypointArrow.update(
+        { x: tx, y: ty, label, color: c.fill, labelColor: c.text },
+        { x: pos.x, y: pos.y }
+      );
       return;
     }
-    const colors = {
-      warehouse: { fill: 0xffd600, text: '#ffd600' },
-      pickup: { fill: 0x00b4ff, text: '#00b4ff' },
-      dropoff: { fill: 0xff6b35, text: '#ff6b35' },
-    } as const;
-    const c = colors[wp.phase];
-    const tx = wp.tileX * TILE_SIZE + TILE_SIZE / 2;
-    const ty = wp.tileY * TILE_SIZE + TILE_SIZE / 2;
-    const pos = this.player.getPosition();
-    const distM = Math.round(Math.hypot(tx - pos.x, ty - pos.y) / 8);
-    const timer = this.courierManager.getTimerLabel?.() ?? '';
-    const phaseLabel =
-      wp.phase === 'warehouse' ? 'Склад' : wp.phase === 'pickup' ? 'Забрать' : 'Доставить';
-    const label = timer
-      ? `${phaseLabel} · ${distM}м · ${timer}`
-      : `${phaseLabel} · ${distM}м · ${wp.label}`;
-    this.courierWaypointArrow.update(
-      {
-        x: tx,
-        y: ty,
-        label,
-        color: c.fill,
-        labelColor: c.text,
-      },
-      { x: pos.x, y: pos.y }
-    );
+
+    const tWp = this.taxiManager.getWaypoint();
+    if (tWp) {
+      const colors = {
+        depot: { fill: 0xffd600, text: '#ffd600' },
+        pickup: { fill: 0x00e676, text: '#00e676' },
+        dropoff: { fill: 0xff6b35, text: '#ff6b35' },
+      } as const;
+      const c = colors[tWp.phase];
+      const tx = tWp.tileX * TILE_SIZE + TILE_SIZE / 2;
+      const ty = tWp.tileY * TILE_SIZE + TILE_SIZE / 2;
+      const distM = Math.round(Math.hypot(tx - pos.x, ty - pos.y) / 8);
+      const phaseLabel =
+        tWp.phase === 'depot' ? 'Депо' : tWp.phase === 'pickup' ? 'Пассажир' : 'Высадка';
+      this.courierWaypointArrow.update(
+        {
+          x: tx,
+          y: ty,
+          label: `${phaseLabel} · ${distM}м · ${tWp.label}`,
+          color: c.fill,
+          labelColor: c.text,
+        },
+        { x: pos.x, y: pos.y }
+      );
+      return;
+    }
+
+    const nav = this.state.navTarget;
+    if (nav) {
+      const distM = Math.round(Math.hypot(nav.x - pos.x, nav.y - pos.y) / 8);
+      this.courierWaypointArrow.update(
+        {
+          x: nav.x,
+          y: nav.y,
+          label: `${nav.label} · ${distM}м`,
+          color: 0xc8f542,
+          labelColor: '#c8f542',
+        },
+        { x: pos.x, y: pos.y }
+      );
+      return;
+    }
+
+    this.courierWaypointArrow.update(null);
   }
 
   private handlePlayerDeath(player: Player, msg: string): void {
@@ -854,6 +919,7 @@ export class GameScene extends Phaser.Scene {
       this.shopUI.isVisible() ||
       this.lifeShopUI?.isVisible() ||
       this.jobApplicationUI?.isVisible() ||
+      this.smartphone?.isVisible() ||
       this.lifeSimIntro.isVisible() ||
       this.scopeOverlay.isActive() ||
       (LIFE_SIM ? this.lifeTaskLog.isVisible() : this.questLog.isVisible()) ||
@@ -863,7 +929,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleUIInput(): void {
+    if (LIFE_SIM && this.inputMgr.justPressed('P')) {
+      if (this.smartphone?.isVisible()) this.smartphone.close();
+      else this.openSmartphone();
+      return;
+    }
     if (this.inputMgr.justPressed('ESC')) {
+      if (this.smartphone?.isVisible()) {
+        this.smartphone.close();
+        return;
+      }
       if (this.shopUI.isVisible()) {
         this.shopUI.close();
         return;
@@ -1183,7 +1258,11 @@ export class GameScene extends Phaser.Scene {
           }
           if (job.jobType === 'courier' || job.id === 'courier') {
             this.refreshCourierMarkers();
-            this.showMessage('Склад отмечен на карте — следуйте за стрелкой');
+            this.showMessage('Курьер: начните смену на складе или в смартфоне (P)');
+          }
+          if (job.jobType === 'taxi' || job.id === 'taxi') {
+            this.state.taxiCarCleanliness = 100;
+            this.showMessage('Такси: купите/возьмите седан, вымойте, начните смену (P)');
           }
         }
         return err;
@@ -1191,6 +1270,7 @@ export class GameScene extends Phaser.Scene {
       () => {
         this.jobManager.quit();
         this.courierManager.clearDelivery();
+        this.taxiManager.clearFare();
         this.refreshCourierMarkers();
         this.clearContractTargets();
       },
@@ -1566,6 +1646,33 @@ export class GameScene extends Phaser.Scene {
       case 'courier_deliver':
         this.handleCourierDeliver(payload!.home as HomeConfig);
         break;
+      case 'job_start_shift': {
+        const err = this.jobManager.openShift();
+        this.showMessage(err ?? 'Смена открыта');
+        this.refreshCourierMarkers();
+        break;
+      }
+      case 'job_end_shift': {
+        const busy = this.courierManager.hasActiveDelivery() || this.taxiManager.hasFare();
+        const err = this.jobManager.closeShift(busy);
+        this.showMessage(err ?? 'Смена закрыта');
+        this.refreshCourierMarkers();
+        break;
+      }
+      case 'taxi_take_fare':
+        this.handleTaxiTakeFare();
+        break;
+      case 'taxi_pickup':
+        this.handleTaxiPickup();
+        break;
+      case 'taxi_dropoff':
+        this.handleTaxiDropoff();
+        break;
+      case 'car_wash': {
+        const err = this.taxiManager.washCar();
+        this.showMessage(err ?? 'Машина вымыта (100%)');
+        break;
+      }
       case 'home_enter':
         this.enterHome(payload!.home as HomeConfig);
         break;
@@ -1810,19 +1917,46 @@ export class GameScene extends Phaser.Scene {
       );
     }
 
+    // Taxi passenger pickup/dropoff
+    if (this.jobManager.isTaxiJob()) {
+      if (this.taxiManager.isNearPickup(px, py) && this.player.inVehicle) {
+        out.push(makeCandidate('taxi_pickup', 20, 'Посадить пассажира'));
+      }
+      if (this.taxiManager.isNearDropoff(px, py) && this.player.inVehicle) {
+        out.push(makeCandidate('taxi_dropoff', 20, 'Высадить пассажира'));
+      }
+      if (this.taxiManager.isAtDepot(px, py)) {
+        const dist = 30;
+        if (!this.state.job?.shiftOpen) {
+          out.push(makeCandidate('job_start_shift', dist, 'Начать смену такси'));
+        } else if (!this.taxiManager.hasFare()) {
+          out.push(makeCandidate('taxi_take_fare', dist, 'Взять заказ такси'));
+          out.push(makeCandidate('car_wash', dist + 0.5, 'Помыть машину ($15)'));
+          out.push(makeCandidate('job_end_shift', dist + 1, 'Закончить смену'));
+        } else {
+          out.push(makeCandidate('car_wash', dist, 'Помыть машину ($15)'));
+        }
+      }
+    }
+
     const job = this.jobManager.getJobNearHr(px, py, this.state.currentMapId);
     if (job && this.state.job?.id === job.id) {
       const hx = job.hrX * TILE_SIZE + TILE_SIZE / 2;
       const hy = job.hrY * TILE_SIZE + TILE_SIZE / 2;
       const dist = Phaser.Math.Distance.Between(px, py, hx, hy);
       if (this.jobManager.isCourierJob()) {
-        if (!this.courierManager.hasActiveDelivery()) {
+        if (!this.state.job.shiftOpen) {
+          out.push(makeCandidate('job_start_shift', dist, 'Начать смену курьера', { job }));
+        } else if (!this.courierManager.hasActiveDelivery()) {
           out.push(makeCandidate('courier_take_order', dist, 'Взять заказ', { job }));
+          out.push(makeCandidate('job_end_shift', dist + 1, 'Закончить смену', { job }));
         }
+      } else if (this.jobManager.isTaxiJob()) {
+        // depot also covers HR; extras above
       } else {
         out.push(makeCandidate('job_shift', dist, 'Идти на смену', { job }));
       }
-      out.push(makeCandidate('job_hr', dist + 1, 'Уволиться', { job, quit: true }));
+      out.push(makeCandidate('job_hr', dist + 2, 'Уволиться', { job, quit: true }));
     }
 
     if (!this.player.insideEmploymentOfficeId) {
@@ -1848,12 +1982,96 @@ export class GameScene extends Phaser.Scene {
     if (quit && this.state.job?.id === job.id) {
       this.jobManager.quit();
       this.courierManager.clearDelivery();
+      this.taxiManager.clearFare();
       this.refreshCourierMarkers();
       this.clearContractTargets();
       this.showMessage('Вы уволились');
       return;
     }
-    this.showMessage('Устройство — через телефон, ноутбук или офис занятости');
+    this.showMessage('Устройство — через смартфон (P), ноутбук или офис занятости');
+  }
+
+  private openSmartphone(): void {
+    if (!LIFE_SIM) return;
+    this.smartphone?.close();
+    this.smartphone = new SmartphoneUI(
+      this,
+      this.state,
+      this.jobManager,
+      this.housingManager,
+      this.courierManager,
+      this.taxiManager,
+      this.groceryManager,
+      {
+        onMessage: (m) => this.showMessage(m),
+        onClose: () => {
+          this.smartphone = null;
+        },
+        onNavSet: (t) => {
+          this.state.navTarget = t;
+        },
+        onShiftToggle: () => this.refreshCourierMarkers(),
+        onQuitJob: () => {
+          if (!this.state.job) return;
+          this.jobManager.quit();
+          this.courierManager.clearDelivery();
+          this.taxiManager.clearFare();
+          this.refreshCourierMarkers();
+          this.showMessage('Вы уволились');
+          this.smartphone?.close();
+        },
+        onTakeCourierOrder: () => this.handleCourierTakeOrder(),
+        onTakeTaxiFare: () => this.handleTaxiTakeFare(),
+        onWashCar: () => {
+          const err = this.taxiManager.washCar();
+          this.showMessage(err ?? 'Машина вымыта');
+        },
+      }
+    );
+    this.smartphone.show();
+  }
+
+  private handleTaxiTakeFare(): void {
+    const v = this.player.currentVehicle;
+    const err = this.taxiManager.takeFare(
+      this.player.inVehicle,
+      v?.getType() ?? null,
+      v?.isTraffic ?? true
+    );
+    if (err) {
+      this.showMessage(err);
+      return;
+    }
+    const f = this.taxiManager.getFare()!;
+    this.showMessage(`Заказ: ${f.passengerName} · ~$${f.basePay} · чистота ${Math.round(this.taxiManager.cleanliness())}%`);
+    this.refreshCourierMarkers();
+  }
+
+  private handleTaxiPickup(): void {
+    const err = this.taxiManager.pickupPassenger(
+      this.player.getPosition().x,
+      this.player.getPosition().y,
+      this.player.inVehicle
+    );
+    if (err) this.showMessage(err);
+    else {
+      this.showMessage(`Пассажир ${this.taxiManager.getFare()!.passengerName} сел`);
+      this.refreshCourierMarkers();
+    }
+  }
+
+  private handleTaxiDropoff(): void {
+    const result = this.taxiManager.dropoffPassenger(
+      this.player.getPosition().x,
+      this.player.getPosition().y,
+      this.player.inVehicle
+    );
+    if (typeof result === 'string') {
+      this.showMessage(result);
+      return;
+    }
+    this.showMessage(result.message);
+    this.refreshCourierMarkers();
   }
 
   private handleCarjackCaught(fine: number, arrestFine: number): void {

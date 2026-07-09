@@ -42,6 +42,20 @@
     "wheels": 2
   },
   {
+    "id": "taxi",
+    "name": "Такси",
+    "color": "#f1c40f",
+    "maxSpeed": 245,
+    "acceleration": 185,
+    "handling": 2.9,
+    "friction": 2.4,
+    "grip": 9,
+    "brakePower": 330,
+    "hp": 85,
+    "price": 0,
+    "wheels": 4
+  },
+  {
     "id": "sedan",
     "name": "Седан",
     "color": "#4a90d9",

@@ -61,12 +61,43 @@ export class JobManager {
       employedDay: this.state.day,
       daysWorked: 0,
       workedToday: false,
+      shiftOpen: false,
     };
     return null;
   }
 
   quit(): void {
     this.state.job = null;
+  }
+
+  isPieceworkJob(): boolean {
+    return this.isCourierJob() || this.isTaxiJob();
+  }
+
+  isTaxiJob(): boolean {
+    const cfg = this.getJobById(this.state.job?.id ?? '');
+    return cfg?.jobType === 'taxi' || cfg?.id === 'taxi';
+  }
+
+  isShiftOpen(): boolean {
+    return this.state.job?.shiftOpen === true;
+  }
+
+  openShift(): string | null {
+    if (!this.state.job) return 'Нет работы';
+    if (!this.isPieceworkJob()) return 'Смена только для курьера/таксиста';
+    this.state.job.shiftOpen = true;
+    return null;
+  }
+
+  /** End accepting new orders; fails if active piecework order. */
+  closeShift(hasActiveOrder: boolean): string | null {
+    if (!this.state.job) return 'Нет работы';
+    if (!this.isPieceworkJob()) return 'Смена только для курьера/таксиста';
+    if (hasActiveOrder) return 'Сначала завершите текущий заказ';
+    this.state.job.shiftOpen = false;
+    this.state.lifeStats.shiftsWorked += 1;
+    return null;
   }
 
   hasJob(): boolean {

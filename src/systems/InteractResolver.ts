@@ -16,6 +16,12 @@ export type InteractKind =
   | 'courier_take_order'
   | 'courier_pickup'
   | 'courier_deliver'
+  | 'job_end_shift'
+  | 'job_start_shift'
+  | 'taxi_take_fare'
+  | 'taxi_pickup'
+  | 'taxi_dropoff'
+  | 'car_wash'
   | 'home_enter'
   | 'home_rent'
   | 'task_board'
@@ -39,9 +45,15 @@ const PRIORITY: Record<InteractKind, number> = {
   shop_clerk: 80,
   courier_deliver: 79,
   courier_pickup: 79,
+  taxi_dropoff: 79,
+  taxi_pickup: 79,
   courier_take_order: 78,
-  job_shift: 77,
-  job_hr: 76,
+  taxi_take_fare: 78,
+  job_start_shift: 77,
+  job_end_shift: 77,
+  car_wash: 76,
+  job_shift: 75,
+  job_hr: 74,
   home_enter: 74,
   home_rent: 72,
   task_board: 55,

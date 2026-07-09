@@ -158,22 +158,36 @@ export class HUD {
           )
         : null;
       const isCourier = jobCfg?.jobType === 'courier' || jobCfg?.id === 'courier';
+      const isTaxi = jobCfg?.jobType === 'taxi' || jobCfg?.id === 'taxi';
+      const shiftTag = this.state.job?.shiftOpen ? ' · смена' : '';
       this.weaponSlotsText.setText(
         this.state.job
           ? isCourier
-            ? `Работа: ${this.state.job.name} · доставки: ${this.state.lifeStats.courierDeliveries}`
-            : `Работа: ${this.state.job.name}${this.state.job.remoteUnlocked ? ' (удалёнка)' : ''}`
-          : 'Безработный'
+            ? `Курьер · ${this.state.lifeStats.courierDeliveries} дост.${shiftTag}`
+            : isTaxi
+              ? `Такси · ${this.state.lifeStats.taxiFares ?? 0} рейсов${shiftTag}`
+              : `Работа: ${this.state.job.name}${this.state.job.remoteUnlocked ? ' (удалёнка)' : ''}`
+          : 'Безработный · P — смартфон'
       );
       this.drawHealthBar();
       this.drawP2HealthBar();
       this.drawVehicleBar(vehicleHp);
       this.gangBars.clear();
-      this.gangLabels.setText(
-        this.state.housing.homeId
-          ? `Дом: ${this.state.housing.type === 'owned' ? 'свой' : 'аренда'}`
-          : 'Жильё: нет'
-      );
+      if (this.state.housing.type === 'rent' && this.state.housing.homeId) {
+        const days = Math.max(0, this.state.housing.rentDueDay - this.state.day);
+        // rent amount not on state — show days only
+        this.gangLabels.setText(
+          days === 0
+            ? `Аренда: сегодня списание`
+            : `Аренда через ${days} дн. (до дн.${this.state.housing.rentDueDay})`
+        );
+      } else {
+        this.gangLabels.setText(
+          this.state.housing.homeId
+            ? `Дом: ${this.state.housing.type === 'owned' ? 'свой' : 'аренда'}`
+            : 'Жильё: нет · P — смартфон'
+        );
+      }
       this.drawStoryPanel(!!storyLine);
       this.questText.setText(storyLine);
       if (jobCfg?.violent) {
@@ -184,8 +198,18 @@ export class HUD {
       } else if (isCourier) {
         this.dailyQuestText.setText(this.courierStatusLine(this.state.courierDelivery));
         this.gangBars.clear();
+      } else if (isTaxi) {
+        const f = this.state.taxiFare;
+        this.dailyQuestText.setText(
+          f
+            ? f.hasPassenger
+              ? `🚕 ${f.passengerName} → ${f.dropoffName}`
+              : `🚕 Забрать: ${f.passengerName}`
+            : `🚕 Чистота ${Math.round(this.state.taxiCarCleanliness ?? 100)}% · P — заказы`
+        );
+        this.gangBars.clear();
       } else {
-        this.dailyQuestText.setText(`Запасы: ${new GroceryManager(this.state).getFoodStockSummary()}`);
+        this.dailyQuestText.setText(`Запасы: ${new GroceryManager(this.state).getFoodStockSummary()} · P — смартфон`);
         this.gangBars.clear();
       }
       this.interactHint.setText(interactHint);

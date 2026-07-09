@@ -1,7 +1,7 @@
 import type { GameState } from '../config';
 
-const HUNGER_DECAY_PER_HOUR = 3.5;
-const SLEEP_DECAY_PER_HOUR = 2.8;
+const HUNGER_DECAY_PER_HOUR = 2.0;
+const SLEEP_DECAY_PER_HOUR = 1.6;
 const DRUNK_DECAY_PER_HOUR = 12;
 const SPRINT_HUNGER_MIN = 22;
 const DRUNK_SPRINT_MAX = 48;
@@ -18,6 +18,11 @@ export class NeedsManager {
     state.hunger = Math.max(0, state.hunger - HUNGER_DECAY_PER_HOUR);
     state.sleep = Math.max(0, state.sleep - SLEEP_DECAY_PER_HOUR);
     state.drunkLevel = Math.max(0, state.drunkLevel - DRUNK_DECAY_PER_HOUR);
+
+    // Taxi work car dirt while on open shift
+    if (state.job?.id === 'taxi' && state.job.shiftOpen) {
+      state.taxiCarCleanliness = Math.max(0, (state.taxiCarCleanliness ?? 100) - 2);
+    }
 
     if (state.hunger <= 0 || state.sleep <= 0) {
       const fromHunger = state.hunger <= 0;
@@ -57,13 +62,11 @@ export class NeedsManager {
   sleep(state: GameState, amount = 85): void {
     state.sleep = Math.min(100, state.sleep + amount);
     state.drunkLevel = Math.max(0, state.drunkLevel - 15);
-    // Light recovery while resting
     state.health = Math.min(state.maxHealth, state.health + 4);
   }
 
-  /** Extra hunger cost for sleeping through the night (no meals). */
   applySleepHunger(state: GameState, hours = SLEEP_HOURS_DEFAULT): void {
-    const cost = Math.round(hours * 1.2);
+    const cost = Math.round(hours * 1.0);
     state.hunger = Math.max(8, state.hunger - cost);
   }
 

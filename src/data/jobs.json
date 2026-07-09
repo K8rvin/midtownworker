@@ -98,6 +98,27 @@
     "shiftEnd": 14
   },
   {
+    "id": "taxi",
+    "name": "Таксист",
+    "employer": "Парк «Жёлтый»",
+    "description": "Возите пассажиров. Нужна чистая машина (седан/фургон). Оценка от каждого клиента.",
+    "jobType": "taxi",
+    "mapId": "city",
+    "doorX": 112,
+    "doorY": 108,
+    "interiorX": 111,
+    "interiorY": 106,
+    "interiorW": 3,
+    "interiorH": 2,
+    "hrX": 112,
+    "hrY": 106,
+    "salary": 0,
+    "remote": false,
+    "remoteAfterDays": 0,
+    "shiftStart": 7,
+    "shiftEnd": 23
+  },
+  {
     "id": "killer",
     "name": "Киллер",
     "employer": "Агентство «Тень»",

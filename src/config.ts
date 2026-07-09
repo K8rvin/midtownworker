@@ -73,6 +73,30 @@ export interface JobState {
   employedDay: number;
   daysWorked: number;
   workedToday: boolean;
+  /** Piecework (courier/taxi): accepting new orders. */
+  shiftOpen: boolean;
+}
+
+export interface TaxiFareState {
+  fareId: string;
+  passengerName: string;
+  pickupX: number;
+  pickupY: number;
+  dropoffX: number;
+  dropoffY: number;
+  dropoffName: string;
+  distanceTiles: number;
+  hasPassenger: boolean;
+  basePay: number;
+  timeLimitMinutes: number;
+  deadlineAbsMin: number;
+  startedAbsMin: number;
+}
+
+export interface NavTarget {
+  x: number;
+  y: number;
+  label: string;
 }
 
 export type CourierOrderCategory = 'food' | 'parcel' | 'fragile' | 'express';
@@ -109,6 +133,9 @@ export interface LifeStats {
   courierDeliveries: number;
   /** Consecutive successful on-time deliveries. */
   courierCombo: number;
+  taxiFares: number;
+  taxiRatingSum: number;
+  taxiRatingCount: number;
 }
 
 export interface GameState {
@@ -163,6 +190,12 @@ export interface GameState {
   storyChapter: number;
   /** Active courier delivery (courier job only). */
   courierDelivery: CourierDeliveryState | null;
+  /** Active taxi fare. */
+  taxiFare: TaxiFareState | null;
+  /** 0–100 cleanliness of work car (taxi). */
+  taxiCarCleanliness: number;
+  /** Smartphone navigation pin (world px). */
+  navTarget: NavTarget | null;
 }
 
 export interface CoopPlayerData {
@@ -192,6 +225,9 @@ export const DEFAULT_LIFE_STATS: LifeStats = {
   contractKills: 0,
   courierDeliveries: 0,
   courierCombo: 0,
+  taxiFares: 0,
+  taxiRatingSum: 0,
+  taxiRatingCount: 0,
 };
 
 export const DEFAULT_HOUSING: HousingState = {
@@ -243,4 +279,7 @@ export const DEFAULT_GAME_STATE: GameState = {
   activeLifeTaskId: null,
   storyChapter: 0,
   courierDelivery: null,
+  taxiFare: null,
+  taxiCarCleanliness: 100,
+  navTarget: null,
 };

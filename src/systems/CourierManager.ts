@@ -108,6 +108,7 @@ export class CourierManager {
 
   takeOrder(): string | null {
     if (!this.isCourierEmployed()) return 'Вы не работаете курьером';
+    if (!this.state.job?.shiftOpen) return 'Сначала начните смену (склад или смартфон)';
     if (this.hasActiveDelivery()) return 'Сначала завершите текущую доставку';
 
     const pickup = this.pickups[Math.floor(Math.random() * this.pickups.length)];
@@ -236,6 +237,7 @@ export class CourierManager {
     if (!this.isCourierEmployed()) return null;
     const d = this.state.courierDelivery;
     if (!d) {
+      if (!this.state.job?.shiftOpen) return null;
       const wh = this.getWarehouseTile();
       return {
         tileX: wh.x,

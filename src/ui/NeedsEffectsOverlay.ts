@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config';
 
-/** Drowsiness / drunkenness screen effects — eyelids, sway, no money penalties. */
+/**
+ * Drowsiness: double eyelid blink + longer hold when very tired.
+ */
 export class NeedsEffectsOverlay {
   private topLid: Phaser.GameObjects.Rectangle;
   private bottomLid: Phaser.GameObjects.Rectangle;
@@ -10,6 +12,10 @@ export class NeedsEffectsOverlay {
   private blinkDuration = 0;
   private blinkStrength = 0;
   private swayPhase = 0;
+  /** Double-blink: 0 idle, 1 first blink running, 2 gap, 3 second blink */
+  private doublePhase: 0 | 1 | 2 | 3 = 0;
+  private doubleGap = 0;
+  private secondBlinkQueued = false;
 
   constructor(private scene: Phaser.Scene) {
     this.sway = scene.add
@@ -29,37 +35,73 @@ export class NeedsEffectsOverlay {
   }
 
   triggerCollapseBlink(): void {
-    this.blinkDuration = 1.1;
+    this.blinkDuration = 1.3;
     this.blinkStrength = 1;
     this.blinkTimer = 0;
+    this.doublePhase = 0;
+    this.secondBlinkQueued = false;
+  }
+
+  private startBlink(intensity: number, longHold: boolean): void {
+    const hold = longHold
+      ? Phaser.Math.Linear(0.9, 1.35, intensity)
+      : Phaser.Math.Linear(0.28, 0.55, intensity);
+    this.blinkDuration = hold;
+    this.blinkStrength = Phaser.Math.Linear(0.4, 1, intensity);
   }
 
   update(dt: number, sleep: number, drunk: number): void {
     const drowsy = Math.max(0, (35 - sleep) / 35);
     const drunkFx = Math.min(1, drunk / 55);
     const intensity = Phaser.Math.Clamp(drowsy * 0.75 + drunkFx * 0.95, 0, 1);
+    const heavyDrowsy = drowsy > 0.35;
 
     if (intensity > 0.08) {
       this.blinkTimer -= dt;
-      if (this.blinkTimer <= 0 && this.blinkDuration <= 0) {
-        const baseInterval = Phaser.Math.Linear(14, 4.5, intensity);
-        this.blinkTimer = baseInterval + Math.random() * baseInterval * 0.5;
-        this.blinkDuration = Phaser.Math.Linear(0.22, 0.85, intensity);
-        this.blinkStrength = Phaser.Math.Linear(0.35, 1, intensity);
+
+      if (this.doublePhase === 2) {
+        this.doubleGap -= dt;
+        if (this.doubleGap <= 0) {
+          this.doublePhase = 3;
+          this.startBlink(intensity, heavyDrowsy);
+        }
+      }
+
+      if (this.blinkTimer <= 0 && this.blinkDuration <= 0 && this.doublePhase === 0) {
+        // Slower interval, heavier blinks
+        const baseInterval = Phaser.Math.Linear(18, 6, intensity);
+        this.blinkTimer = baseInterval + Math.random() * baseInterval * 0.4;
+        this.doublePhase = 1;
+        this.secondBlinkQueued = heavyDrowsy || Math.random() < 0.55 + intensity * 0.35;
+        this.startBlink(intensity, heavyDrowsy);
       }
     } else {
-      this.blinkTimer = 2;
+      this.blinkTimer = 3;
       this.blinkDuration = 0;
+      this.doublePhase = 0;
+      this.secondBlinkQueued = false;
     }
 
     let lid = 0;
     if (this.blinkDuration > 0) {
       this.blinkDuration -= dt;
-      const t = Phaser.Math.Clamp(this.blinkDuration / 0.85, 0, 1);
-      const curve = 1 - Math.abs(t * 2 - 1);
-      lid = curve * this.blinkStrength * (GAME_HEIGHT * 0.42);
+      const total = heavyDrowsy ? 1.35 : 0.85;
+      const t = Phaser.Math.Clamp(this.blinkDuration / total, 0, 1);
+      // Hold closed longer: flatter top of curve
+      const u = t < 0.35 ? t / 0.35 : t > 0.65 ? (1 - t) / 0.35 : 1;
+      lid = u * this.blinkStrength * (GAME_HEIGHT * 0.44);
+
+      if (this.blinkDuration <= 0) {
+        if (this.doublePhase === 1 && this.secondBlinkQueued) {
+          this.doublePhase = 2;
+          this.doubleGap = 0.14 + Math.random() * 0.08;
+          this.secondBlinkQueued = false;
+        } else {
+          this.doublePhase = 0;
+        }
+      }
     } else if (drowsy > 0.45 && drunkFx < 0.3) {
-      lid = drowsy * GAME_HEIGHT * 0.08;
+      lid = drowsy * GAME_HEIGHT * 0.1;
     }
 
     this.topLid.setSize(GAME_WIDTH, lid);

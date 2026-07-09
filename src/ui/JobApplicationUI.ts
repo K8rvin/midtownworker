@@ -162,6 +162,7 @@ export class JobApplicationUI {
 
   private payLabel(jobId: string, salary: number, jobType?: string): string {
     if (jobType === 'courier' || jobId === 'courier') return 'оплата за доставку';
+    if (jobType === 'taxi' || jobId === 'taxi') return 'оплата за рейс · рейтинг';
     return `$${salary}/смена`;
   }
 

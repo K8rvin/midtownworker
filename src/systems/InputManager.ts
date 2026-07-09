@@ -100,7 +100,7 @@ export class InputManager {
     this.keys = {};
     const codes = new Set([
       'W', 'A', 'S', 'D', 'UP', 'DOWN', 'LEFT', 'RIGHT',
-      'ESC', 'F5', 'F9', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'Q',
+      'ESC', 'F5', 'F9', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'Q', 'P',
       ...Object.values(this.settings.keys),
     ]);
     for (const code of codes) {

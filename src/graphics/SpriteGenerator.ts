@@ -951,6 +951,7 @@ export class SpriteGenerator {
       'vehicle_sports',
       'vehicle_truck',
       'vehicle_van',
+      'vehicle_taxi',
       'vehicle_police',
       'vehicle_bicycle',
       'vehicle_moped',
@@ -962,6 +963,7 @@ export class SpriteGenerator {
     this.genCarTopDown('vehicle_sports', 0xe04030, 0xa02018, 'sports');
     this.genCarTopDown('vehicle_truck', 0x9a7a50, 0x6a5030, 'truck');
     this.genCarTopDown('vehicle_van', 0x6a7a80, 0x4a5a60, 'van');
+    this.genCarTopDown('vehicle_taxi', 0xf1c40f, 0xc9a000, 'sedan');
     this.genCarTopDown('vehicle_police', 0xf0f0f0, 0x303040, 'police');
     this.genTwoWheeler('vehicle_bicycle', 0x2ecc71, 0x1a8a40, 'bicycle');
     this.genTwoWheeler('vehicle_moped', 0xf1c40f, 0xb8960a, 'moped');
