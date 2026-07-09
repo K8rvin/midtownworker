@@ -1,52 +1,88 @@
 import type Phaser from 'phaser';
 import { getAudio } from './AudioManager';
 
+/** Scenes that must never remain under the main menu. */
 const GAMEPLAY_SCENES = [
   'GameScene',
   'HomeScene',
   'PauseScene',
   'SettingsScene',
+  'SaveSlotsScene',
   'GameOverScene',
   'VictoryScene',
-  'SaveSlotsScene',
+  'LobbyScene',
 ] as const;
 
+function forceStopScene(sm: Phaser.Scenes.ScenePlugin | Phaser.Scenes.SceneManager, key: string): void {
+  try {
+    // Phaser can leave a scene half-alive if stopped while paused
+    const scene = sm.getScene?.(key) as Phaser.Scene | undefined;
+    if (scene?.sys?.isPaused?.()) {
+      sm.resume(key);
+    }
+  } catch {
+    /* ignore */
+  }
+  try {
+    sm.stop(key);
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
- * Hard reset to main menu — stops paused/active gameplay scenes so
- * a leftover paused GameScene cannot block or corrupt the menu.
+ * Hard reset to main menu. Uses the Game instance so cleanup still works
+ * even if the calling scene (Pause) is shutting down mid-click.
  */
 export function goToMainMenu(from: Phaser.Scene): void {
+  const game = from.game;
+
   try {
     getAudio(from).stopEngine();
     getAudio(from).stopMusic();
   } catch {
-    /* audio optional during teardown */
+    /* audio optional */
   }
 
-  for (const key of GAMEPLAY_SCENES) {
-    if (key === from.scene.key) continue;
+  // Defer one tick so we finish the pointer handler cleanly
+  const run = () => {
+    const sm = game.scene;
+    for (const key of GAMEPLAY_SCENES) {
+      forceStopScene(sm, key);
+    }
+
+    // Fresh menu on top — restart even if MainMenu was somehow still around
     try {
-      if (from.scene.isActive(key) || from.scene.isPaused(key) || from.scene.isSleeping(key)) {
-        from.scene.stop(key);
+      if (sm.isActive('MainMenuScene')) {
+        sm.stop('MainMenuScene');
       }
     } catch {
       /* ignore */
     }
-  }
+    try {
+      sm.start('MainMenuScene');
+    } catch (e) {
+      console.error('goToMainMenu failed', e);
+      try {
+        sm.run('MainMenuScene');
+      } catch {
+        /* ignore */
+      }
+    }
+  };
 
-  // Start menu last; also stops the calling scene (Pause / GameOver / etc.)
-  from.scene.start('MainMenuScene');
+  // Prefer browser timer: scene.time dies if Pause is stopped same frame
+  if (typeof window !== 'undefined' && typeof window.setTimeout === 'function') {
+    window.setTimeout(run, 0);
+  } else {
+    run();
+  }
 }
 
-/** Stop any lingering GameScene/Home before starting a fresh run. */
+/** Stop lingering gameplay before starting a new run / menu actions. */
 export function stopGameplayScenes(from: Phaser.Scene): void {
-  for (const key of ['GameScene', 'HomeScene', 'PauseScene', 'SaveSlotsScene'] as const) {
-    try {
-      if (from.scene.isActive(key) || from.scene.isPaused(key) || from.scene.isSleeping(key)) {
-        from.scene.stop(key);
-      }
-    } catch {
-      /* ignore */
-    }
+  const sm = from.game.scene;
+  for (const key of ['GameScene', 'HomeScene', 'PauseScene', 'SaveSlotsScene', 'SettingsScene'] as const) {
+    forceStopScene(sm, key);
   }
 }

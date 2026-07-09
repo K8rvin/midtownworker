@@ -239,9 +239,24 @@ export function createMenuButton(
     underline.setAlpha(0);
     btn.setScale(1);
   });
+  let busy = false;
   bg.on('pointerdown', () => {
-    getAudio(scene).playSfx('ui');
-    onClick();
+    if (busy) return;
+    busy = true;
+    try {
+      getAudio(scene).playSfx('ui');
+    } catch {
+      /* ignore audio errors */
+    }
+    try {
+      onClick();
+    } catch (e) {
+      console.error('Menu button action failed', e);
+    }
+    // Allow re-click after short delay (navigation often destroys the scene)
+    scene.time?.delayedCall?.(80, () => {
+      busy = false;
+    });
   });
 
   return btn;

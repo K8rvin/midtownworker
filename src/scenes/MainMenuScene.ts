@@ -20,12 +20,28 @@ export class MainMenuScene extends Phaser.Scene {
   }
 
   create(): void {
-    // Ensure no paused GameScene steals focus
+    // Clean camera left over from gameplay (zoom/follow freezes perceived UI)
+    try {
+      this.cameras.main.stopFollow();
+      this.cameras.main.setZoom(1);
+      this.cameras.main.setScroll(0, 0);
+      this.cameras.main.fadeIn(150, 13, 13, 20);
+    } catch {
+      /* ignore */
+    }
+    this.input.enabled = true;
+    this.input.setDefaultCursor('default');
+
+    // Ensure no paused GameScene steals focus / input
     stopGameplayScenes(this);
 
-    const audio = getAudio(this);
-    audio.ensureContext();
-    audio.startMusic();
+    try {
+      const audio = getAudio(this);
+      audio.ensureContext();
+      audio.startMusic();
+    } catch {
+      /* audio optional */
+    }
 
     createMenuBackdrop(this);
 

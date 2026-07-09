@@ -50,11 +50,15 @@ export class PauseScene extends Phaser.Scene {
       this.scene.launch('SettingsScene', { returnScene: 'PauseScene', resumeGame: true });
     }).setDepth(2);
 
+    let leaving = false;
     createMenuButton(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 116, 'ГЛАВНОЕ МЕНЮ', () => {
+      if (leaving) return;
+      leaving = true;
       goToMainMenu(this);
     }).setDepth(2);
 
     this.input.keyboard?.on('keydown-ESC', () => {
+      if (leaving) return;
       if (this.scene.isActive('SaveSlotsScene') || this.scene.isActive('SettingsScene')) return;
       this.scene.resume('GameScene');
       this.scene.stop();

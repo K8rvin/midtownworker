@@ -2942,21 +2942,40 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleShutdown = (): void => {
-    getAudio(this).stopEngine();
-    this.dynamicEvents?.cleanup();
-    this.cityMap?.destroy();
-    this.atmosphere?.destroy();
-    this.streetLights?.destroy();
-    this.streetLights = null;
-    this.softCrime?.destroy();
-    this.softCrime = null;
-    this.tireMarks?.clear();
-    this.mobileControls?.destroy();
-    this.mobileControls = null;
-    this.garageManager?.destroy();
-    this.network?.offMessage(this.onNetworkMessage);
-    this.resetSceneUI();
-    this.resetWorldEntities();
+    // Never throw during shutdown — one failed destroy used to leave the game frozen
+    const safe = (fn: () => void) => {
+      try {
+        fn();
+      } catch {
+        /* ignore teardown errors */
+      }
+    };
+    safe(() => getAudio(this).stopEngine());
+    safe(() => this.dynamicEvents?.cleanup());
+    safe(() => this.cameras?.main?.stopFollow());
+    safe(() => this.cameraZoomTween?.stop());
+    safe(() => {
+      this.cityMap?.destroy();
+    });
+    safe(() => this.atmosphere?.destroy());
+    safe(() => {
+      this.streetLights?.destroy();
+      this.streetLights = null;
+    });
+    safe(() => {
+      this.softCrime?.destroy();
+      this.softCrime = null;
+    });
+    safe(() => this.smartphone?.close());
+    safe(() => this.tireMarks?.clear());
+    safe(() => {
+      this.mobileControls?.destroy();
+      this.mobileControls = null;
+    });
+    safe(() => this.garageManager?.destroy());
+    safe(() => this.network?.offMessage(this.onNetworkMessage));
+    safe(() => this.resetSceneUI());
+    safe(() => this.resetWorldEntities());
   };
 
   private handleVehicleDestroyed = (): void => {
@@ -2964,24 +2983,23 @@ export class GameScene extends Phaser.Scene {
   };
 
   private ensureSceneRunning(): void {
-    // Never auto-resume while pause/settings/slots overlay is open
+    // Never fight the main menu / overlays — auto-resume caused freezes
     if (
+      this.scene.isActive('MainMenuScene') ||
       this.scene.isActive('PauseScene') ||
       this.scene.isActive('SettingsScene') ||
-      this.scene.isActive('SaveSlotsScene')
+      this.scene.isActive('SaveSlotsScene') ||
+      this.scene.isActive('GameOverScene') ||
+      this.scene.isActive('VictoryScene')
     ) {
       return;
     }
-    if (this.sys.isPaused()) {
-      this.sys.resume();
-    }
-    if (this.scene.isPaused('GameScene')) {
-      this.scene.resume('GameScene');
-    }
+    // Do NOT auto-resume a intentionally paused GameScene
   }
 
   private pauseGame(): void {
     if (
+      this.scene.isActive('MainMenuScene') ||
       this.scene.isActive('PauseScene') ||
       this.scene.isActive('SaveSlotsScene') ||
       this.scene.isActive('SettingsScene')
