@@ -397,6 +397,14 @@ function applyBuildingInteriors(
           if (iy < tiles.length && ix < (tiles[0]?.length ?? 0)) tiles[iy][ix] = TileType.Sidewalk;
         }
       }
+      if (layout.doorX !== undefined && layout.doorY !== undefined) {
+        const aisleStart = layout.interiorY + (layout.interiorH ?? 1);
+        for (let iy = aisleStart; iy < layout.doorY; iy++) {
+          if (iy >= 0 && iy < tiles.length && layout.doorX < (tiles[0]?.length ?? 0)) {
+            tiles[iy][layout.doorX] = TileType.Sidewalk;
+          }
+        }
+      }
     }
   }
 }

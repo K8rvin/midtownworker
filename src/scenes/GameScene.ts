@@ -238,7 +238,10 @@ export class GameScene extends Phaser.Scene {
     const spawnX = this.state.playerX || defaultSpawn.x;
     const spawnY = this.state.playerY || defaultSpawn.y;
     this.player = new Player(this, spawnX, spawnY, this.state);
-    if (this.state.onRoof) {
+    if (LIFE_SIM) {
+      this.state.onRoof = false;
+      this.player.toggleRoof(false);
+    } else if (this.state.onRoof) {
       const zone = this.cityMap.getRoofZoneAtWorld(spawnX, spawnY);
       this.player.toggleRoof(true, zone?.id ?? null);
     }
@@ -600,6 +603,7 @@ export class GameScene extends Phaser.Scene {
       getAudio(this).stopEngine();
       this.player.update(this, dt, move, sprint, pointer);
       this.enforceRoofBounds(this.player);
+      this.enforceShopInteriorBounds(this.player);
       this.updateInteriorVisibility();
     }
 
@@ -1272,7 +1276,7 @@ export class GameScene extends Phaser.Scene {
       return candidates;
     }
 
-    const stairsZone = this.cityMap.getStairsZoneAtWorld(px, py, 1);
+    const stairsZone = !LIFE_SIM ? this.cityMap.getStairsZoneAtWorld(px, py, 1) : null;
     if (stairsZone) {
       const stairX = stairsZone.stairs.tx * TILE_SIZE + TILE_SIZE / 2;
       const stairY = stairsZone.stairs.ty * TILE_SIZE + TILE_SIZE / 2;
@@ -1605,6 +1609,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleStairsInteract(player: Player = this.player): boolean {
+    if (LIFE_SIM) return false;
     const zone = this.cityMap.getStairsZoneAtWorld(player.sprite.x, player.sprite.y, 1);
     if (!zone) return false;
 
@@ -1637,8 +1642,36 @@ export class GameScene extends Phaser.Scene {
     return true;
   }
 
+  private enforceShopInteriorBounds(player: Player): void {
+    if (!player.insideShopId || player.inVehicle) return;
+    const shop = this.shopManager.getShopById(player.insideShopId);
+    if (!shop) return;
+
+    const pad = 7;
+    const left = shop.interiorX * TILE_SIZE + pad;
+    const right = (shop.interiorX + shop.interiorW) * TILE_SIZE - pad;
+    const top = shop.interiorY * TILE_SIZE + pad;
+    const interiorBottom = (shop.interiorY + shop.interiorH) * TILE_SIZE - pad;
+    const doorCx = shop.doorX * TILE_SIZE + TILE_SIZE / 2;
+    const doorY = shop.doorY * TILE_SIZE + TILE_SIZE / 2;
+    const inDoorColumn = Math.abs(player.sprite.x - doorCx) <= TILE_SIZE * 0.42;
+
+    let x = Phaser.Math.Clamp(player.sprite.x, left, right);
+    let y = player.sprite.y;
+    if (inDoorColumn) {
+      y = Phaser.Math.Clamp(y, top, doorY);
+    } else {
+      y = Phaser.Math.Clamp(y, top, interiorBottom);
+    }
+
+    if (x !== player.sprite.x || y !== player.sprite.y) {
+      player.sprite.setPosition(x, y);
+      player.sprite.setVelocity(0, 0);
+    }
+  }
+
   private enforceRoofBounds(player: Player): void {
-    if (!player.onRoof || !player.roofZoneId || player.inVehicle) return;
+    if (LIFE_SIM || !player.onRoof || !player.roofZoneId || player.inVehicle) return;
     if (this.cityMap.isValidRoofPosition(player.sprite.x, player.sprite.y, player.roofZoneId)) return;
 
     const zone = this.cityMap.getRoofZone(player.roofZoneId);
@@ -2035,6 +2068,13 @@ export class GameScene extends Phaser.Scene {
 
   private updateElevationVisuals(): void {
     const roofLayer = this.cityMap.getRoofLayer();
+    if (LIFE_SIM) {
+      roofLayer.setVisible(false);
+      roofLayer.setAlpha(0);
+      for (const m of this.stairMarkers) m.setVisible(false);
+      if (this.player.onRoof) this.player.toggleRoof(false);
+      return;
+    }
     if (this.player.onRoof) {
       roofLayer.setAlpha(1);
       roofLayer.setVisible(true);
@@ -2212,7 +2252,7 @@ export class GameScene extends Phaser.Scene {
         p.setDepth(3);
         this.payphones.push(p);
       }
-      if (obj.type === 'stairs') {
+      if (obj.type === 'stairs' && !LIFE_SIM) {
         const s = this.add.sprite(obj.x * TILE_SIZE + 16, obj.y * TILE_SIZE + 16, 'tile_stairs');
         s.setOrigin(0.5, 0.5);
         s.setDepth(3);

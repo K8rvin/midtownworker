@@ -23,10 +23,10 @@ const shopMgr = readFileSync(join(root, 'src', 'systems', 'ShopManager.ts'), 'ut
 if (!shopMgr.includes('getShopAtDoor')) throw new Error('Shop door entry missing');
 if (!shopMgr.includes('isInsideShop')) throw new Error('Shop interior check missing');
 if (!shopMgr.includes('getShopNearClerk')) throw new Error('Shop clerk proximity missing');
-if (!shopMgr.includes('maxDist = 40')) throw new Error('Shop door radius should allow south sidewalk tile');
+if (!shopMgr.includes('isNearShopDoor')) throw new Error('Tile-based shop door check missing');
 
 const TILE_SIZE = 32;
-const DOOR_RADIUS = 40;
+const DOOR_RADIUS = 52;
 const grocery = shops.find((s) => s.id === 'grocery_1');
 if (!grocery) throw new Error('Grocery shop missing');
 const doorCx = grocery.doorX * TILE_SIZE + TILE_SIZE / 2;

@@ -8,10 +8,10 @@
     "doorX": 106,
     "doorY": 109,
     "interiorX": 105,
-    "interiorY": 106,
+    "interiorY": 107,
     "interiorW": 3,
     "interiorH": 2,
-    "clerk": { "name": "Кассир", "x": 106, "y": 106 },
+    "clerk": { "name": "Кассир", "x": 106, "y": 107 },
     "items": ["bread", "water", "sandwich", "meal"]
   },
   {
@@ -23,10 +23,10 @@
     "doorX": 118,
     "doorY": 119,
     "interiorX": 117,
-    "interiorY": 116,
+    "interiorY": 117,
     "interiorW": 3,
     "interiorH": 2,
-    "clerk": { "name": "Консультант", "x": 118, "y": 116 },
+    "clerk": { "name": "Консультант", "x": 118, "y": 117 },
     "items": ["bed_basic", "fridge_basic", "desk_basic"]
   },
   {

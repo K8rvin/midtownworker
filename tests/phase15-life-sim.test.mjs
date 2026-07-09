@@ -150,6 +150,8 @@ if (!gameScene.includes('enableGameClock')) throw new Error('Life-sim game clock
 const vehicle = readFileSync(join(root, 'src', 'entities', 'Vehicle.ts'), 'utf8');
 if (!vehicle.includes('tickTrafficStuck')) throw new Error('Traffic stuck recovery missing');
 if (!gameScene.includes('isTraffic && b.isTraffic')) throw new Error('Traffic gridlock guard missing');
+if (!gameScene.includes('enforceShopInteriorBounds')) throw new Error('Shop interior wall clamp missing');
+if (!gameScene.includes('LIFE_SIM) return false')) throw new Error('Roofs should be disabled in life sim');
 
 const pedestrian = readFileSync(join(root, 'src', 'entities', 'Pedestrian.ts'), 'utf8');
 if (!pedestrian.includes('findNearbySidewalkTile')) throw new Error('Pedestrian nearby walking missing');

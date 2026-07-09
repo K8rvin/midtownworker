@@ -353,6 +353,9 @@ export class CityMap {
           this.shopPassableTiles.add(`${x},${y}`);
         }
       }
+      for (let y = layout.interiorY + layout.interiorH; y < layout.doorY; y++) {
+        this.shopPassableTiles.add(`${layout.doorX},${y}`);
+      }
     };
 
     for (const shop of shopsData as {
