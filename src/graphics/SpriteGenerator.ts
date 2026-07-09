@@ -1,5 +1,29 @@
 import Phaser from 'phaser';
 import { COLORS } from '../config';
+import { TILESET_COLUMNS, TILESET_TILECOUNT, tilesetFrameKeys } from '../world/TileGids';
+
+/** Always regenerate these — PNG overrides are legacy doodles. */
+const FORCE_TILE_KEYS = [
+  'tile_grass',
+  'tile_road',
+  'tile_sidewalk',
+  'tile_building',
+  'tile_roof',
+  'tile_stairs',
+  'tile_building_brick',
+  'tile_building_brick_b',
+  'tile_building_glass',
+  'tile_building_industrial',
+  'tile_building_warehouse',
+  'tile_building_suburban',
+  'tile_building_campus',
+  'tile_building_old',
+  'tile_roof_flat',
+  'tile_roof_gravel',
+  'tile_roof_metal',
+  'tile_roof_green',
+  'city_tileset',
+];
 
 export class SpriteGenerator {
   private skip = new Set<string>();
@@ -8,6 +32,10 @@ export class SpriteGenerator {
 
   generateAll(skip: ReadonlySet<string> = new Set()): void {
     this.skip = new Set(skip);
+    for (const key of FORCE_TILE_KEYS) {
+      if (this.scene.textures.exists(key)) this.scene.textures.remove(key);
+      this.skip.delete(key);
+    }
     this.genTiles();
     this.genCityTileset();
     this.genPlayer();
@@ -26,121 +54,428 @@ export class SpriteGenerator {
   }
 
   private genTiles(): void {
-    if (this.shouldGen('tile_grass')) this.makeTile('tile_grass', 32, 32, (g) => {
-      g.fillStyle(COLORS.grass, 1);
+    // --- Terrain (pixel grit, deterministic) ---
+    this.forceTile('tile_grass', (g) => {
+      g.fillStyle(0x1a3a2a, 1);
       g.fillRect(0, 0, 32, 32);
-      g.fillStyle(0x254d3a, 0.5);
-      for (let i = 0; i < 8; i++) {
-        g.fillRect(Phaser.Math.Between(0, 28), Phaser.Math.Between(0, 28), 2, 2);
+      g.fillStyle(0x234d36, 1);
+      g.fillRect(1, 1, 30, 30);
+      const specs = [0x2d5a40, 0x1e4530, 0x3a6a4a, 0x163828];
+      for (let i = 0; i < 24; i++) {
+        const x = (i * 7 + 3) % 30;
+        const y = (i * 11 + 5) % 30;
+        g.fillStyle(specs[i % specs.length], 1);
+        g.fillRect(1 + x, 1 + y, 1, 1);
+        if (i % 4 === 0) g.fillRect(1 + x, 1 + y, 2, 1);
       }
     });
 
-    if (this.shouldGen('tile_road')) this.makeTile('tile_road', 32, 32, (g) => {
-      g.fillStyle(0x222236, 1);
+    this.forceTile('tile_road', (g) => {
+      g.fillStyle(0x1a1a28, 1);
       g.fillRect(0, 0, 32, 32);
-      g.fillStyle(COLORS.road, 1);
-      g.fillRect(1, 1, 30, 30);
-      g.fillStyle(COLORS.roadLine, 0.55);
-      g.fillRect(14, 0, 4, 32);
-      g.fillStyle(0xd4c878, 0.35);
-      for (let y = 4; y < 32; y += 10) g.fillRect(15, y, 2, 5);
-      g.fillStyle(0x555577, 0.35);
-      g.fillRect(0, 0, 32, 2);
-      g.fillRect(0, 30, 32, 2);
-    });
-
-    if (this.shouldGen('tile_sidewalk')) this.makeTile('tile_sidewalk', 32, 32, (g) => {
-      g.fillStyle(COLORS.sidewalk, 1);
+      g.fillStyle(0x2a2a3c, 1);
       g.fillRect(0, 0, 32, 32);
-      g.fillStyle(0x4a4a60, 0.5);
+      // asphalt grit
+      for (let i = 0; i < 18; i++) {
+        g.fillStyle(i % 2 ? 0x323248 : 0x222234, 1);
+        g.fillRect((i * 5) % 31, (i * 9) % 31, 1, 1);
+      }
+      // center dashed line
+      g.fillStyle(0xc8b86a, 1);
+      for (let y = 2; y < 30; y += 8) g.fillRect(15, y, 2, 4);
+      // edge curbs
+      g.fillStyle(0x3a3a50, 1);
       g.fillRect(0, 0, 32, 1);
-      g.fillRect(0, 15, 32, 1);
       g.fillRect(0, 31, 32, 1);
     });
 
-    if (this.shouldGen('tile_building')) this.makeTile('tile_building', 32, 32, (g) => {
-      g.fillStyle(0x252538, 1);
+    this.forceTile('tile_sidewalk', (g) => {
+      g.fillStyle(0x3a3a4e, 1);
       g.fillRect(0, 0, 32, 32);
-      g.fillStyle(COLORS.building, 1);
-      g.fillRect(2, 4, 28, 28);
-      g.fillStyle(0x2a2a40, 1);
-      g.fillRect(0, 0, 32, 4);
-      const neon = [0xff2d55, 0x00e676, 0x00b4ff, 0xffd600];
-      for (let row = 0; row < 3; row++) {
-        for (let col = 0; col < 3; col++) {
-          const lit = (row + col) % 2 === 0;
-          g.fillStyle(lit ? 0xffee88 : 0x1a1a28, lit ? 0.85 : 1);
-          g.fillRect(4 + col * 9, 8 + row * 7, 6, 5);
-          if (lit && col === 1 && row === 0) {
-            g.fillStyle(neon[row], 0.5);
-            g.fillRect(3, 6, 26, 2);
-          }
-        }
-      }
-      g.fillStyle(0x1a1a28, 1);
-      g.fillRect(12, 24, 8, 8);
+      g.fillStyle(0x44445a, 1);
+      g.fillRect(1, 1, 14, 14);
+      g.fillRect(17, 1, 14, 14);
+      g.fillRect(1, 17, 14, 14);
+      g.fillRect(17, 17, 14, 14);
+      g.fillStyle(0x2e2e40, 1);
+      g.fillRect(0, 15, 32, 2);
+      g.fillRect(15, 0, 2, 32);
+      g.fillStyle(0x505068, 1);
+      g.fillRect(2, 2, 1, 1);
+      g.fillRect(20, 20, 1, 1);
     });
 
-    if (this.shouldGen('tile_roof')) this.makeTile('tile_roof', 32, 32, (g) => {
-      g.fillStyle(COLORS.buildingRoof, 1);
+    this.forceTile('tile_stairs', (g) => {
+      g.fillStyle(0x4a4a62, 1);
       g.fillRect(0, 0, 32, 32);
-      g.fillStyle(0x3a3a55, 0.6);
-      g.lineStyle(1, 0x3a3a55, 0.8);
-      for (let i = 0; i < 32; i += 8) {
-        g.lineBetween(i, 0, i, 32);
-        g.lineBetween(0, i, 32, i);
-      }
-      g.fillStyle(0x666688, 1);
-      g.fillRect(4, 4, 6, 10);
-      g.fillRect(22, 4, 6, 10);
-    });
-
-    if (this.shouldGen('tile_stairs')) this.makeTile('tile_stairs', 32, 32, (g) => {
-      g.fillStyle(0x5a5a7a, 1);
-      g.fillRect(0, 0, 32, 32);
-      g.fillStyle(0x7a7a9a, 1);
       for (let i = 0; i < 5; i++) {
-        g.fillRect(2, 2 + i * 6, 28, 4);
+        g.fillStyle(i % 2 ? 0x6a6a88 : 0x5a5a78, 1);
+        g.fillRect(2, 2 + i * 6, 28, 5);
+        g.fillStyle(0x3a3a50, 1);
+        g.fillRect(2, 6 + i * 6, 28, 1);
       }
       g.fillStyle(0xc8f542, 1);
-      g.fillTriangle(16, 8, 10, 20, 22, 20);
+      g.fillRect(14, 10, 4, 2);
+      g.fillRect(13, 12, 6, 2);
+      g.fillRect(12, 14, 8, 2);
+    });
+
+    // Default building/roof = brick / flat (GID 4 / 5)
+    this.drawBuildingBrick('tile_building', false);
+    this.drawRoofFlat('tile_roof');
+
+    // Variants
+    this.drawBuildingBrick('tile_building_brick', false);
+    this.drawBuildingBrick('tile_building_brick_b', true);
+    this.drawBuildingGlass('tile_building_glass');
+    this.drawBuildingIndustrial('tile_building_industrial');
+    this.drawBuildingWarehouse('tile_building_warehouse');
+    this.drawBuildingSuburban('tile_building_suburban');
+    this.drawBuildingCampus('tile_building_campus');
+    this.drawBuildingOld('tile_building_old');
+    this.drawRoofFlat('tile_roof_flat');
+    this.drawRoofGravel('tile_roof_gravel');
+    this.drawRoofMetal('tile_roof_metal');
+    this.drawRoofGreen('tile_roof_green');
+  }
+
+  private forceTile(key: string, draw: (g: Phaser.GameObjects.Graphics) => void): void {
+    if (this.scene.textures.exists(key)) this.scene.textures.remove(key);
+    this.makeTile(key, 32, 32, draw);
+  }
+
+  /** Brick facade — dense / mixed midtown. */
+  private drawBuildingBrick(key: string, alt: boolean): void {
+    this.forceTile(key, (g) => {
+      const wall = alt ? 0x5a3a3a : 0x4a3848;
+      const wallDark = alt ? 0x3a2828 : 0x322430;
+      const mortar = alt ? 0x6a4a4a : 0x5a4858;
+      g.fillStyle(wallDark, 1);
+      g.fillRect(0, 0, 32, 32);
+      g.fillStyle(wall, 1);
+      g.fillRect(1, 1, 30, 30);
+      // brick rows
+      for (let row = 0; row < 7; row++) {
+        const y = 2 + row * 4;
+        g.fillStyle(mortar, 1);
+        g.fillRect(1, y + 3, 30, 1);
+        const offset = row % 2 === 0 ? 0 : 2;
+        for (let col = 0; col < 6; col++) {
+          g.fillStyle(wallDark, 1);
+          g.fillRect(2 + offset + col * 5, y, 1, 3);
+        }
+      }
+      // cornice
+      g.fillStyle(0x2a1a28, 1);
+      g.fillRect(0, 0, 32, 3);
+      g.fillStyle(0x6a5a68, 1);
+      g.fillRect(1, 1, 30, 1);
+      // windows 2x2 grid
+      const lit = [true, false, true, true, false, true];
+      let wi = 0;
+      for (let row = 0; row < 2; row++) {
+        for (let col = 0; col < 3; col++) {
+          const wx = 3 + col * 10;
+          const wy = 6 + row * 9;
+          g.fillStyle(0x1a1020, 1);
+          g.fillRect(wx, wy, 8, 7);
+          g.fillStyle(lit[wi++] ? 0xffe8a0 : 0x1a2840, 1);
+          g.fillRect(wx + 1, wy + 1, 6, 5);
+          g.fillStyle(0x2a2030, 1);
+          g.fillRect(wx + 3, wy, 1, 7);
+          g.fillRect(wx, wy + 3, 8, 1);
+        }
+      }
+      // door
+      g.fillStyle(0x1a1018, 1);
+      g.fillRect(12, 24, 8, 8);
+      g.fillStyle(0x3a2a20, 1);
+      g.fillRect(13, 25, 6, 7);
+      g.fillStyle(0xc8a060, 1);
+      g.fillRect(17, 28, 1, 1);
     });
   }
 
-  /** Combined spritesheet for Phaser Tilemap (6 terrain + 3 zone markers). */
+  private drawBuildingGlass(key: string): void {
+    this.forceTile(key, (g) => {
+      g.fillStyle(0x1a2838, 1);
+      g.fillRect(0, 0, 32, 32);
+      g.fillStyle(0x2a3a4e, 1);
+      g.fillRect(1, 1, 30, 30);
+      g.fillStyle(0x0a1828, 1);
+      g.fillRect(0, 0, 32, 3);
+      // glass grid
+      for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 4; col++) {
+          const wx = 2 + col * 7;
+          const wy = 4 + row * 7;
+          const bright = (row + col) % 3 !== 0;
+          g.fillStyle(bright ? 0x4a88b8 : 0x1a3048, 1);
+          g.fillRect(wx, wy, 6, 6);
+          g.fillStyle(0x88c8e8, bright ? 0.35 : 0.15);
+          g.fillRect(wx + 1, wy + 1, 2, 2);
+        }
+      }
+      g.fillStyle(0x0a1020, 1);
+      g.fillRect(13, 26, 6, 6);
+    });
+  }
+
+  private drawBuildingIndustrial(key: string): void {
+    this.forceTile(key, (g) => {
+      g.fillStyle(0x3a3a40, 1);
+      g.fillRect(0, 0, 32, 32);
+      g.fillStyle(0x4a4a52, 1);
+      g.fillRect(1, 1, 30, 30);
+      // corrugated stripes
+      for (let x = 2; x < 30; x += 3) {
+        g.fillStyle(0x3a3a44, 1);
+        g.fillRect(x, 2, 1, 28);
+      }
+      g.fillStyle(0x2a2a30, 1);
+      g.fillRect(0, 0, 32, 4);
+      // large windows
+      g.fillStyle(0x1a2030, 1);
+      g.fillRect(3, 6, 12, 8);
+      g.fillRect(17, 6, 12, 8);
+      g.fillStyle(0x3a5060, 1);
+      g.fillRect(4, 7, 10, 6);
+      g.fillRect(18, 7, 10, 6);
+      // garage door
+      g.fillStyle(0x2a2a32, 1);
+      g.fillRect(6, 18, 20, 13);
+      for (let y = 19; y < 30; y += 3) {
+        g.fillStyle(0x3a3a44, 1);
+        g.fillRect(7, y, 18, 2);
+      }
+      g.fillStyle(0x888890, 1);
+      g.fillRect(15, 24, 2, 2);
+    });
+  }
+
+  private drawBuildingWarehouse(key: string): void {
+    this.forceTile(key, (g) => {
+      g.fillStyle(0x4a4030, 1);
+      g.fillRect(0, 0, 32, 32);
+      g.fillStyle(0x5a5040, 1);
+      g.fillRect(1, 1, 30, 30);
+      g.fillStyle(0x3a3428, 1);
+      g.fillRect(0, 0, 32, 3);
+      // loading bay
+      g.fillStyle(0x2a2418, 1);
+      g.fillRect(4, 14, 24, 17);
+      g.fillStyle(0x4a4030, 1);
+      for (let y = 15; y < 30; y += 4) g.fillRect(5, y, 22, 2);
+      // high windows
+      for (let col = 0; col < 4; col++) {
+        g.fillStyle(0x1a2830, 1);
+        g.fillRect(3 + col * 7, 5, 5, 6);
+        g.fillStyle(0x6a8890, 1);
+        g.fillRect(4 + col * 7, 6, 3, 4);
+      }
+      // chimney hint
+      g.fillStyle(0x3a3028, 1);
+      g.fillRect(24, 1, 5, 8);
+    });
+  }
+
+  private drawBuildingSuburban(key: string): void {
+    this.forceTile(key, (g) => {
+      // grass strip at bottom edge of lot feel
+      g.fillStyle(0x2a4a30, 1);
+      g.fillRect(0, 28, 32, 4);
+      // house body
+      g.fillStyle(0x6a5a48, 1);
+      g.fillRect(2, 10, 28, 18);
+      g.fillStyle(0x5a4a3a, 1);
+      g.fillRect(2, 10, 28, 2);
+      // roof triangle hint (top-down: darker top band)
+      g.fillStyle(0x5a3030, 1);
+      g.fillRect(1, 4, 30, 7);
+      g.fillStyle(0x4a2828, 1);
+      g.fillRect(4, 2, 24, 3);
+      g.fillStyle(0x3a2020, 1);
+      g.fillRect(10, 1, 12, 2);
+      // windows
+      g.fillStyle(0xffe8a0, 1);
+      g.fillRect(5, 14, 6, 6);
+      g.fillRect(21, 14, 6, 6);
+      g.fillStyle(0x2a2018, 1);
+      g.fillRect(7, 14, 1, 6);
+      g.fillRect(23, 14, 1, 6);
+      g.fillRect(5, 16, 6, 1);
+      g.fillRect(21, 16, 6, 1);
+      // door
+      g.fillStyle(0x3a2818, 1);
+      g.fillRect(13, 18, 6, 10);
+      g.fillStyle(0xc8a060, 1);
+      g.fillRect(17, 23, 1, 1);
+      // bush
+      g.fillStyle(0x2d6a3a, 1);
+      g.fillRect(3, 26, 4, 3);
+      g.fillRect(25, 26, 4, 3);
+    });
+  }
+
+  private drawBuildingCampus(key: string): void {
+    this.forceTile(key, (g) => {
+      g.fillStyle(0x3a4850, 1);
+      g.fillRect(0, 0, 32, 32);
+      g.fillStyle(0xc8d0d4, 1);
+      g.fillRect(1, 1, 30, 30);
+      g.fillStyle(0xa8b0b8, 1);
+      g.fillRect(0, 0, 32, 3);
+      // clean window grid
+      for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 3; col++) {
+          const wx = 3 + col * 10;
+          const wy = 5 + row * 8;
+          g.fillStyle(0x2a5068, 1);
+          g.fillRect(wx, wy, 8, 6);
+          g.fillStyle(0x88c0d8, 1);
+          g.fillRect(wx + 1, wy + 1, 6, 4);
+        }
+      }
+      g.fillStyle(0x4a5860, 1);
+      g.fillRect(12, 28, 8, 4);
+    });
+  }
+
+  private drawBuildingOld(key: string): void {
+    this.forceTile(key, (g) => {
+      g.fillStyle(0x4a3830, 1);
+      g.fillRect(0, 0, 32, 32);
+      g.fillStyle(0x6a5040, 1);
+      g.fillRect(1, 1, 30, 30);
+      // weathered streaks
+      for (let i = 0; i < 6; i++) {
+        g.fillStyle(0x5a4030, 1);
+        g.fillRect(3 + i * 5, 2, 1, 28);
+      }
+      g.fillStyle(0x3a2820, 1);
+      g.fillRect(0, 0, 32, 4);
+      // arched window feel
+      for (let col = 0; col < 3; col++) {
+        const wx = 3 + col * 10;
+        g.fillStyle(0x1a1810, 1);
+        g.fillRect(wx, 8, 8, 10);
+        g.fillStyle(0x3a4830, 1);
+        g.fillRect(wx + 1, 9, 6, 8);
+        g.fillStyle(0x2a2018, 1);
+        g.fillRect(wx + 3, 8, 2, 10);
+      }
+      // shop door
+      g.fillStyle(0x2a1a10, 1);
+      g.fillRect(11, 22, 10, 10);
+      g.fillStyle(0x5a4030, 1);
+      g.fillRect(12, 23, 8, 8);
+      // awning
+      g.fillStyle(0x8a3030, 1);
+      g.fillRect(8, 20, 16, 3);
+      g.fillStyle(0xc8a040, 1);
+      g.fillRect(8, 20, 16, 1);
+    });
+  }
+
+  private drawRoofFlat(key: string): void {
+    this.forceTile(key, (g) => {
+      g.fillStyle(0x3a3a52, 1);
+      g.fillRect(0, 0, 32, 32);
+      g.fillStyle(0x4a4a62, 1);
+      g.fillRect(1, 1, 30, 30);
+      g.fillStyle(0x2a2a3a, 1);
+      for (let i = 0; i < 32; i += 8) {
+        g.fillRect(i, 0, 1, 32);
+        g.fillRect(0, i, 32, 1);
+      }
+      // AC units
+      g.fillStyle(0x5a5a70, 1);
+      g.fillRect(4, 4, 8, 6);
+      g.fillRect(20, 18, 8, 6);
+      g.fillStyle(0x3a3a50, 1);
+      g.fillRect(5, 5, 6, 2);
+      g.fillRect(21, 19, 6, 2);
+    });
+  }
+
+  private drawRoofGravel(key: string): void {
+    this.forceTile(key, (g) => {
+      g.fillStyle(0x4a4840, 1);
+      g.fillRect(0, 0, 32, 32);
+      for (let i = 0; i < 40; i++) {
+        g.fillStyle(i % 3 === 0 ? 0x5a5848 : 0x3a3830, 1);
+        g.fillRect((i * 7) % 31, (i * 11) % 31, 1, 1);
+      }
+      g.fillStyle(0x6a6858, 1);
+      g.fillRect(10, 10, 12, 8);
+      g.fillStyle(0x2a2820, 1);
+      g.fillRect(12, 12, 8, 4);
+    });
+  }
+
+  private drawRoofMetal(key: string): void {
+    this.forceTile(key, (g) => {
+      g.fillStyle(0x4a5058, 1);
+      g.fillRect(0, 0, 32, 32);
+      for (let y = 0; y < 32; y += 4) {
+        g.fillStyle(y % 8 === 0 ? 0x5a6068 : 0x3a4048, 1);
+        g.fillRect(0, y, 32, 3);
+      }
+      g.fillStyle(0x2a3038, 1);
+      g.fillRect(14, 6, 4, 20);
+      g.fillStyle(0x6a7078, 1);
+      g.fillRect(6, 22, 8, 6);
+    });
+  }
+
+  private drawRoofGreen(key: string): void {
+    this.forceTile(key, (g) => {
+      g.fillStyle(0x2a4a30, 1);
+      g.fillRect(0, 0, 32, 32);
+      g.fillStyle(0x3a6a40, 1);
+      g.fillRect(1, 1, 30, 30);
+      for (let i = 0; i < 20; i++) {
+        g.fillStyle(i % 2 ? 0x4a7a50 : 0x2a5a38, 1);
+        g.fillRect((i * 5 + 2) % 30, (i * 7 + 3) % 30, 2, 2);
+      }
+      g.fillStyle(0x5a4a30, 1);
+      g.fillRect(20, 4, 8, 6);
+    });
+  }
+
+  /** Combined spritesheet for Phaser Tilemap (21 frames: base + zones + variants). */
   private genCityTileset(): void {
-    if (!this.shouldGen('city_tileset')) return;
-    const terrain = [
-      'tile_grass',
-      'tile_road',
-      'tile_sidewalk',
-      'tile_building',
-      'tile_roof',
-      'tile_stairs',
-    ];
+    if (this.scene.textures.exists('city_tileset')) {
+      this.scene.textures.remove('city_tileset');
+    }
+    const frameKeys = tilesetFrameKeys();
     const canvas = document.createElement('canvas');
-    canvas.width = 288;
+    canvas.width = TILESET_COLUMNS * 32;
     canvas.height = 32;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    for (let i = 0; i < terrain.length; i++) {
-      if (!this.scene.textures.exists(terrain[i])) continue;
-      const src = this.scene.textures.get(terrain[i]).getSourceImage() as HTMLCanvasElement;
-      ctx.drawImage(src, 0, 0, 32, 32, i * 32, 0, 32, 32);
-    }
-
     const zoneColors = [COLORS.yakuza, COLORS.rednecks, COLORS.scientists];
-    for (let i = 0; i < 3; i++) {
-      ctx.fillStyle = `#${zoneColors[i].toString(16).padStart(6, '0')}`;
-      ctx.globalAlpha = 0.35;
-      ctx.fillRect((6 + i) * 32, 0, 32, 32);
-      ctx.globalAlpha = 1;
+
+    for (let i = 0; i < TILESET_TILECOUNT; i++) {
+      const key = frameKeys[i];
+      const dx = i * 32;
+      if (key && this.scene.textures.exists(key)) {
+        const src = this.scene.textures.get(key).getSourceImage() as HTMLCanvasElement | HTMLImageElement;
+        ctx.drawImage(src, 0, 0, 32, 32, dx, 0, 32, 32);
+      } else if (i >= 6 && i <= 8) {
+        // zone swatches
+        const c = zoneColors[i - 6];
+        ctx.fillStyle = `#${c.toString(16).padStart(6, '0')}`;
+        ctx.globalAlpha = 0.35;
+        ctx.fillRect(dx, 0, 32, 32);
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.fillStyle = '#333344';
+        ctx.fillRect(dx, 0, 32, 32);
+      }
     }
 
-    if (this.scene.textures.exists('city_tileset')) {
-      this.scene.textures.remove('city_tileset');
-    }
     this.scene.textures.addCanvas('city_tileset', canvas);
   }
 

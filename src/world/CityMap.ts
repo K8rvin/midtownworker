@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { TILE_SIZE, GangId } from '../config';
-import { generateMapData, gidToTileType, zoneGidToGang } from './MapDataGenerator';
+import { generateMapData, zoneGidToGang } from './MapDataGenerator';
+import { gidToTileType } from './TileGids';
 import { parseTiledObjects } from './TiledObjectParser';
 import { NavigationGrid } from './NavigationGrid';
 import { DEFAULT_MAP_ID, getMapConfig } from './MapRegistry';
@@ -15,6 +16,11 @@ import {
   getDistrictTheme,
   type DistrictTheme,
 } from './DistrictGrid';
+import {
+  getDistrictStyle,
+  textureKeyForGid,
+  visualGidForTile,
+} from './TileGids';
 
 export enum TileType {
   Grass = 0,
@@ -222,7 +228,7 @@ export class CityMap {
       this.gangZones[y] = [];
       for (let x = 0; x < this.mapWidth; x++) {
         const groundGid = groundLayer?.data?.[y]?.[x]?.index ?? 0;
-        this.tiles[y][x] = gidToTileType(groundGid) ?? TileType.Grass;
+        this.tiles[y][x] = (gidToTileType(groundGid) as TileType | null) ?? TileType.Grass;
 
         const zoneGid = zoneLayer?.data?.[y]?.[x]?.index ?? 0;
         this.gangZones[y][x] = zoneGidToGang(zoneGid);
@@ -275,6 +281,8 @@ export class CityMap {
       for (let x = 0; x < this.mapWidth; x++) {
         const tile = this.tiles[y][x];
         if (tile === TileType.Road || tile === TileType.Stairs) continue;
+        // Buildings/roofs already have pixel variant art — skip heavy tint
+        if (tile === TileType.Building || tile === TileType.Roof) continue;
         const districtId = getDistrictAt(this.districtGrid, x, y);
         const theme = getDistrictTheme(districtId);
         const tint = this.tileDistrictTint(tile, theme);
@@ -318,13 +326,20 @@ export class CityMap {
         const tile = this.tiles[y][x];
         const px = x * TILE_SIZE + TILE_SIZE / 2;
         const py = y * TILE_SIZE + TILE_SIZE / 2;
-        const sprite = this.scene.add.image(px, py, textureMap[tile]);
+        let tex = textureMap[tile];
+        if (tile === TileType.Building || tile === TileType.Roof) {
+          const districtId = getDistrictAt(this.districtGrid, x, y);
+          const style = getDistrictStyle(districtId);
+          const gid = visualGidForTile(tile, x, y, style);
+          tex = textureKeyForGid(gid) ?? tex;
+        }
+        const sprite = this.scene.add.image(px, py, tex);
         if (tile === TileType.Roof) {
           containerRoof.add(sprite);
         } else {
           containerGround.add(sprite);
         }
-        if (tile !== TileType.Road && tile !== TileType.Stairs) {
+        if (tile !== TileType.Road && tile !== TileType.Stairs && tile !== TileType.Building && tile !== TileType.Roof) {
           const districtId = getDistrictAt(this.districtGrid, x, y);
           const theme = getDistrictTheme(districtId);
           const tint = this.tileDistrictTint(tile, theme);

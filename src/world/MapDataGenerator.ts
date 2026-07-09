@@ -532,15 +532,13 @@ export function generateMapData(): GeneratedMapData {
   return { tiles, gangZones, objects };
 }
 
-/** Tiled GID: 0 = empty, 1–6 = TileType + 1 */
-export function tileTypeToGid(tile: TileType): number {
-  return tile + 1;
-}
-
-export function gidToTileType(gid: number): TileType | null {
-  if (gid < 1 || gid > 6) return null;
-  return (gid - 1) as TileType;
-}
+export {
+  tileTypeToGid,
+  gidToTileType,
+  visualGidForTile,
+  TILESET_TILECOUNT,
+  TILESET_COLUMNS,
+} from './TileGids';
 
 /** Zone layer GID: 7=yakuza, 8=rednecks, 9=scientists */
 export function gangToZoneGid(gang: GangId | null): number {

@@ -206,6 +206,7 @@ docs/
 - **VFX / следы:** pool частиц; tire marks в одном Graphics
 - **HUD life-sim:** бары голод/сон, панель сюжета
 - **Дом:** сон +7 ч игрового времени; fridge на стартовой студии; больше мебели; работа «Уборщик»
+- **Пиксельные здания:** варианты фасадов по style района (brick/glass/industrial/suburban/…), tileset 21 GID (`src/data/tile-gids.json`, `TileGids.ts`)
 
 ---
 

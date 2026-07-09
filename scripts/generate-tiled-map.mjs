@@ -6,14 +6,17 @@ import { writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { generateCityMapData, TileType } from './lib/generate-city-map.mjs';
+import {
+  visualGidForTile,
+  pickBuildingGid,
+  pickRoofGid,
+  getDistrictStyleAt,
+  tilesetMeta,
+} from './lib/tile-gids.mjs';
 
 const TILE_SIZE = 32;
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = join(root, 'public', 'maps');
-
-function tileToGid(tile) {
-  return tile + 1;
-}
 
 function gangToZoneGid(gang) {
   if (!gang) return 0;
@@ -202,11 +205,16 @@ function buildTiledMap({ MAP_WIDTH, MAP_HEIGHT, tiles, gangZones, objects, npcSp
   for (let y = 0; y < MAP_HEIGHT; y++) {
     for (let x = 0; x < MAP_WIDTH; x++) {
       const t = tiles[y][x];
+      const style = getDistrictStyleAt(x, y);
       if (t === TileType.Roof) {
-        groundData.push(tileToGid(TileType.Building));
-        roofData.push(tileToGid(TileType.Roof));
+        // Roof pad sits on building ground + roof layer
+        groundData.push(pickBuildingGid(x, y, style));
+        roofData.push(pickRoofGid(x, y, style));
+      } else if (t === TileType.Building) {
+        groundData.push(pickBuildingGid(x, y, style));
+        roofData.push(0);
       } else {
-        groundData.push(tileToGid(t));
+        groundData.push(visualGidForTile(t, x, y, style));
         roofData.push(0);
       }
       zoneData.push(gangToZoneGid(gangZones[y][x]));
@@ -231,9 +239,7 @@ function buildTiledMap({ MAP_WIDTH, MAP_HEIGHT, tiles, gangZones, objects, npcSp
     tiledversion: '1.10.2',
     tileheight: 32,
     tilewidth: 32,
-    tilesets: [
-      { columns: 9, firstgid: 1, margin: 0, name: 'city_tileset', spacing: 0, tilecount: 9, tileheight: 32, tilewidth: 32 },
-    ],
+    tilesets: [tilesetMeta()],
     type: 'map',
     version: '1.10',
   };

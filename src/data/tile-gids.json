@@ -1,0 +1,80 @@
+{
+  "tilecount": 21,
+  "columns": 21,
+  "base": {
+    "grass": 1,
+    "road": 2,
+    "sidewalk": 3,
+    "building": 4,
+    "roof": 5,
+    "stairs": 6
+  },
+  "zones": {
+    "yakuza": 7,
+    "rednecks": 8,
+    "scientists": 9
+  },
+  "buildings": {
+    "brick": 10,
+    "brick_b": 11,
+    "glass": 12,
+    "industrial": 13,
+    "warehouse": 14,
+    "suburban": 15,
+    "campus": 16,
+    "old": 17
+  },
+  "roofs": {
+    "flat": 18,
+    "gravel": 19,
+    "metal": 20,
+    "green": 21
+  },
+  "keysByGid": {
+    "1": "tile_grass",
+    "2": "tile_road",
+    "3": "tile_sidewalk",
+    "4": "tile_building",
+    "5": "tile_roof",
+    "6": "tile_stairs",
+    "7": null,
+    "8": null,
+    "9": null,
+    "10": "tile_building_brick",
+    "11": "tile_building_brick_b",
+    "12": "tile_building_glass",
+    "13": "tile_building_industrial",
+    "14": "tile_building_warehouse",
+    "15": "tile_building_suburban",
+    "16": "tile_building_campus",
+    "17": "tile_building_old",
+    "18": "tile_roof_flat",
+    "19": "tile_roof_gravel",
+    "20": "tile_roof_metal",
+    "21": "tile_roof_green"
+  },
+  "styleBuildings": {
+    "dense": [10, 11, 17],
+    "mixed": [10, 11, 17, 12],
+    "old_town": [17, 10, 11],
+    "skyline": [12, 12, 16],
+    "industrial": [13, 14, 13],
+    "docks": [14, 13, 14],
+    "suburban": [15, 15, 10],
+    "sparse": [15, 10, 15],
+    "campus": [16, 16, 12],
+    "park": [15, 10]
+  },
+  "styleRoofs": {
+    "dense": [18, 19],
+    "mixed": [18, 19],
+    "old_town": [19, 18],
+    "skyline": [18, 18],
+    "industrial": [20, 20, 19],
+    "docks": [20, 19],
+    "suburban": [21, 19],
+    "sparse": [21, 18],
+    "campus": [18, 21],
+    "park": [21, 18]
+  }
+}
