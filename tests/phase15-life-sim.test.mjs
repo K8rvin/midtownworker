@@ -72,6 +72,7 @@ if (!mapGen.includes('placeShopBuildings')) throw new Error('Shop buildings on m
 const shops = JSON.parse(readFileSync(join(root, 'src', 'data', 'shops.json'), 'utf8'));
 if (!shops.some((s) => s.type === 'grocery')) throw new Error('Grocery shop missing');
 if (!shops.some((s) => s.type === 'furniture')) throw new Error('Furniture shop missing');
+if (!shops.some((s) => s.type === 'bank')) throw new Error('Bank shop missing');
 
 const mainMenu = readFileSync(join(root, 'src', 'scenes', 'MainMenuScene.ts'), 'utf8');
 if (!mainMenu.includes("'РАБОТЯГА'") || !mainMenu.includes("'из мидтауна'")) {
@@ -149,7 +150,7 @@ if (!gameScene.includes('enableGameClock')) throw new Error('Life-sim game clock
 
 const vehicle = readFileSync(join(root, 'src', 'entities', 'Vehicle.ts'), 'utf8');
 if (!vehicle.includes('tickTrafficStuck')) throw new Error('Traffic stuck recovery missing');
-if (!vehicle.includes('getFrontBrakeThrottle')) throw new Error('Traffic front-brake missing');
+if (!vehicle.includes('applyCarFollowing')) throw new Error('Traffic car-following missing');
 if (!gameScene.includes('isTraffic && b.isTraffic')) throw new Error('Traffic gridlock guard missing');
 if (!gameScene.includes('enforceShopInteriorBounds')) throw new Error('Shop interior wall clamp missing');
 if (!gameScene.includes('LIFE_SIM) return false')) throw new Error('Roofs should be disabled in life sim');

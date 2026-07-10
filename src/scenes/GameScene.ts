@@ -91,8 +91,10 @@ import { LifeSimStoryManager } from '../systems/LifeSimStoryManager';
 import { EmploymentOfficeManager, type EmploymentOfficeConfig } from '../systems/EmploymentOfficeManager';
 import { isScopedWeapon } from '../systems/WeaponManager';
 import { SoftCrimeManager } from '../systems/SoftCrimeManager';
+import { BankManager } from '../systems/BankManager';
 import { TaxiManager } from '../systems/TaxiManager';
 import { SmartphoneUI } from '../ui/SmartphoneUI';
+import { BankUI } from '../ui/BankUI';
 
 export class GameScene extends Phaser.Scene {
   private state!: GameState;
@@ -140,6 +142,8 @@ export class GameScene extends Phaser.Scene {
   private jobManager!: JobManager;
   private courierManager!: CourierManager;
   private softCrime: SoftCrimeManager | null = null;
+  private bankManager!: BankManager;
+  private bankUI: BankUI | null = null;
   private taxiManager!: TaxiManager;
   private smartphone: SmartphoneUI | null = null;
   private lastRentWarnDay = -1;
@@ -317,7 +321,12 @@ export class GameScene extends Phaser.Scene {
     this.courierManager.setTimeManager(this.timeManager);
     this.taxiManager = new TaxiManager(this.state);
     this.taxiManager.setTimeManager(this.timeManager);
-    if (LIFE_SIM) this.softCrime = new SoftCrimeManager(this, this.state, this.cityMap);
+    if (LIFE_SIM) {
+      this.softCrime = new SoftCrimeManager(this, this.state, this.cityMap);
+      this.softCrime.setLaneNav(this.laneNavigation);
+      this.softCrime.spawnPatrols();
+    }
+    this.bankManager = new BankManager(this.state);
     this.housingManager = new HousingManager(this.state);
     this.lifeTaskManager = new LifeTaskManager(this.state);
     this.lifeSimStory = new LifeSimStoryManager(this.state, this.lifeTaskManager);
@@ -565,6 +574,8 @@ export class GameScene extends Phaser.Scene {
       if (dayAdvanced) {
         const rentMsg = this.housingManager.onDayAdvanced();
         if (rentMsg) this.showMessage(rentMsg);
+        const bankMsg = this.bankManager.onDayAdvanced();
+        if (bankMsg) this.showMessage(bankMsg);
         const warn = this.housingManager.rentWarningMessage();
         if (warn && this.lastRentWarnDay !== this.state.day) {
           this.lastRentWarnDay = this.state.day;
@@ -733,8 +744,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (LIFE_SIM && this.softCrime) {
-      this.softCrime.update(dt, this.player, ({ fine, arrestFine }) => {
-        this.handleCarjackCaught(fine, arrestFine);
+      this.softCrime.update(dt, this.player, ({ fine, arrestMoney, canPayFine }) => {
+        this.handleCarjackCaught(fine, arrestMoney, canPayFine);
       });
     }
 
@@ -923,6 +934,7 @@ export class GameScene extends Phaser.Scene {
       this.tutorial.isVisible() ||
       this.shopUI.isVisible() ||
       this.lifeShopUI?.isVisible() ||
+      this.bankUI?.isVisible() ||
       this.jobApplicationUI?.isVisible() ||
       this.smartphone?.isVisible() ||
       this.lifeSimIntro.isVisible() ||
@@ -946,6 +958,10 @@ export class GameScene extends Phaser.Scene {
       }
       if (this.shopUI.isVisible()) {
         this.shopUI.close();
+        return;
+      }
+      if (this.bankUI?.isVisible()) {
+        this.bankUI.close();
         return;
       }
       if (LIFE_SIM && this.lifeTaskLog.isVisible()) {
@@ -980,7 +996,12 @@ export class GameScene extends Phaser.Scene {
       if (!this.dialogBox.isVisible()) this.pauseGame();
     }
 
-    if (this.inputMgr.justPressedQuestLog() && !this.shopUI.isVisible() && !this.lifeShopUI?.isVisible()) {
+    if (
+      this.inputMgr.justPressedQuestLog() &&
+      !this.shopUI.isVisible() &&
+      !this.lifeShopUI?.isVisible() &&
+      !this.bankUI?.isVisible()
+    ) {
       if (LIFE_SIM) this.lifeTaskLog.toggle();
       else this.questLog.toggle();
     }
@@ -989,6 +1010,7 @@ export class GameScene extends Phaser.Scene {
       this.inputMgr.justPressedMap() &&
       !this.shopUI.isVisible() &&
       !this.lifeShopUI?.isVisible() &&
+      !this.bankUI?.isVisible() &&
       !(LIFE_SIM ? this.lifeTaskLog.isVisible() : this.questLog.isVisible())
     ) {
       this.toggleFullMap();
@@ -998,6 +1020,7 @@ export class GameScene extends Phaser.Scene {
       this.inputMgr.justPressedInteract() &&
       !this.shopUI.isVisible() &&
       !this.lifeShopUI?.isVisible() &&
+      !this.bankUI?.isVisible() &&
       !(LIFE_SIM ? this.lifeTaskLog.isVisible() : this.questLog.isVisible())
     ) {
       this.handleInteract();
@@ -1469,13 +1492,10 @@ export class GameScene extends Phaser.Scene {
           const cy = shop.clerk.y * TILE_SIZE + TILE_SIZE / 2;
           const clerkDist = Phaser.Math.Distance.Between(px, py, cx, cy);
           if (clerkDist <= 40) {
+            const clerkHint =
+              shop.type === 'bank' ? `${shop.name} — вклад / кредит` : `${shop.name} — купить`;
             candidates.push(
-              makeCandidate(
-                'shop_clerk',
-                clerkDist,
-                `${shop.name} — купить`,
-                { shop, player }
-              )
+              makeCandidate('shop_clerk', clerkDist, clerkHint, { shop, player })
             );
           }
         }
@@ -1617,6 +1637,8 @@ export class GameScene extends Phaser.Scene {
         }
         if (LIFE_SIM && (shop.type === 'grocery' || shop.type === 'furniture')) {
           this.openLifeShop(shop.type as 'grocery' | 'furniture', shop);
+        } else if (LIFE_SIM && shop.type === 'bank') {
+          this.openBankUI();
         } else if (LIFE_SIM && shop.type === 'vehicle') {
           this.shopUI.show(shop);
         } else {
@@ -2079,7 +2101,7 @@ export class GameScene extends Phaser.Scene {
     this.refreshCourierMarkers();
   }
 
-  private handleCarjackCaught(fine: number, arrestFine: number): void {
+  private handleCarjackCaught(fine: number, arrestMoney: number, canPayFine: boolean): void {
     // Eject from stolen car
     if (this.player.inVehicle && this.player.currentVehicle) {
       const v = this.player.currentVehicle;
@@ -2089,26 +2111,36 @@ export class GameScene extends Phaser.Scene {
       v.sprite.destroy();
       v.active = false;
     }
+    const fineLine = canPayFine
+      ? `Штраф $${fine} (есть деньги) — рекомендуется`
+      : `Штраф $${fine} — не хватает денег (нужно $${fine}, у вас $${this.state.money})`;
     this.dialogBox.showSequence(
       this,
       [
         {
           speaker: 'Полиция',
-          text: `Вас остановили за угон. Штраф $${fine} или арест (−$${arrestFine})?`,
+          text: `Угон. ${fineLine}. Арест — бесплатно, но несколько часов в участке и усталость.`,
         },
       ],
       () => {
-        // Simple two-button via confirm: OK = fine, Cancel = arrest
-        const payFine = window.confirm(
-          `Оплатить штраф $${fine} и отпустить?\n\nОК = штраф\nОтмена = арест (−$${arrestFine})`
-        );
+        let payFine = false;
+        if (canPayFine) {
+          payFine = window.confirm(
+            `Оплатить штраф $${fine}?\n\nОК = штраф $${fine}\nОтмена = арест (без оплаты, потеря времени)`
+          );
+        } else {
+          window.alert(
+            `Не хватает на штраф $${fine} (у вас $${this.state.money}).\nОформляется арест — без денежного штрафа.`
+          );
+          payFine = false;
+        }
         if (payFine) {
           this.showMessage(this.softCrime!.resolveFine(fine));
         } else {
-          this.showMessage(this.softCrime!.resolveArrest(arrestFine));
+          this.showMessage(this.softCrime!.resolveArrest(arrestMoney));
           const spawn = this.softCrime!.getArrestSpawn();
           this.player.sprite.setPosition(spawn.x, spawn.y);
-          this.setCameraFollow(this.player.sprite, 1);
+          this.setCameraFollow(this.player.sprite, 1.3);
         }
         this.setupCollisions();
       }
@@ -2307,6 +2339,20 @@ export class GameScene extends Phaser.Scene {
       returnX: pos.x,
       returnY: pos.y,
     } satisfies import('./HomeScene').HomeSceneData);
+  }
+
+  private openBankUI(): void {
+    this.bankUI?.close();
+    this.bankUI = new BankUI(
+      this,
+      this.state,
+      this.bankManager,
+      (msg) => this.showMessage(msg),
+      () => {
+        this.bankUI = null;
+      }
+    );
+    this.bankUI.show();
   }
 
   private openLifeShop(type: 'grocery' | 'furniture', shop?: { items?: string[] }): void {
@@ -2602,7 +2648,9 @@ export class GameScene extends Phaser.Scene {
                   ? 'shop_weapon'
                   : shop.type === 'vehicle'
                     ? 'shop_vehicle'
-                    : 'shop_hospital';
+                    : shop.type === 'bank'
+                      ? 'shop_bank'
+                      : 'shop_hospital';
           const s = this.add.sprite(obj.x * TILE_SIZE + 16, obj.y * TILE_SIZE + 16, key);
           s.setDepth(3);
           this.shopSprites.push(s);
@@ -2656,6 +2704,7 @@ export class GameScene extends Phaser.Scene {
       ...this.trafficManager.getAllVehicles(),
       ...this.garageManager.parkedVehicles,
       ...this.policeManager.policeVehicles,
+      ...(this.softCrime?.getPatrolVehicles() ?? []),
     ].filter((v) => v.active);
     for (const v of allVehicles) {
       this.colliders.push(this.physics.add.collider(v.sprite, collisionGroup));
@@ -2687,10 +2736,10 @@ export class GameScene extends Phaser.Scene {
     cam.setBounds(0, 0, this.cityMap.worldWidth, this.cityMap.worldHeight);
     cam.roundPixels = true;
     if (this.isCoop) {
-      cam.setZoom(0.95);
+      cam.setZoom(1.1);
       this.updateCoopCamera();
     } else {
-      this.setCameraFollow(this.player.sprite, 1);
+      this.setCameraFollow(this.player.sprite, 1.3);
     }
   }
 
@@ -2720,13 +2769,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateSmoothCamera(): void {
+    // Closer camera: foot 1.3, vehicle 1.1
     if (this.player.inVehicle && this.player.currentVehicle) {
-      this.setCameraFollow(this.player.currentVehicle.sprite, 0.9);
+      this.setCameraFollow(this.player.currentVehicle.sprite, 1.1);
     } else {
-      this.setCameraFollow(this.player.sprite, 1);
+      this.setCameraFollow(this.player.sprite, 1.3);
     }
 
-    // Look-ahead along velocity so high-speed driving reads the road ahead
+    // Look-ahead along velocity (slightly shorter at high zoom)
     if (!this.cameraLookTarget || !this.cameraFollowTarget) return;
     const follow = this.cameraFollowTarget as unknown as { x: number; y: number };
     let vx = 0;
@@ -2741,7 +2791,7 @@ export class GameScene extends Phaser.Scene {
         vy = body.velocity.y;
       }
     }
-    const look = this.player.inVehicle ? 0.18 : 0.1;
+    const look = this.player.inVehicle ? 0.12 : 0.07;
     this.cameraLookTarget.setPosition(follow.x + vx * look, follow.y + vy * look);
   }
 
@@ -2966,6 +3016,7 @@ export class GameScene extends Phaser.Scene {
       this.softCrime?.destroy();
       this.softCrime = null;
     });
+    safe(() => this.bankUI?.close());
     safe(() => this.smartphone?.close());
     safe(() => this.tireMarks?.clear());
     safe(() => {

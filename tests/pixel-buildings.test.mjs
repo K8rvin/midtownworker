@@ -53,8 +53,11 @@ if (existsSync(mapPath)) {
 }
 
 const cityMap = readFileSync(join(root, 'src/world/CityMap.ts'), 'utf8');
-if (!cityMap.includes('tile === TileType.Building || tile === TileType.Roof) continue')) {
-  throw new Error('District tint should skip buildings/roofs');
+if (
+  !cityMap.includes('TileType.Building || tile === TileType.Roof || tile === TileType.Grass') &&
+  !cityMap.includes('tile === TileType.Building || tile === TileType.Roof) continue')
+) {
+  throw new Error('District tint should skip buildings/roofs (and grass)');
 }
 
 console.log('Pixel buildings checks passed');

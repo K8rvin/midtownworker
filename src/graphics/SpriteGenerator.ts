@@ -56,18 +56,23 @@ export class SpriteGenerator {
   private genTiles(): void {
     // --- Terrain (pixel grit, deterministic) ---
     this.forceTile('tile_grass', (g) => {
-      g.fillStyle(0x1a3a2a, 1);
+      // Lighter midtown park green (was near-black)
+      g.fillStyle(0x3d7a52, 1);
       g.fillRect(0, 0, 32, 32);
-      g.fillStyle(0x234d36, 1);
+      g.fillStyle(0x4a8f62, 1);
       g.fillRect(1, 1, 30, 30);
-      const specs = [0x2d5a40, 0x1e4530, 0x3a6a4a, 0x163828];
-      for (let i = 0; i < 24; i++) {
+      const specs = [0x5aa070, 0x3d6a4a, 0x6ab87e, 0x4a8058, 0x2d5a3c];
+      for (let i = 0; i < 28; i++) {
         const x = (i * 7 + 3) % 30;
         const y = (i * 11 + 5) % 30;
         g.fillStyle(specs[i % specs.length], 1);
         g.fillRect(1 + x, 1 + y, 1, 1);
-        if (i % 4 === 0) g.fillRect(1 + x, 1 + y, 2, 1);
+        if (i % 5 === 0) g.fillRect(1 + x, 1 + y, 2, 1);
       }
+      // occasional light dirt speck
+      g.fillStyle(0x8a7a50, 1);
+      g.fillRect(8, 12, 1, 1);
+      g.fillRect(22, 20, 1, 1);
     });
 
     this.forceTile('tile_road', (g) => {
@@ -90,17 +95,17 @@ export class SpriteGenerator {
     });
 
     this.forceTile('tile_sidewalk', (g) => {
-      g.fillStyle(0x3a3a4e, 1);
+      g.fillStyle(0x5a5a6e, 1);
       g.fillRect(0, 0, 32, 32);
-      g.fillStyle(0x44445a, 1);
+      g.fillStyle(0x6a6a80, 1);
       g.fillRect(1, 1, 14, 14);
       g.fillRect(17, 1, 14, 14);
       g.fillRect(1, 17, 14, 14);
       g.fillRect(17, 17, 14, 14);
-      g.fillStyle(0x2e2e40, 1);
+      g.fillStyle(0x4a4a5c, 1);
       g.fillRect(0, 15, 32, 2);
       g.fillRect(15, 0, 2, 32);
-      g.fillStyle(0x505068, 1);
+      g.fillStyle(0x7a7a90, 1);
       g.fillRect(2, 2, 1, 1);
       g.fillRect(20, 20, 1, 1);
     });
@@ -1309,6 +1314,18 @@ export class SpriteGenerator {
       g.fillRect(16, 16, 3, 6);
       g.fillStyle(0x9b59b6, 1);
       g.fillRect(4, 6, 10, 5);
+    });
+
+    if (this.shouldGen('shop_bank')) this.makeTexture('shop_bank', 24, 24, (g) => {
+      g.fillStyle(0x1a1a10, 1);
+      g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0xffd700, 1);
+      g.fillRect(4, 6, 16, 14);
+      g.fillStyle(0x0d0d14, 1);
+      g.fillCircle(12, 13, 5);
+      g.fillStyle(0xffd700, 1);
+      g.fillRect(11, 9, 2, 8);
+      g.fillRect(9, 12, 6, 2);
     });
   }
 

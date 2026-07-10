@@ -19113,8 +19113,8 @@
         16,
         6,
         3,
-        2,
-        2,
+        3,
+        3,
         2,
         2,
         2,
@@ -19313,8 +19313,8 @@
         12,
         16,
         3,
-        2,
-        2,
+        3,
+        3,
         2,
         2,
         2,
@@ -19513,7 +19513,7 @@
         3,
         3,
         3,
-        2,
+        3,
         2,
         2,
         2,
@@ -24946,6 +24946,9 @@
         2,
         2,
         2,
+        3,
+        3,
+        3,
         2,
         2,
         2,
@@ -25144,10 +25147,7 @@
         2,
         2,
         2,
-        2,
-        2,
-        2,
-        2,
+        3,
         2,
         2,
         2,
@@ -121584,13 +121584,49 @@
           ]
         },
         {
+          "x": 3136,
+          "y": 3072,
+          "width": 32,
+          "height": 32,
+          "rotation": 0,
+          "visible": true,
+          "id": 128,
+          "name": "shop",
+          "type": "shop",
+          "properties": [
+            {
+              "name": "shopId",
+              "type": "string",
+              "value": "bank_1"
+            }
+          ]
+        },
+        {
+          "x": 4224,
+          "y": 3968,
+          "width": 32,
+          "height": 32,
+          "rotation": 0,
+          "visible": true,
+          "id": 129,
+          "name": "shop",
+          "type": "shop",
+          "properties": [
+            {
+              "name": "shopId",
+              "type": "string",
+              "value": "bank_2"
+            }
+          ]
+        },
+        {
           "x": 768,
           "y": 704,
           "width": 32,
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 128,
+          "id": 130,
           "name": "landmark",
           "type": "landmark",
           "properties": [
@@ -121608,7 +121644,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 129,
+          "id": 131,
           "name": "landmark",
           "type": "landmark",
           "properties": [
@@ -121626,7 +121662,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 130,
+          "id": 132,
           "name": "landmark",
           "type": "landmark",
           "properties": [
@@ -121644,7 +121680,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 131,
+          "id": 133,
           "name": "tree",
           "type": "tree",
           "properties": [
@@ -121662,7 +121698,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 132,
+          "id": 134,
           "name": "landmark",
           "type": "landmark",
           "properties": [
@@ -121680,7 +121716,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 133,
+          "id": 135,
           "name": "landmark",
           "type": "landmark",
           "properties": [
@@ -121698,7 +121734,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 134,
+          "id": 136,
           "name": "landmark",
           "type": "landmark",
           "properties": [
@@ -121716,7 +121752,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 135,
+          "id": 137,
           "name": "landmark",
           "type": "landmark",
           "properties": [
@@ -121734,7 +121770,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 136,
+          "id": 138,
           "name": "landmark",
           "type": "landmark",
           "properties": [
@@ -121752,7 +121788,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 137,
+          "id": 139,
           "name": "landmark",
           "type": "landmark",
           "properties": [
@@ -121770,7 +121806,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 138,
+          "id": 140,
           "name": "district_marker",
           "type": "district_marker",
           "properties": [
@@ -121793,7 +121829,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 139,
+          "id": 141,
           "name": "district_marker",
           "type": "district_marker",
           "properties": [
@@ -121816,7 +121852,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 140,
+          "id": 142,
           "name": "district_marker",
           "type": "district_marker",
           "properties": [
@@ -121839,7 +121875,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 141,
+          "id": 143,
           "name": "district_marker",
           "type": "district_marker",
           "properties": [
@@ -121862,7 +121898,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 142,
+          "id": 144,
           "name": "district_marker",
           "type": "district_marker",
           "properties": [
@@ -121885,7 +121921,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 143,
+          "id": 145,
           "name": "district_marker",
           "type": "district_marker",
           "properties": [
@@ -121908,7 +121944,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 144,
+          "id": 146,
           "name": "district_marker",
           "type": "district_marker",
           "properties": [
@@ -121931,7 +121967,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 145,
+          "id": 147,
           "name": "district_marker",
           "type": "district_marker",
           "properties": [
@@ -121954,7 +121990,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 146,
+          "id": 148,
           "name": "district_marker",
           "type": "district_marker",
           "properties": [
@@ -121977,7 +122013,7 @@
           "height": 32,
           "rotation": 0,
           "visible": true,
-          "id": 147,
+          "id": 149,
           "name": "district_marker",
           "type": "district_marker",
           "properties": [
@@ -121999,7 +122035,7 @@
           "width": 32,
           "height": 32,
           "visible": true,
-          "id": 148,
+          "id": 150,
           "name": "npc_spawn",
           "type": "npc_spawn",
           "properties": [
@@ -122021,7 +122057,7 @@
           "width": 32,
           "height": 32,
           "visible": true,
-          "id": 149,
+          "id": 151,
           "name": "npc_spawn",
           "type": "npc_spawn",
           "properties": [
@@ -122043,7 +122079,7 @@
           "width": 32,
           "height": 32,
           "visible": true,
-          "id": 150,
+          "id": 152,
           "name": "npc_spawn",
           "type": "npc_spawn",
           "properties": [
@@ -122065,7 +122101,7 @@
           "width": 32,
           "height": 32,
           "visible": true,
-          "id": 151,
+          "id": 153,
           "name": "npc_spawn",
           "type": "npc_spawn",
           "properties": [
@@ -122087,7 +122123,7 @@
           "width": 32,
           "height": 32,
           "visible": true,
-          "id": 152,
+          "id": 154,
           "name": "npc_spawn",
           "type": "npc_spawn",
           "properties": [
@@ -122109,7 +122145,7 @@
           "width": 32,
           "height": 32,
           "visible": true,
-          "id": 153,
+          "id": 155,
           "name": "npc_spawn",
           "type": "npc_spawn",
           "properties": [
@@ -122131,7 +122167,7 @@
           "width": 48,
           "height": 24,
           "visible": true,
-          "id": 154,
+          "id": 156,
           "name": "bp_nw",
           "type": "blockpost",
           "properties": [
@@ -122148,7 +122184,7 @@
           "width": 48,
           "height": 24,
           "visible": true,
-          "id": 155,
+          "id": 157,
           "name": "bp_ne",
           "type": "blockpost",
           "properties": [
@@ -122165,7 +122201,7 @@
           "width": 48,
           "height": 24,
           "visible": true,
-          "id": 156,
+          "id": 158,
           "name": "bp_sw",
           "type": "blockpost",
           "properties": [
@@ -122182,7 +122218,7 @@
           "width": 48,
           "height": 24,
           "visible": true,
-          "id": 157,
+          "id": 159,
           "name": "bp_se",
           "type": "blockpost",
           "properties": [
@@ -122199,7 +122235,7 @@
           "width": 32,
           "height": 32,
           "visible": true,
-          "id": 158,
+          "id": 160,
           "name": "to_port",
           "type": "transition",
           "properties": [
@@ -122234,7 +122270,7 @@
     }
   ],
   "nextlayerid": 5,
-  "nextobjectid": 159,
+  "nextobjectid": 161,
   "orientation": "orthogonal",
   "renderorder": "right-down",
   "tiledversion": "1.10.2",

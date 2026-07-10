@@ -265,6 +265,7 @@ export class SmartphoneUI {
       if (s.type === 'grocery') pois.push({ label: `🛒 ${s.name}`, x: s.doorX, y: s.doorY });
       if (s.type === 'furniture') pois.push({ label: `🛋 ${s.name}`, x: s.doorX, y: s.doorY });
       if (s.type === 'vehicle') pois.push({ label: `🚗 ${s.name}`, x: s.doorX, y: s.doorY });
+      if (s.type === 'bank') pois.push({ label: `🏦 ${s.name}`, x: s.doorX, y: s.doorY });
     }
     const emp = (employmentData as { name: string; doorX: number; doorY: number }[])[0];
     if (emp) pois.push({ label: `🏢 ${emp.name}`, x: emp.doorX, y: emp.doorY });

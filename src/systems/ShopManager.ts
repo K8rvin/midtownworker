@@ -54,6 +54,8 @@ export function shopMarkerColor(type: string): number {
       return 0xff6b35;
     case 'vehicle':
       return 0xffd600;
+    case 'bank':
+      return 0xffd700;
     default:
       return 0xff2d55;
   }

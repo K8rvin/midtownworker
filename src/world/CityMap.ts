@@ -281,8 +281,8 @@ export class CityMap {
       for (let x = 0; x < this.mapWidth; x++) {
         const tile = this.tiles[y][x];
         if (tile === TileType.Road || tile === TileType.Stairs) continue;
-        // Buildings/roofs already have pixel variant art — skip heavy tint
-        if (tile === TileType.Building || tile === TileType.Roof) continue;
+        // Buildings/roofs + grass: keep procedural colors (district grass tints were near-black)
+        if (tile === TileType.Building || tile === TileType.Roof || tile === TileType.Grass) continue;
         const districtId = getDistrictAt(this.districtGrid, x, y);
         const theme = getDistrictTheme(districtId);
         const tint = this.tileDistrictTint(tile, theme);
@@ -290,7 +290,6 @@ export class CityMap {
         const t = ground.getTileAt(x, y);
         if (!t) continue;
         t.tint = tint;
-        t.alpha = tile === TileType.Grass ? 0.92 : 1;
       }
     }
   }

@@ -13,7 +13,7 @@ export const COLORS = {
   roadLine: 0x4a4a6a,
   building: 0x3d3d5c,
   buildingRoof: 0x4e4e72,
-  grass: 0x1e3a2f,
+  grass: 0x3d7a52,
   sidewalk: 0x3a3a50,
   yakuza: 0xff2d55,
   rednecks: 0xff6b35,
@@ -98,6 +98,20 @@ export interface NavTarget {
   y: number;
   label: string;
 }
+
+export interface BankState {
+  deposit: number;
+  loanRemaining: number;
+  loanDueDay: number;
+  loanPayment: number;
+}
+
+export const DEFAULT_BANK: BankState = {
+  deposit: 0,
+  loanRemaining: 0,
+  loanDueDay: 0,
+  loanPayment: 0,
+};
 
 export type CourierOrderCategory = 'food' | 'parcel' | 'fragile' | 'express';
 
@@ -196,6 +210,7 @@ export interface GameState {
   taxiCarCleanliness: number;
   /** Smartphone navigation pin (world px). */
   navTarget: NavTarget | null;
+  bank: BankState;
 }
 
 export interface CoopPlayerData {
@@ -282,4 +297,5 @@ export const DEFAULT_GAME_STATE: GameState = {
   taxiFare: null,
   taxiCarCleanliness: 100,
   navTarget: null,
+  bank: { ...DEFAULT_BANK },
 };

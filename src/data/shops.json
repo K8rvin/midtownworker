@@ -119,5 +119,35 @@
     "interiorH": 2,
     "clerk": { "name": "Снабженец", "x": 145, "y": 87 },
     "items": ["pistol", "shotgun", "sniper"]
+  },
+  {
+    "id": "bank_1",
+    "type": "bank",
+    "name": "Банк «Мидтаун»",
+    "x": 98,
+    "y": 96,
+    "doorX": 98,
+    "doorY": 97,
+    "interiorX": 97,
+    "interiorY": 95,
+    "interiorW": 3,
+    "interiorH": 2,
+    "clerk": { "name": "Оператор", "x": 98, "y": 95 },
+    "items": []
+  },
+  {
+    "id": "bank_2",
+    "type": "bank",
+    "name": "Банк «Восточный»",
+    "x": 132,
+    "y": 124,
+    "doorX": 132,
+    "doorY": 125,
+    "interiorX": 131,
+    "interiorY": 123,
+    "interiorW": 3,
+    "interiorH": 2,
+    "clerk": { "name": "Кассир", "x": 132, "y": 123 },
+    "items": []
   }
 ]

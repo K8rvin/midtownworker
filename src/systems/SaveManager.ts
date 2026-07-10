@@ -1,4 +1,10 @@
-import { DEFAULT_GAME_STATE, DEFAULT_HOUSING, DEFAULT_LIFE_STATS, type GameState } from '../config';
+import {
+  DEFAULT_BANK,
+  DEFAULT_GAME_STATE,
+  DEFAULT_HOUSING,
+  DEFAULT_LIFE_STATS,
+  type GameState,
+} from '../config';
 
 /** Number of player save slots. */
 export const SAVE_SLOT_COUNT = 3;
@@ -84,6 +90,7 @@ function parseState(raw: string): GameState | null {
       completedLifeTasks: parsed.completedLifeTasks ?? [],
       activeLifeTaskId: parsed.activeLifeTaskId ?? null,
       storyChapter: parsed.storyChapter ?? 0,
+      bank: { ...DEFAULT_BANK, ...parsed.bank },
     };
   } catch {
     return null;

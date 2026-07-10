@@ -58,8 +58,8 @@ const lateral = Math.abs(vx * -forwardY + vy * forwardX);
 if (along < 50) throw new Error(`Forward speed lost after turn: along=${along.toFixed(1)}`);
 
 const vehicleSrc = readFileSync(join(root, 'src/entities/Vehicle.ts'), 'utf8');
-if (!vehicleSrc.includes('getFrontBrakeThrottle')) {
-  throw new Error('Traffic front-brake missing on Vehicle');
+if (!vehicleSrc.includes('applyCarFollowing')) {
+  throw new Error('Traffic car-following missing on Vehicle');
 }
 if (!vehicleSrc.includes('setDrag(0')) {
   throw new Error('Vehicle should disable Arcade drag (setDrag 0)');
