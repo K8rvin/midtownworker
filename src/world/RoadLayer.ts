@@ -231,7 +231,7 @@ export class RoadLayer {
   }
 
   /**
-   * Zebra connects sidewalk ↔ sidewalk across the full road.
+   * Zebra stays strictly on Road tiles (never sidewalk).
    * Stripe long-axis is perpendicular to vehicle travel (classic piano keys):
    * - N/S traffic → vertical bars (arrayed left→right across the carriageway)
    * - E/W traffic → horizontal bars (arrayed top→bottom across the carriageway)
@@ -239,57 +239,55 @@ export class RoadLayer {
   private drawCrosswalks(gfx: Phaser.GameObjects.Graphics): void {
     for (const inter of this.network.intersections) {
       const half = Math.floor(bandWidth(inter) / 2);
-      // One tile past stop line (stop = half+1), depth 1–2 tiles
+      // One tile past stop line (stop = half+1), depth 1–2 tiles — road band only
       const zebraDist = half + 2;
       const zebraDepth = 2;
-      // Include sidewalk tiles on both curbs (±1 beyond road band)
-      const curb = 1;
 
       // North approach — cars travel N/S → stripes ⊥ travel = vertical ('ns')
-      this.drawZebraCurbToCurb(
+      this.drawZebraOnRoad(
         gfx,
-        inter.tx - half - curb,
-        inter.tx + half + curb,
+        inter.tx - half,
+        inter.tx + half,
         inter.ty - zebraDist - zebraDepth + 1,
         inter.ty - zebraDist,
         'ns'
       );
       // South
-      this.drawZebraCurbToCurb(
+      this.drawZebraOnRoad(
         gfx,
-        inter.tx - half - curb,
-        inter.tx + half + curb,
+        inter.tx - half,
+        inter.tx + half,
         inter.ty + zebraDist,
         inter.ty + zebraDist + zebraDepth - 1,
         'ns'
       );
       // West approach — cars travel E/W → stripes ⊥ travel = horizontal ('ew')
-      this.drawZebraCurbToCurb(
+      this.drawZebraOnRoad(
         gfx,
         inter.tx - zebraDist - zebraDepth + 1,
         inter.tx - zebraDist,
-        inter.ty - half - curb,
-        inter.ty + half + curb,
+        inter.ty - half,
+        inter.ty + half,
         'ew'
       );
       // East
-      this.drawZebraCurbToCurb(
+      this.drawZebraOnRoad(
         gfx,
         inter.tx + zebraDist,
         inter.tx + zebraDist + zebraDepth - 1,
-        inter.ty - half - curb,
-        inter.ty + half + curb,
+        inter.ty - half,
+        inter.ty + half,
         'ew'
       );
     }
   }
 
   /**
-   * Draw zebra only where road/sidewalk exists; bars fill sidewalk-to-sidewalk box.
-   * @param barDir 'ns' = vertical bars (long axis N↔S), arrayed left→right — N/S roads
-   *               'ew' = horizontal bars (long axis E↔W), arrayed top→bottom — E/W roads
+   * Paint zebra only on Road tiles inside the box (skip sidewalk/building).
+   * Bars are drawn per-row/col of road so they never bleed onto curb.
+   * @param barDir 'ns' = vertical bars — N/S roads; 'ew' = horizontal — E/W roads
    */
-  private drawZebraCurbToCurb(
+  private drawZebraOnRoad(
     gfx: Phaser.GameObjects.Graphics,
     tx0: number,
     tx1: number,
@@ -302,27 +300,28 @@ export class RoadLayer {
     const minTy = Math.min(ty0, ty1);
     const maxTy = Math.max(ty0, ty1);
 
-    // Shrink box to actual road + sidewalk tiles present
-    let usedMinTx = maxTx;
-    let usedMaxTx = minTx;
-    let usedMinTy = maxTy;
-    let usedMaxTy = minTy;
-    let any = false;
+    // Collect road-only tiles
+    const roadTiles: { tx: number; ty: number }[] = [];
     for (let ty = minTy; ty <= maxTy; ty++) {
       for (let tx = minTx; tx <= maxTx; tx++) {
-        const t = this.cityMap.tiles[ty]?.[tx];
-        if (t === TileType.Road || t === TileType.Sidewalk) {
-          any = true;
-          usedMinTx = Math.min(usedMinTx, tx);
-          usedMaxTx = Math.max(usedMaxTx, tx);
-          usedMinTy = Math.min(usedMinTy, ty);
-          usedMaxTy = Math.max(usedMaxTy, ty);
+        if (this.cityMap.tiles[ty]?.[tx] === TileType.Road) {
+          roadTiles.push({ tx, ty });
         }
       }
     }
-    if (!any) return;
+    if (roadTiles.length === 0) return;
 
-    // Prefer spanning full intended curb width if sidewalk missing — still cover all road tiles
+    let usedMinTx = Infinity;
+    let usedMaxTx = -Infinity;
+    let usedMinTy = Infinity;
+    let usedMaxTy = -Infinity;
+    for (const t of roadTiles) {
+      usedMinTx = Math.min(usedMinTx, t.tx);
+      usedMaxTx = Math.max(usedMaxTx, t.tx);
+      usedMinTy = Math.min(usedMinTy, t.ty);
+      usedMaxTy = Math.max(usedMaxTy, t.ty);
+    }
+
     const left = usedMinTx * TILE_SIZE;
     const right = (usedMaxTx + 1) * TILE_SIZE;
     const top = usedMinTy * TILE_SIZE;
@@ -331,22 +330,53 @@ export class RoadLayer {
     const h = bottom - top;
     if (w < 8 || h < 8) return;
 
+    // Road mask set for pixel clip (only paint inside road tiles)
+    const roadSet = new Set(roadTiles.map((t) => `${t.tx},${t.ty}`));
+    const isRoadPx = (px: number, py: number) => {
+      const tx = Math.floor(px / TILE_SIZE);
+      const ty = Math.floor(py / TILE_SIZE);
+      return roadSet.has(`${tx},${ty}`);
+    };
+
     gfx.fillStyle(WHITE, 0.72);
-    // Wider bars so the long-axis (⊥ to traffic) reads clearly top-down
     const bar = 9;
     const gap = 6;
+    const pad = 2;
 
     if (barDir === 'ew') {
-      // Horizontal bars: long axis E↔W (⊥ to E/W traffic)
-      for (let y = top + 2; y < bottom - 2; y += bar + gap) {
-        const bh = Math.min(bar, bottom - 2 - y);
-        if (bh > 1) gfx.fillRect(left + 1, y, w - 2, bh);
+      // Horizontal bars: long axis E↔W — clip segments to road columns
+      for (let y = top + pad; y < bottom - pad; y += bar + gap) {
+        const bh = Math.min(bar, bottom - pad - y);
+        if (bh <= 1) continue;
+        // Walk x and merge consecutive road spans
+        let runStart: number | null = null;
+        for (let x = left + pad; x <= right - pad; x++) {
+          const on = x < right - pad && isRoadPx(x, y + bh / 2);
+          if (on && runStart === null) runStart = x;
+          if ((!on || x === right - pad) && runStart !== null) {
+            const runEnd = on && x === right - pad ? x : x - 1;
+            const rw = runEnd - runStart + 1;
+            if (rw > 2) gfx.fillRect(runStart, y, rw, bh);
+            runStart = null;
+          }
+        }
       }
     } else {
-      // Vertical bars: long axis N↔S (⊥ to N/S traffic)
-      for (let x = left + 2; x < right - 2; x += bar + gap) {
-        const bw = Math.min(bar, right - 2 - x);
-        if (bw > 1) gfx.fillRect(x, top + 1, bw, h - 2);
+      // Vertical bars: long axis N↔S — clip segments to road rows
+      for (let x = left + pad; x < right - pad; x += bar + gap) {
+        const bw = Math.min(bar, right - pad - x);
+        if (bw <= 1) continue;
+        let runStart: number | null = null;
+        for (let y = top + pad; y <= bottom - pad; y++) {
+          const on = y < bottom - pad && isRoadPx(x + bw / 2, y);
+          if (on && runStart === null) runStart = y;
+          if ((!on || y === bottom - pad) && runStart !== null) {
+            const runEnd = on && y === bottom - pad ? y : y - 1;
+            const rh = runEnd - runStart + 1;
+            if (rh > 2) gfx.fillRect(x, runStart, bw, rh);
+            runStart = null;
+          }
+        }
       }
     }
   }

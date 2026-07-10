@@ -36,7 +36,7 @@ if (!roadLayer.includes('0xffd54a') && !roadLayer.includes('YELLOW')) {
 if (!roadLayer.includes('drawEqualDashes') && !roadLayer.includes('northH')) {
   throw new Error('Equal pixel-based dashed lane dividers missing');
 }
-if (!roadLayer.includes('drawZebraCurbToCurb') && !roadLayer.includes('drawCrosswalks')) {
+if (!roadLayer.includes('drawZebraOnRoad') && !roadLayer.includes('drawCrosswalks')) {
   throw new Error('Crosswalk / zebra drawing missing');
 }
 // Zebra bars must be ⊥ to vehicle travel: N/S approaches use 'ns', E/W use 'ew'
@@ -45,13 +45,23 @@ if (!roadLayer.includes('drawZebraCurbToCurb') && !roadLayer.includes('drawCross
   const westCall = roadLayer.indexOf('// West approach');
   if (northCall < 0 || westCall < 0) throw new Error('Zebra approach comments missing');
   const northBlock = roadLayer.slice(northCall, westCall);
-  const westBlock = roadLayer.slice(westCall, roadLayer.indexOf('private drawZebraCurbToCurb'));
+  const westBlock = roadLayer.slice(westCall, roadLayer.indexOf('private drawZebraOnRoad'));
   if (!northBlock.includes("'ns'") || northBlock.includes("'ew'")) {
     throw new Error("N/S road zebra must use barDir 'ns' (stripes ⊥ to N/S traffic)");
   }
   if (!westBlock.includes("'ew'")) {
     throw new Error("E/W road zebra must use barDir 'ew' (stripes ⊥ to E/W traffic)");
   }
+}
+// Must not paint sidewalk (only Road tiles)
+if (roadLayer.includes('TileType.Sidewalk') && roadLayer.includes('drawZebra')) {
+  const zebraFn = roadLayer.slice(roadLayer.indexOf('private drawZebraOnRoad'));
+  if (zebraFn.includes('TileType.Sidewalk')) {
+    throw new Error('Zebra must not include Sidewalk tiles (e.g. 105,97)');
+  }
+}
+if (!roadLayer.includes('TileType.Road')) {
+  throw new Error('Zebra should filter TileType.Road');
 }
 if (!roadLayer.includes('Sidewalk') && !roadLayer.includes('curb')) {
   throw new Error('Zebra should reach sidewalk / curb');
