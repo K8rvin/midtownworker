@@ -337,30 +337,89 @@ function paintSidewalks(tiles: TileType[][], mapW: number, mapH: number): void {
   }
 }
 
+/**
+ * Place a POI footprint (building north of door). Door faces south toward the street.
+ * Forces building tiles even when placeBlock would skip (district walls / sidewalk).
+ */
+function placePoiFootprint(
+  tiles: TileType[][],
+  doorX: number,
+  doorY: number,
+  bw: number,
+  bh: number,
+  mapW: number,
+  mapH: number
+): void {
+  const bx = doorX - Math.floor(bw / 2);
+  const by = doorY - bh;
+  // Try normal place first (respects grass)
+  placeBlock(tiles, [], bx, by, bw, bh, mapW, mapH, false);
+  // Force building on grass/sidewalk (not road) so façade sits on street frontage
+  for (let y = by; y < by + bh && y < mapH; y++) {
+    for (let x = bx; x < bx + bw && x < mapW; x++) {
+      if (x < 0 || y < 0) continue;
+      if (tiles[y][x] === TileType.Road || tiles[y][x] === TileType.Stairs) continue;
+      // Keep door row as sidewalk later; build mass north of door
+      if (y === doorY && x === doorX) continue;
+      if (y < doorY) tiles[y][x] = TileType.Building;
+    }
+  }
+}
+
+/** Carve sidewalk from door south to the nearest road so player can walk in from street. */
+function carveApproachFromDoor(
+  tiles: TileType[][],
+  doorX: number,
+  doorY: number,
+  mapW: number,
+  mapH: number
+): void {
+  if (doorX < 0 || doorX >= mapW || doorY < 0 || doorY >= mapH) return;
+  tiles[doorY][doorX] = TileType.Sidewalk;
+  // 1–2 tiles south always sidewalk
+  for (let dy = 1; dy <= 3; dy++) {
+    const y = doorY + dy;
+    if (y >= mapH) break;
+    if (tiles[y][doorX] === TileType.Road) break;
+    if (tiles[y][doorX] === TileType.Building || tiles[y][doorX] === TileType.Roof) {
+      tiles[y][doorX] = TileType.Sidewalk;
+    } else if (tiles[y][doorX] === TileType.Grass) {
+      tiles[y][doorX] = TileType.Sidewalk;
+    }
+  }
+  // Widen approach ±1 on door row and next south for easier entry
+  for (const dx of [-1, 0, 1]) {
+    const x = doorX + dx;
+    if (x < 0 || x >= mapW) continue;
+    for (const y of [doorY, doorY + 1]) {
+      if (y < 0 || y >= mapH) continue;
+      if (tiles[y][x] === TileType.Building || tiles[y][x] === TileType.Grass) {
+        tiles[y][x] = TileType.Sidewalk;
+      }
+    }
+  }
+}
+
 function placeHomeBuildings(tiles: TileType[][], mapW: number, mapH: number): void {
   for (const home of homesData as { doorX: number; doorY: number }[]) {
-    const bx = home.doorX - 1;
-    const by = home.doorY - 2;
-    placeBlock(tiles, [], bx, by, 3, 3, mapW, mapH, false);
+    placePoiFootprint(tiles, home.doorX, home.doorY, 3, 3, mapW, mapH);
+    carveApproachFromDoor(tiles, home.doorX, home.doorY, mapW, mapH);
   }
 }
 
 function placeShopBuildings(tiles: TileType[][], mapW: number, mapH: number): void {
   for (const shop of shopsData as { doorX: number; doorY: number; type?: string }[]) {
-    const bx = shop.doorX - 1;
-    const by = shop.doorY - 2;
-    // Dealers slightly larger façade
     const bw = shop.type === 'vehicle' ? 5 : 4;
     const bh = shop.type === 'vehicle' ? 4 : 3;
-    placeBlock(tiles, [], bx, by, bw, bh, mapW, mapH, false);
+    placePoiFootprint(tiles, shop.doorX, shop.doorY, bw, bh, mapW, mapH);
+    carveApproachFromDoor(tiles, shop.doorX, shop.doorY, mapW, mapH);
   }
 }
 
 function placeEmploymentBuildings(tiles: TileType[][], mapW: number, mapH: number): void {
   for (const office of employmentOfficeData as { doorX: number; doorY: number }[]) {
-    const bx = office.doorX - 1;
-    const by = office.doorY - 2;
-    placeBlock(tiles, [], bx, by, 3, 3, mapW, mapH, false);
+    placePoiFootprint(tiles, office.doorX, office.doorY, 3, 3, mapW, mapH);
+    carveApproachFromDoor(tiles, office.doorX, office.doorY, mapW, mapH);
   }
 }
 
@@ -371,28 +430,24 @@ function placeJobBuildings(tiles: TileType[][], mapW: number, mapH: number): voi
     jobType?: string;
     id?: string;
   }[]) {
-    const bx = job.doorX - 1;
-    const by = job.doorY - 2;
-    const emergency = job.jobType === 'police' || job.jobType === 'firefighter' || job.id === 'police' || job.id === 'firefighter';
+    const emergency =
+      job.jobType === 'police' ||
+      job.jobType === 'firefighter' ||
+      job.id === 'police' ||
+      job.id === 'firefighter';
     const bw = emergency ? 5 : 4;
     const bh = emergency ? 4 : 3;
-    placeBlock(tiles, [], bx, by, bw, bh, mapW, mapH, false);
+    placePoiFootprint(tiles, job.doorX, job.doorY, bw, bh, mapW, mapH);
+    carveApproachFromDoor(tiles, job.doorX, job.doorY, mapW, mapH);
   }
 }
 
-/** Standalone hospital block in midtown east — off the central intersection. */
+/** Hospital on major street frontage (north curb of y=100). */
 function placeHospitalBuilding(tiles: TileType[][], mapW: number, mapH: number): void {
-  const bx = 128;
-  const by = 112;
-  const bw = 5;
-  const bh = 4;
-  placeBlock(tiles, [], bx, by, bw, bh, mapW, mapH, false);
-  for (let x = bx + 1; x < bx + bw - 1; x++) {
-    const py = by + bh;
-    if (py < mapH && x >= 0 && x < mapW && tiles[py][x] === TileType.Grass) {
-      tiles[py][x] = TileType.Sidewalk;
-    }
-  }
+  const doorX = 128;
+  const doorY = 97;
+  placePoiFootprint(tiles, doorX, doorY, 5, 4, mapW, mapH);
+  carveApproachFromDoor(tiles, doorX, doorY, mapW, mapH);
 }
 
 function applyBuildingInteriors(

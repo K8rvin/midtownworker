@@ -2,21 +2,21 @@
   {
     "id": "task_first_job",
     "title": "Первая работа",
-    "description": "Офис занятости (95, 111), телефон или ноутбук дома",
+    "description": "Офис занятости (94, 97), телефон или ноутбук дома",
     "reward": 100,
     "type": "get_job"
   },
   {
     "id": "task_rent_home",
     "title": "Крыша над головой",
-    "description": "Зелёная дверь (78, 78) — [E] «Снять» — $80/нед",
+    "description": "Зелёная дверь (78, 73) — [E] «Снять» — $80/нед",
     "reward": 30,
     "type": "rent_home"
   },
   {
     "id": "task_tutorial_food",
     "title": "Первый укус",
-    "description": "Дверь супермаркета (106, 109) — [E] → «Съесть»",
+    "description": "Дверь супермаркета (112, 97) — [E] → «Съесть»",
     "reward": 25,
     "type": "buy_food",
     "count": 1
@@ -47,7 +47,7 @@
   {
     "id": "task_buy_bed",
     "title": "Обустроить дом",
-    "description": "Купите кровать и поставьте дома",
+    "description": "Мебельный (122, 97) — купите кровать и поставьте дома",
     "reward": 150,
     "type": "place_furniture",
     "furnitureId": "bed_basic"

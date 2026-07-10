@@ -48,7 +48,7 @@ export class TaxiManager {
 
   getDepotTile(): { x: number; y: number } {
     const job = (jobsData as { id: string; doorX: number; doorY: number }[]).find((j) => j.id === 'taxi');
-    return { x: job?.doorX ?? 115, y: job?.doorY ?? 115 };
+    return { x: job?.doorX ?? 136, y: job?.doorY ?? 97 };
   }
 
   /** Door + HR tiles for markers / interaction. */
@@ -56,7 +56,7 @@ export class TaxiManager {
     const job = (jobsData as { id: string; doorX: number; doorY: number; hrX?: number; hrY?: number }[]).find(
       (j) => j.id === 'taxi'
     );
-    if (!job) return [{ x: 115, y: 115, kind: 'door' }];
+    if (!job) return [{ x: 136, y: 97, kind: 'door' }];
     const pts: { x: number; y: number; kind: 'door' | 'hr' }[] = [
       { x: job.doorX, y: job.doorY, kind: 'door' },
     ];

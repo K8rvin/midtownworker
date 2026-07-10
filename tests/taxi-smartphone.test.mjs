@@ -48,8 +48,8 @@ if (!taxi.includes('getDepotPoints') && !taxi.includes('R = 88')) {
 
 const taxiJob = jobs.find((j) => j.id === 'taxi');
 if (!taxiJob) throw new Error('taxi job missing');
-if (taxiJob.doorX === 112 && taxiJob.doorY === 108) {
-  throw new Error('Taxi depot still at old cramped coords near grocery');
+if (taxiJob.doorY !== 97 && taxiJob.doorY !== 73) {
+  throw new Error(`Taxi depot should be on street frontage, got doorY=${taxiJob.doorY}`);
 }
 
 const phone = readFileSync(join(root, 'src/ui/SmartphoneUI.ts'), 'utf8');

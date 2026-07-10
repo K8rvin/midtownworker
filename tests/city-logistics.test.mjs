@@ -95,17 +95,23 @@ if (!arrow.includes('ring = 16') && !arrow.includes('size = 9')) {
 const homes = JSON.parse(readFileSync(join(root, 'src/data/homes.json'), 'utf8'));
 const midtown = homes.find((h) => h.id === 'apt_midtown_1');
 if (!midtown) throw new Error('apt_midtown_1 missing');
-// Minor road centers 25/75/125/175 width 3; major 50/100/150 width 5
-const onMinor = (n) => [25, 75, 125, 175].some((c) => Math.abs(n - c) <= 1);
-const onMajor = (n) => [50, 100, 150].some((c) => Math.abs(n - c) <= 2);
-if (onMinor(midtown.doorX) || onMinor(midtown.doorY) || onMajor(midtown.doorX) || onMajor(midtown.doorY)) {
-  throw new Error(`Midtown apt door still on road: ${midtown.doorX},${midtown.doorY}`);
+// Door must not sit on road tiles (sidewalk frontage is OK: e.g. doorY=97 north of major 100)
+const onRoadXY = (x, y) => {
+  const maj = [50, 100, 150];
+  const min = [25, 75, 125, 175];
+  // tile is road only if on H-band (y near center) OR V-band (x near center)
+  if (maj.some((c) => Math.abs(y - c) <= 2) || maj.some((c) => Math.abs(x - c) <= 2)) return true;
+  if (min.some((c) => Math.abs(y - c) <= 1) || min.some((c) => Math.abs(x - c) <= 1)) return true;
+  return false;
+};
+if (onRoadXY(midtown.doorX, midtown.doorY)) {
+  throw new Error(`Midtown apt door on road tile: ${midtown.doorX},${midtown.doorY}`);
 }
 
 const layout = JSON.parse(readFileSync(join(root, 'src/data/city-layout.json'), 'utf8'));
 const bb = (layout.landmarks || []).find((l) => l.kind === 'billboard' && l.district === 'midtown_east');
-if (bb && (onMinor(bb.x) || onMinor(bb.y) || onMajor(bb.x) || onMajor(bb.y))) {
-  throw new Error(`Midtown billboard still on road: ${bb.x},${bb.y}`);
+if (bb && onRoadXY(bb.x, bb.y)) {
+  throw new Error(`Midtown billboard on road tile: ${bb.x},${bb.y}`);
 }
 if (bb && bb.x === 132 && bb.y === 126) {
   throw new Error('Billboard still at old on-road coords 132,126');
