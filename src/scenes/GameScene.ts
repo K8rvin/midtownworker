@@ -138,6 +138,8 @@ export class GameScene extends Phaser.Scene {
   private shopDoorMarkers: Phaser.GameObjects.Rectangle[] = [];
   private questOfficeDoorMarkers: Phaser.GameObjects.Rectangle[] = [];
   private homeDoorMarkers: Phaser.GameObjects.Rectangle[] = [];
+  private jobSiteMarkers: Phaser.GameObjects.GameObject[] = [];
+  private jobSiteLabels: Phaser.GameObjects.Text[] = [];
   private timeManager = new TimeManager();
   private needsManager = new NeedsManager();
   private jobManager!: JobManager;
@@ -375,6 +377,7 @@ export class GameScene extends Phaser.Scene {
     if (LIFE_SIM) {
       this.spawnHomeDoorMarkers();
       this.spawnEmploymentDoorMarkers();
+      this.spawnJobSiteMarkers();
       if (this.jobManager.isViolentJobActive()) this.spawnContractTargets();
       this.refreshCourierMarkers();
     }
@@ -1340,7 +1343,11 @@ export class GameScene extends Phaser.Scene {
           }
           if (job.jobType === 'taxi' || job.id === 'taxi') {
             this.state.taxiCarCleanliness = 100;
-            this.showMessage('Такси: купите/возьмите седан, вымойте, начните смену (P)');
+            this.spawnJobSiteMarkers();
+            this.refreshCourierMarkers();
+            this.showMessage(
+              'Такси: седан/фургон → жёлтая площадка «Парк Жёлтый» [E] смена/заказ (или P)'
+            );
           }
         }
         return err;
@@ -2012,9 +2019,9 @@ export class GameScene extends Phaser.Scene {
         out.push(makeCandidate('taxi_dropoff', 20, 'Высадить пассажира'));
       }
       if (this.taxiManager.isAtDepot(px, py)) {
-        const dist = 30;
+        const dist = 12;
         if (!this.state.job?.shiftOpen) {
-          out.push(makeCandidate('job_start_shift', dist, 'Начать смену такси'));
+          out.push(makeCandidate('job_start_shift', dist, 'Парк «Жёлтый» — начать смену'));
         } else if (!this.taxiManager.hasFare()) {
           out.push(makeCandidate('taxi_take_fare', dist, 'Взять заказ такси'));
           out.push(makeCandidate('car_wash', dist + 0.5, 'Помыть машину ($15)'));
@@ -2096,6 +2103,7 @@ export class GameScene extends Phaser.Scene {
       this.taxiManager.clearFare();
       this.emergencyManager.clearCall();
       this.refreshCourierMarkers();
+      this.spawnJobSiteMarkers();
       this.clearContractTargets();
       this.showMessage('Вы уволились');
       return;
@@ -2321,7 +2329,18 @@ export class GameScene extends Phaser.Scene {
     if (cWp) {
       const colors = { warehouse: 0xffd600, pickup: 0x00b4ff, dropoff: 0xff6b35 } as const;
       targets.push({ x: cWp.tileX, y: cWp.tileY, label: `▲ ${cWp.label}`, color: colors[cWp.phase] });
-    } else {
+    }
+    const tWp = this.taxiManager.getWaypoint();
+    if (tWp && !cWp) {
+      const colors = { depot: 0xffd600, pickup: 0x00e676, dropoff: 0xff6b35 } as const;
+      targets.push({
+        x: tWp.tileX,
+        y: tWp.tileY,
+        label: `▲ ${tWp.label}`,
+        color: colors[tWp.phase],
+      });
+    }
+    if (!cWp && !tWp) {
       const eWp = this.emergencyManager.getWaypoint();
       if (eWp?.phase === 'scene') {
         targets.push({
@@ -2535,6 +2554,68 @@ export class GameScene extends Phaser.Scene {
         )
         .setDepth(2);
       this.homeDoorMarkers.push(door);
+    }
+  }
+
+  /** Yellow pad + label for taxi depot / courier warehouse when employed. */
+  private spawnJobSiteMarkers(): void {
+    // Clear previous job pads (reuse homeDoorMarkers list for simple rects + labels via courier labels pattern)
+    for (const m of this.jobSiteMarkers) m.destroy();
+    for (const l of this.jobSiteLabels) l.destroy();
+    this.jobSiteMarkers = [];
+    this.jobSiteLabels = [];
+
+    if (this.jobManager.isTaxiJob()) {
+      const d = this.taxiManager.getDepotTile();
+      const wx = d.x * TILE_SIZE + TILE_SIZE / 2;
+      const wy = d.y * TILE_SIZE + TILE_SIZE / 2;
+      const pad = this.add
+        .rectangle(wx, wy, TILE_SIZE + 10, TILE_SIZE + 10, 0xffd600, 0.45)
+        .setStrokeStyle(2, 0xffffff, 0.85)
+        .setDepth(2);
+      this.jobSiteMarkers.push(pad);
+      const lbl = this.add
+        .text(wx, wy - 28, '🚕 Парк «Жёлтый»\n[E] смена / заказ', {
+          fontFamily: 'monospace',
+          fontSize: '11px',
+          color: '#ffd600',
+          backgroundColor: '#0d0d14ee',
+          padding: { x: 6, y: 3 },
+          align: 'center',
+        })
+        .setOrigin(0.5)
+        .setDepth(7);
+      this.jobSiteLabels.push(lbl);
+      this.tweens.add({
+        targets: [pad, lbl],
+        alpha: { from: 1, to: 0.55 },
+        duration: 900,
+        yoyo: true,
+        repeat: -1,
+      });
+    }
+
+    if (this.jobManager.isCourierJob()) {
+      const wh = this.courierManager.getWarehouseTile();
+      const wx = wh.x * TILE_SIZE + TILE_SIZE / 2;
+      const wy = wh.y * TILE_SIZE + TILE_SIZE / 2;
+      const pad = this.add
+        .rectangle(wx, wy, TILE_SIZE + 10, TILE_SIZE + 10, 0x00b4ff, 0.4)
+        .setStrokeStyle(2, 0xffffff, 0.8)
+        .setDepth(2);
+      this.jobSiteMarkers.push(pad);
+      const lbl = this.add
+        .text(wx, wy - 28, '📦 Склад курьера\n[E] смена / заказ', {
+          fontFamily: 'monospace',
+          fontSize: '11px',
+          color: '#00b4ff',
+          backgroundColor: '#0d0d14ee',
+          padding: { x: 6, y: 3 },
+          align: 'center',
+        })
+        .setOrigin(0.5)
+        .setDepth(7);
+      this.jobSiteLabels.push(lbl);
     }
   }
 
@@ -3038,10 +3119,14 @@ export class GameScene extends Phaser.Scene {
     for (const m of this.shopDoorMarkers) m.destroy();
     for (const m of this.questOfficeDoorMarkers) m.destroy();
     for (const m of this.homeDoorMarkers) m.destroy();
+    for (const m of this.jobSiteMarkers) m.destroy();
+    for (const l of this.jobSiteLabels) l.destroy();
     this.shopInteriorMarkers = [];
     this.shopDoorMarkers = [];
     this.questOfficeDoorMarkers = [];
     this.homeDoorMarkers = [];
+    this.jobSiteMarkers = [];
+    this.jobSiteLabels = [];
     this.stairMarkers = [];
     this.districtFlags = [];
     this.landmarkSprites = [];

@@ -48,7 +48,22 @@ export class TaxiManager {
 
   getDepotTile(): { x: number; y: number } {
     const job = (jobsData as { id: string; doorX: number; doorY: number }[]).find((j) => j.id === 'taxi');
-    return { x: job?.doorX ?? 112, y: job?.doorY ?? 108 };
+    return { x: job?.doorX ?? 115, y: job?.doorY ?? 115 };
+  }
+
+  /** Door + HR tiles for markers / interaction. */
+  getDepotPoints(): { x: number; y: number; kind: 'door' | 'hr' }[] {
+    const job = (jobsData as { id: string; doorX: number; doorY: number; hrX?: number; hrY?: number }[]).find(
+      (j) => j.id === 'taxi'
+    );
+    if (!job) return [{ x: 115, y: 115, kind: 'door' }];
+    const pts: { x: number; y: number; kind: 'door' | 'hr' }[] = [
+      { x: job.doorX, y: job.doorY, kind: 'door' },
+    ];
+    if (job.hrX !== undefined && job.hrY !== undefined) {
+      pts.push({ x: job.hrX, y: job.hrY, kind: 'hr' });
+    }
+    return pts;
   }
 
   cleanliness(): number {
@@ -191,9 +206,12 @@ export class TaxiManager {
     if (!this.isEmployed()) return null;
     const f = this.state.taxiFare;
     if (!f) {
-      if (!this.state.job?.shiftOpen) return null;
+      // Always guide to depot when no fare (start shift, wash, take order)
       const d = this.getDepotTile();
-      return { tileX: d.x, tileY: d.y, label: 'Парк «Жёлтый»', phase: 'depot' };
+      const label = this.state.job?.shiftOpen
+        ? 'Парк «Жёлтый» · [E] заказ / мойка'
+        : 'Парк «Жёлтый» · [E] начать смену';
+      return { tileX: d.x, tileY: d.y, label, phase: 'depot' };
     }
     if (!f.hasPassenger) {
       return {
@@ -215,9 +233,11 @@ export class TaxiManager {
     const f = this.state.taxiFare;
     const clean = Math.round(this.cleanliness());
     if (!f) {
-      if (!this.state.job?.shiftOpen) return 'Такси: смена закрыта (смартфон / депо)';
+      if (!this.state.job?.shiftOpen) {
+        return 'Такси: подъедьте к жёлтой площадке депо [E] · или P → смена';
+      }
       const avg = this.avgRating();
-      return `Такси: ждут заказы · чистота ${clean}% · рейтинг ${avg > 0 ? avg.toFixed(1) : '—'}`;
+      return `Такси: депо [E] заказ · чистота ${clean}% · ★${avg > 0 ? avg.toFixed(1) : '—'}`;
     }
     if (!f.hasPassenger) return `Забрать: ${f.passengerName} · ~$${f.basePay}`;
     return `Везу: ${f.passengerName} → ${f.dropoffName} · ~$${f.basePay}`;
@@ -235,11 +255,15 @@ export class TaxiManager {
     return this.distTile(px, py, f.dropoffX, f.dropoffY) <= DROP_R;
   }
 
+  /** Large radius so player can use [E] on foot or in a car at the yellow pad. */
   isAtDepot(px: number, py: number): boolean {
-    const d = this.getDepotTile();
-    const hx = d.x * TILE_SIZE + TILE_SIZE / 2;
-    const hy = d.y * TILE_SIZE + TILE_SIZE / 2;
-    return Math.hypot(px - hx, py - hy) < 48;
+    const R = 88;
+    for (const p of this.getDepotPoints()) {
+      const hx = p.x * TILE_SIZE + TILE_SIZE / 2;
+      const hy = p.y * TILE_SIZE + TILE_SIZE / 2;
+      if (Math.hypot(px - hx, py - hy) < R) return true;
+    }
+    return false;
   }
 
   private distTile(px: number, py: number, tx: number, ty: number): number {

@@ -298,7 +298,7 @@ export class SmartphoneUI {
     }
     if (this.jobs.isTaxiJob()) {
       const dep = this.taxi.getDepotTile();
-      pois.push({ label: '🚕 Парк такси', x: dep.x, y: dep.y });
+      pois.push({ label: '🚕 Парк «Жёлтый» (депо [E])', x: dep.x, y: dep.y });
     }
     if (this.jobs.isPoliceJob()) {
       const st = this.emergency.getStationTile('police');

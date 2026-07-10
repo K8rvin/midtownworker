@@ -237,12 +237,14 @@ export class CourierManager {
     if (!this.isCourierEmployed()) return null;
     const d = this.state.courierDelivery;
     if (!d) {
-      if (!this.state.job?.shiftOpen) return null;
+      // Always point to warehouse when no order (start shift / take order)
       const wh = this.getWarehouseTile();
       return {
         tileX: wh.x,
         tileY: wh.y,
-        label: 'Склад «Быстрая доставка»',
+        label: this.state.job?.shiftOpen
+          ? 'Склад · [E] заказ'
+          : 'Склад · [E] начать смену',
         phase: 'warehouse',
       };
     }

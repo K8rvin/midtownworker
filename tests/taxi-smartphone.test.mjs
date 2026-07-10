@@ -34,6 +34,24 @@ const taxi = readFileSync(join(root, 'src/systems/TaxiManager.ts'), 'utf8');
 if (!taxi.includes('washCar')) throw new Error('Taxi wash missing');
 if (!taxi.includes('takeFare')) throw new Error('Taxi takeFare missing');
 if (!taxi.includes('rating')) throw new Error('Taxi rating missing');
+if (!taxi.includes('isAtDepot')) throw new Error('isAtDepot missing');
+// Depot waypoint even when shift closed
+if (taxi.includes("if (!this.state.job?.shiftOpen) return null") && taxi.includes('getWaypoint')) {
+  const wpBlock = taxi.slice(taxi.indexOf('getWaypoint'));
+  if (wpBlock.includes("if (!this.state.job?.shiftOpen) return null")) {
+    throw new Error('Taxi depot waypoint should show even when shift is closed');
+  }
+}
+if (!taxi.includes('getDepotPoints') && !taxi.includes('R = 88')) {
+  throw new Error('Taxi depot interaction radius / multi-point missing');
+}
+
+const jobs = JSON.parse(readFileSync(join(root, 'src/data/jobs.json'), 'utf8'));
+const taxiJob = jobs.find((j) => j.id === 'taxi');
+if (!taxiJob) throw new Error('taxi job missing');
+if (taxiJob.doorX === 112 && taxiJob.doorY === 108) {
+  throw new Error('Taxi depot still at old cramped coords near grocery');
+}
 
 const phone = readFileSync(join(root, 'src/ui/SmartphoneUI.ts'), 'utf8');
 if (!phone.includes('nav') || !phone.includes('food') || !phone.includes('work')) {
