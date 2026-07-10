@@ -33,17 +33,17 @@ if (!roadLayer.includes('drawRoadMarkings') && !roadLayer.includes('drawCenterLi
 if (!roadLayer.includes('0xffd54a') && !roadLayer.includes('YELLOW')) {
   throw new Error('Double yellow center line missing');
 }
-if (!roadLayer.includes('drawSameDirectionDashes') && !roadLayer.includes('lanes < 2')) {
-  throw new Error('Equal same-direction dashed dividers missing');
+if (!roadLayer.includes('drawEqualDashes') && !roadLayer.includes('northH')) {
+  throw new Error('Equal pixel-based dashed lane dividers missing');
 }
-if (!roadLayer.includes('drawZebraBox') && !roadLayer.includes('drawCrosswalks')) {
+if (!roadLayer.includes('drawZebraCurbToCurb') && !roadLayer.includes('drawCrosswalks')) {
   throw new Error('Crosswalk / zebra drawing missing');
 }
-if (!roadLayer.includes('zebraInner') && !roadLayer.includes('zebraOuter')) {
-  throw new Error('Zebras should be offset further from intersection');
+if (!roadLayer.includes('Sidewalk') && !roadLayer.includes('curb')) {
+  throw new Error('Zebra should reach sidewalk / curb');
 }
-if (!roadLayer.includes("barDir === 'ns'") && !roadLayer.includes("'ns'")) {
-  throw new Error('Zebra bars should support NS/EW orientation');
+if (!roadLayer.includes("barDir === 'ew'") && !roadLayer.includes("'ew'")) {
+  throw new Error('Zebra bars should run curb-to-curb (ew/ns)');
 }
 
 const spriteGen = readFileSync(join(root, 'src', 'graphics', 'SpriteGenerator.ts'), 'utf8');
