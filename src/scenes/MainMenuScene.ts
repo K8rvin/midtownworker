@@ -185,7 +185,15 @@ export class MainMenuScene extends Phaser.Scene {
   }
 
   private openSettings(): void {
-    this.scene.start('SettingsScene', { returnScene: 'MainMenuScene' });
+    try {
+      // Ensure a clean start (stale SettingsScene blocks launch/start)
+      if (this.scene.isActive('SettingsScene') || this.scene.isSleeping('SettingsScene')) {
+        this.scene.stop('SettingsScene');
+      }
+      this.scene.start('SettingsScene', { returnScene: 'MainMenuScene', resumeGame: false });
+    } catch (e) {
+      console.error('openSettings failed', e);
+    }
   }
 
   private openLobby(): void {

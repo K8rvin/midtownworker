@@ -37,8 +37,34 @@ export class SettingsScene extends Phaser.Scene {
   }
 
   create(): void {
-    getAudio(this).ensureContext();
-    createMenuBackdrop(this, 0.96);
+    // Clean camera left over from gameplay zoom/follow
+    try {
+      this.cameras.main.stopFollow();
+      this.cameras.main.setZoom(1);
+      this.cameras.main.setScroll(0, 0);
+      this.cameras.main.setAlpha(1);
+      this.cameras.main.setVisible(true);
+    } catch {
+      /* ignore */
+    }
+    this.input.enabled = true;
+    this.input.setDefaultCursor('default');
+    try {
+      this.scene.bringToTop('SettingsScene');
+    } catch {
+      try {
+        this.scene.bringToTop();
+      } catch {
+        /* ignore */
+      }
+    }
+
+    try {
+      getAudio(this).ensureContext();
+    } catch {
+      /* audio optional */
+    }
+    createMenuBackdrop(this, 0.98).setDepth(0);
     createMenuPanel(this, GAME_WIDTH / 2, GAME_HEIGHT / 2, PANEL_W, GAME_HEIGHT - 48).setDepth(1);
 
     this.add
@@ -295,9 +321,18 @@ export class SettingsScene extends Phaser.Scene {
 
   private goBack(): void {
     if (this.resumeGame) {
-      this.scene.stop();
+      // Opened as overlay from PauseScene
+      this.scene.stop('SettingsScene');
+      if (this.returnScene && this.scene.isSleeping(this.returnScene)) {
+        this.scene.wake(this.returnScene);
+      } else if (this.returnScene && this.scene.isPaused(this.returnScene)) {
+        this.scene.resume(this.returnScene);
+      } else if (this.returnScene && !this.scene.isActive(this.returnScene)) {
+        this.scene.launch(this.returnScene);
+      }
+      if (this.returnScene) this.scene.bringToTop(this.returnScene);
       return;
     }
-    this.scene.start(this.returnScene);
+    this.scene.start(this.returnScene || 'MainMenuScene');
   }
 }

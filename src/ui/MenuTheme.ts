@@ -133,9 +133,14 @@ export function createMenuScrollArea(
 
   const content = scene.add.container(x, top).setDepth(depth);
 
+  // Keep mask graphics off the display list so it never paints a white panel
   const maskShape = scene.make.graphics({ x: 0, y: 0 });
-  maskShape.fillStyle(0xffffff);
+  maskShape.fillStyle(0xffffff, 1);
   maskShape.fillRect(x - width / 2, top, width, height);
+  maskShape.setVisible(false);
+  maskShape.setActive(false);
+  // remove from display list if make() auto-added it
+  maskShape.removeFromDisplayList?.();
   const mask = maskShape.createGeometryMask();
   content.setMask(mask);
 

@@ -47,7 +47,27 @@ export class PauseScene extends Phaser.Scene {
     }).setDepth(2);
 
     createMenuButton(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 54, 'НАСТРОЙКИ', () => {
-      this.scene.launch('SettingsScene', { returnScene: 'PauseScene', resumeGame: true });
+      try {
+        if (this.scene.isActive('SettingsScene') || this.scene.isSleeping('SettingsScene')) {
+          this.scene.stop('SettingsScene');
+        }
+        this.scene.launch('SettingsScene', { returnScene: 'PauseScene', resumeGame: true });
+        this.scene.bringToTop('SettingsScene');
+        // Sleep after launch so Settings mounts fully and gets input priority
+        const game = this.game;
+        window.setTimeout(() => {
+          try {
+            if (game.scene.isActive('SettingsScene') && game.scene.isActive('PauseScene')) {
+              game.scene.sleep('PauseScene');
+            }
+          } catch {
+            /* ignore */
+          }
+        }, 0);
+      } catch (e) {
+        console.error('openSettings from pause failed', e);
+        if (this.scene.isSleeping('PauseScene')) this.scene.wake('PauseScene');
+      }
     }).setDepth(2);
 
     let leaving = false;
@@ -60,6 +80,7 @@ export class PauseScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-ESC', () => {
       if (leaving) return;
       if (this.scene.isActive('SaveSlotsScene') || this.scene.isActive('SettingsScene')) return;
+      if (this.scene.isSleeping('SettingsScene')) return;
       this.scene.resume('GameScene');
       this.scene.stop();
     });
