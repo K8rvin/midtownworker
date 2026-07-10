@@ -78,23 +78,35 @@ export class SoftCrimeManager {
     return this.patrolCars.filter((v) => v.active);
   }
 
-  /** Call when player steals a non-owned vehicle. */
+  /**
+   * First-time steal of a traffic car only.
+   * Already claimed / empty stolen cars: no wanted, no fleeing driver, no double-count.
+   */
   onCarjack(
     vehicle: Vehicle,
     playerPos: { x: number; y: number },
     ownedTypes: string[]
   ): { message: string; policeAlerted: boolean } {
-    if (ownedTypes.includes(vehicle.getType()) && !vehicle.isTraffic) {
+    // Re-enter abandoned jacked car, or legally owned type already claimed
+    if (vehicle.playerStolen || (!vehicle.isTraffic && ownedTypes.includes(vehicle.getType()))) {
+      vehicle.claimByPlayer();
+      vehicle.occupied = true;
+      return { message: '', policeAlerted: false };
+    }
+    if (!vehicle.isTraffic) {
+      // Empty non-traffic car without prior jack (e.g. edge case) — just take it
+      vehicle.claimByPlayer();
+      vehicle.occupied = true;
       return { message: '', policeAlerted: false };
     }
 
     this.state.stats.vehiclesStolen += 1;
 
-    // Driver abandoned the car — no more traffic AI on this vehicle
+    // Driver abandoned the car — no more traffic AI; permanently playerStolen
     vehicle.claimByPlayer();
     vehicle.occupied = true; // player is boarding
 
-    // Fleeing former driver
+    // Fleeing former driver (once)
     const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
     const fx = playerPos.x + Math.cos(angle) * 28;
     const fy = playerPos.y + Math.sin(angle) * 28;
@@ -118,7 +130,7 @@ export class SoftCrimeManager {
       };
     }
     return {
-      message: 'Водитель убежал. Полиции рядом не было — уезжайте',
+      message: 'Водитель убежал. Машина теперь ваша — можно садиться снова',
       policeAlerted: false,
     };
   }

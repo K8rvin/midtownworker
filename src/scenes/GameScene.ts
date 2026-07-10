@@ -1712,7 +1712,13 @@ export class GameScene extends Phaser.Scene {
     for (const v of this.trafficManager.getAllVehicles()) {
       if (!v.active || v.occupied) continue;
       const dist = Phaser.Math.Distance.Between(px, py, v.sprite.x, v.sprite.y);
-      if (dist < 40) candidates.push(makeCandidate('traffic_vehicle', dist, 'Сесть в машину', { vehicle: v }));
+      if (dist < 40) {
+        const label =
+          v.playerStolen || !v.isTraffic
+            ? 'Сесть в машину'
+            : 'Угнать машину';
+        candidates.push(makeCandidate('traffic_vehicle', dist, label, { vehicle: v }));
+      }
     }
 
     const garageVehicle = this.garageManager.findNearbyVehicle(px, py);
@@ -1886,9 +1892,11 @@ export class GameScene extends Phaser.Scene {
       case 'traffic_vehicle':
       case 'garage_vehicle': {
         const vehicle = payload!.vehicle as Vehicle;
-        const isOwned = this.state.ownedVehicles.includes(vehicle.getType()) && !vehicle.isTraffic;
+        // Snapshot BEFORE enterVehicle → claimByPlayer clears isTraffic
+        const isFirstJack =
+          vehicle.isTraffic && !vehicle.playerStolen && !this.state.ownedVehicles.includes(vehicle.getType());
         player.enterVehicle(vehicle);
-        if (LIFE_SIM && kind === 'traffic_vehicle' && !isOwned && this.softCrime) {
+        if (LIFE_SIM && kind === 'traffic_vehicle' && isFirstJack && this.softCrime) {
           const r = this.softCrime.onCarjack(vehicle, player.getPosition(), this.state.ownedVehicles);
           if (r.message) this.showMessage(r.message);
         }

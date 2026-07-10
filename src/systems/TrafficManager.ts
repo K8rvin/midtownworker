@@ -142,10 +142,12 @@ export class TrafficManager {
 
   private despawnFarthestMoving(nearX?: number, nearY?: number): void {
     if (this.vehicles.length === 0) return;
-    let idx = 0;
+    let idx = -1;
     let maxDist = -1;
     for (let i = 0; i < this.vehicles.length; i++) {
       const v = this.vehicles[i];
+      // Never despawn cars the player already jacked / claimed
+      if (v.playerStolen || !v.isTraffic || v.occupied) continue;
       const dist =
         nearX !== undefined && nearY !== undefined
           ? Phaser.Math.Distance.Between(nearX, nearY, v.sprite.x, v.sprite.y)
@@ -155,6 +157,7 @@ export class TrafficManager {
         idx = i;
       }
     }
+    if (idx < 0) return;
     this.vehicles[idx].destroyExtras();
     this.vehicles[idx].sprite.destroy();
     this.vehicles.splice(idx, 1);

@@ -60,9 +60,15 @@ if (!courier.includes('getTimerLabel')) throw new Error('Courier timer label mis
 const soft = readFileSync(join(root, 'src/systems/SoftCrimeManager.ts'), 'utf8');
 if (!soft.includes('onCarjack')) throw new Error('SoftCrime carjack missing');
 if (!soft.includes('claimByPlayer')) throw new Error('Carjack should clear traffic AI via claimByPlayer');
+if (!soft.includes('playerStolen')) {
+  throw new Error('onCarjack must no-op on re-enter when vehicle.playerStolen');
+}
 
 const vehicleSrc = readFileSync(join(root, 'src/entities/Vehicle.ts'), 'utf8');
 if (!vehicleSrc.includes('claimByPlayer')) throw new Error('Vehicle.claimByPlayer missing');
+if (!vehicleSrc.includes('playerStolen')) {
+  throw new Error('Vehicle.playerStolen missing — stolen cars must stay claimed');
+}
 
 const playerSrc = readFileSync(join(root, 'src/entities/Player.ts'), 'utf8');
 if (!playerSrc.includes('claimByPlayer')) {
@@ -73,6 +79,14 @@ if (!soft.includes('resolveFine')) throw new Error('SoftCrime fine missing');
 const game = readFileSync(join(root, 'src/scenes/GameScene.ts'), 'utf8');
 if (!game.includes('softCrime')) throw new Error('SoftCrime not wired in GameScene');
 if (!game.includes('handleCarjackCaught')) throw new Error('Carjack catch dialog missing');
+if (!game.includes('isFirstJack') || !game.includes('playerStolen')) {
+  throw new Error('GameScene must carjack only once (isFirstJack before claim)');
+}
+
+const traffic = readFileSync(join(root, 'src/systems/TrafficManager.ts'), 'utf8');
+if (!traffic.includes('playerStolen')) {
+  throw new Error('Traffic despawn must skip playerStolen cars');
+}
 
 const config = readFileSync(join(root, 'src/config.ts'), 'utf8');
 if (!config.includes('CourierOrderCategory')) throw new Error('Courier categories missing');

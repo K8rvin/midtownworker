@@ -32,6 +32,11 @@ export class Vehicle {
   public readonly maxFuel = 100;
   public occupied = false;
   public isTraffic = false;
+  /**
+   * Player has taken this car (carjack / garage). Permanent for this instance:
+   * re-enter must not re-trigger carjack / fleeing NPC / soft wanted.
+   */
+  public playerStolen = false;
   public active = true;
   public state: VehicleState;
   public pathFollower = new PathFollower();
@@ -519,10 +524,12 @@ export class Vehicle {
 
   /**
    * Player took the vehicle (carjack / garage) — stop NPC traffic AI permanently.
-   * Without this, after exitTraffic AI resumes and the empty car drives away.
+   * Without this, after exit Traffic AI resumes and the empty car drives away.
+   * Also marks the car as abandoned/stolen so re-boarding is free of crime checks.
    */
   claimByPlayer(): void {
     this.isTraffic = false;
+    this.playerStolen = true;
     this.laneSegmentId = null;
     this.laneWaypointIndex = 0;
     this.trafficStuckTimer = 0;
