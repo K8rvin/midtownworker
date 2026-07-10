@@ -46,11 +46,13 @@ if (!taxi.includes('getDepotPoints') && !taxi.includes('R = 88')) {
   throw new Error('Taxi depot interaction radius / multi-point missing');
 }
 
-const jobs = JSON.parse(readFileSync(join(root, 'src/data/jobs.json'), 'utf8'));
 const taxiJob = jobs.find((j) => j.id === 'taxi');
 if (!taxiJob) throw new Error('taxi job missing');
 if (taxiJob.doorX === 112 && taxiJob.doorY === 108) {
   throw new Error('Taxi depot still at old cramped coords near grocery');
+}
+if (!game.includes('spawnJobSiteMarkers') && !readFileSync(join(root, 'src/scenes/GameScene.ts'), 'utf8').includes('spawnJobSiteMarkers')) {
+  throw new Error('Job site visual markers missing');
 }
 
 const phone = readFileSync(join(root, 'src/ui/SmartphoneUI.ts'), 'utf8');
