@@ -30,14 +30,17 @@ const roadLayer = readFileSync(join(root, 'src', 'world', 'RoadLayer.ts'), 'utf8
 if (!roadLayer.includes('drawRoadMarkings') && !roadLayer.includes('drawCenterLines')) {
   throw new Error('RoadLayer road markings missing');
 }
-if (!roadLayer.includes('YELLOW') && !roadLayer.includes('0xffd54a') && !roadLayer.includes('double')) {
-  // double yellow for opposing traffic
-  if (!roadLayer.includes('gap = 3') && !roadLayer.includes('cy - gap')) {
-    throw new Error('Double center line (opposing traffic) missing');
-  }
+if (!roadLayer.includes('0xffd54a') && !roadLayer.includes('YELLOW')) {
+  throw new Error('Double yellow center line missing');
 }
-if (!roadLayer.includes('drawDashedAlong') && !roadLayer.includes('dash')) {
-  throw new Error('Dashed lane markings missing');
+if (!roadLayer.includes('drawSameDirectionDashes') && !roadLayer.includes('lanes < 2')) {
+  throw new Error('Equal same-direction dashed dividers missing');
+}
+if (!roadLayer.includes('drawZebraSpan') && !roadLayer.includes('drawCrosswalks')) {
+  throw new Error('Crosswalk / zebra drawing missing');
+}
+if (!roadLayer.includes('approach')) {
+  throw new Error('Zebras should sit on approach tiles outside intersection');
 }
 
 const spriteGen = readFileSync(join(root, 'src', 'graphics', 'SpriteGenerator.ts'), 'utf8');
