@@ -124,5 +124,19 @@
     "hp": 100,
     "price": 0,
     "wheels": 4
+  },
+  {
+    "id": "firetruck",
+    "name": "Пожарная",
+    "color": "#e74c3c",
+    "maxSpeed": 210,
+    "acceleration": 140,
+    "handling": 2.0,
+    "friction": 2.8,
+    "grip": 10,
+    "brakePower": 320,
+    "hp": 140,
+    "price": 0,
+    "wheels": 4
   }
 ]

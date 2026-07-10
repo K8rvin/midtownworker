@@ -93,6 +93,7 @@ import { isScopedWeapon } from '../systems/WeaponManager';
 import { SoftCrimeManager } from '../systems/SoftCrimeManager';
 import { BankManager } from '../systems/BankManager';
 import { TaxiManager } from '../systems/TaxiManager';
+import { EmergencyManager } from '../systems/EmergencyManager';
 import { SmartphoneUI } from '../ui/SmartphoneUI';
 import { BankUI } from '../ui/BankUI';
 
@@ -145,6 +146,7 @@ export class GameScene extends Phaser.Scene {
   private bankManager!: BankManager;
   private bankUI: BankUI | null = null;
   private taxiManager!: TaxiManager;
+  private emergencyManager!: EmergencyManager;
   private smartphone: SmartphoneUI | null = null;
   private lastRentWarnDay = -1;
   private taxiFineDay = -1;
@@ -321,6 +323,8 @@ export class GameScene extends Phaser.Scene {
     this.courierManager.setTimeManager(this.timeManager);
     this.taxiManager = new TaxiManager(this.state);
     this.taxiManager.setTimeManager(this.timeManager);
+    this.emergencyManager = new EmergencyManager(this.state);
+    this.emergencyManager.setTimeManager(this.timeManager);
     if (LIFE_SIM) {
       this.softCrime = new SoftCrimeManager(this, this.state, this.cityMap);
       this.softCrime.setLaneNav(this.laneNavigation);
@@ -783,6 +787,14 @@ export class GameScene extends Phaser.Scene {
         kind: 'objective',
       });
     }
+    const eWp = this.emergencyManager?.getWaypoint();
+    if (eWp) {
+      markers.push({
+        x: eWp.tileX * TILE_SIZE + TILE_SIZE / 2,
+        y: eWp.tileY * TILE_SIZE + TILE_SIZE / 2,
+        kind: eWp.phase === 'scene' ? 'target' : 'giver',
+      });
+    }
     // Grocery / dealer doors as fixed POI markers
     for (const shop of shopsData as { type: string; doorX: number; doorY: number }[]) {
       if (shop.type !== 'grocery' && shop.type !== 'vehicle') continue;
@@ -799,7 +811,7 @@ export class GameScene extends Phaser.Scene {
     if (!LIFE_SIM || !this.courierWaypointArrow) return;
     const pos = this.player.getPosition();
 
-    // Priority: active courier → active taxi → nav pin
+    // Priority: active courier → taxi → emergency → nav pin
     const cWp = this.courierManager.getWaypoint();
     if (cWp) {
       const colors = {
@@ -845,6 +857,24 @@ export class GameScene extends Phaser.Scene {
           color: c.fill,
           labelColor: c.text,
         },
+        { x: pos.x, y: pos.y }
+      );
+      return;
+    }
+
+    const eWp = this.emergencyManager.getWaypoint();
+    if (eWp) {
+      const tx = eWp.tileX * TILE_SIZE + TILE_SIZE / 2;
+      const ty = eWp.tileY * TILE_SIZE + TILE_SIZE / 2;
+      const distM = Math.round(Math.hypot(tx - pos.x, ty - pos.y) / 8);
+      const timer = this.emergencyManager.getTimerLabel();
+      const phaseLabel = eWp.phase === 'station' ? 'Участок' : 'Вызов';
+      const color = eWp.phase === 'station' ? 0xffd600 : 0xff2d55;
+      const label = timer
+        ? `${phaseLabel} · ${distM}м · ${timer}`
+        : `${phaseLabel} · ${distM}м · ${eWp.label}`;
+      this.courierWaypointArrow.update(
+        { x: tx, y: ty, label, color, labelColor: eWp.phase === 'station' ? '#ffd600' : '#ff6b6b' },
         { x: pos.x, y: pos.y }
       );
       return;
@@ -1680,7 +1710,10 @@ export class GameScene extends Phaser.Scene {
         break;
       }
       case 'job_end_shift': {
-        const busy = this.courierManager.hasActiveDelivery() || this.taxiManager.hasFare();
+        const busy =
+          this.courierManager.hasActiveDelivery() ||
+          this.taxiManager.hasFare() ||
+          this.emergencyManager.hasCall();
         const err = this.jobManager.closeShift(busy);
         this.showMessage(err ?? 'Смена закрыта');
         this.refreshCourierMarkers();
@@ -1694,6 +1727,12 @@ export class GameScene extends Phaser.Scene {
         break;
       case 'taxi_dropoff':
         this.handleTaxiDropoff();
+        break;
+      case 'emergency_take_call':
+        this.handleEmergencyTakeCall();
+        break;
+      case 'emergency_resolve':
+        this.handleEmergencyResolve();
         break;
       case 'car_wash': {
         const err = this.taxiManager.washCar();
@@ -1966,6 +2005,31 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // Police / firefighter dispatch
+    if (this.jobManager.isEmergencyJob()) {
+      if (this.emergencyManager.isNearScene(px, py)) {
+        const label = this.jobManager.isPoliceJob()
+          ? 'Отработать вызов'
+          : 'Потушить очаг';
+        out.push(makeCandidate('emergency_resolve', 18, label));
+      }
+      if (this.emergencyManager.isAtStation(px, py)) {
+        const dist = 28;
+        if (!this.state.job?.shiftOpen) {
+          out.push(
+            makeCandidate(
+              'job_start_shift',
+              dist,
+              this.jobManager.isPoliceJob() ? 'Начать смену (полиция)' : 'Начать смену (пожарные)'
+            )
+          );
+        } else if (!this.emergencyManager.hasCall()) {
+          out.push(makeCandidate('emergency_take_call', dist, 'Взять вызов'));
+          out.push(makeCandidate('job_end_shift', dist + 1, 'Закончить смену'));
+        }
+      }
+    }
+
     const job = this.jobManager.getJobNearHr(px, py, this.state.currentMapId);
     if (job && this.state.job?.id === job.id) {
       const hx = job.hrX * TILE_SIZE + TILE_SIZE / 2;
@@ -1978,8 +2042,8 @@ export class GameScene extends Phaser.Scene {
           out.push(makeCandidate('courier_take_order', dist, 'Взять заказ', { job }));
           out.push(makeCandidate('job_end_shift', dist + 1, 'Закончить смену', { job }));
         }
-      } else if (this.jobManager.isTaxiJob()) {
-        // depot also covers HR; extras above
+      } else if (this.jobManager.isTaxiJob() || this.jobManager.isEmergencyJob()) {
+        // station/depot covers piecework shift; HR quit below
       } else {
         out.push(makeCandidate('job_shift', dist, 'Идти на смену', { job }));
       }
@@ -2010,6 +2074,7 @@ export class GameScene extends Phaser.Scene {
       this.jobManager.quit();
       this.courierManager.clearDelivery();
       this.taxiManager.clearFare();
+      this.emergencyManager.clearCall();
       this.refreshCourierMarkers();
       this.clearContractTargets();
       this.showMessage('Вы уволились');
@@ -2028,6 +2093,7 @@ export class GameScene extends Phaser.Scene {
       this.housingManager,
       this.courierManager,
       this.taxiManager,
+      this.emergencyManager,
       this.groceryManager,
       {
         onMessage: (m) => this.showMessage(m),
@@ -2043,12 +2109,14 @@ export class GameScene extends Phaser.Scene {
           this.jobManager.quit();
           this.courierManager.clearDelivery();
           this.taxiManager.clearFare();
+          this.emergencyManager.clearCall();
           this.refreshCourierMarkers();
           this.showMessage('Вы уволились');
           this.smartphone?.close();
         },
         onTakeCourierOrder: () => this.handleCourierTakeOrder(),
         onTakeTaxiFare: () => this.handleTaxiTakeFare(),
+        onTakeEmergencyCall: () => this.handleEmergencyTakeCall(),
         onWashCar: () => {
           const err = this.taxiManager.washCar();
           this.showMessage(err ?? 'Машина вымыта');
@@ -2056,6 +2124,32 @@ export class GameScene extends Phaser.Scene {
       }
     );
     this.smartphone.show();
+  }
+
+  private handleEmergencyTakeCall(): void {
+    const err = this.emergencyManager.takeCall();
+    if (err) {
+      this.showMessage(err);
+      return;
+    }
+    const c = this.emergencyManager.getCall()!;
+    this.showMessage(
+      `Вызов: ${c.title} · ${c.targetName} · ~$${c.pay} · ${c.timeLimitMinutes}м`
+    );
+    this.refreshCourierMarkers();
+    this.hudUpdate(this.getInteractHint());
+  }
+
+  private handleEmergencyResolve(): void {
+    const pos = this.player.getPosition();
+    const result = this.emergencyManager.resolveCall(pos.x, pos.y);
+    if (typeof result === 'string') {
+      this.showMessage(result);
+      return;
+    }
+    this.showMessage(result.message);
+    this.refreshCourierMarkers();
+    this.hudUpdate(this.getInteractHint());
   }
 
   private handleTaxiTakeFare(): void {
@@ -2202,19 +2296,25 @@ export class GameScene extends Phaser.Scene {
     this.courierMarkerGfx = null;
     this.courierMarkerLabels = [];
 
-    const wp = this.courierManager.getWaypoint();
-    if (!wp) return;
+    const targets: { x: number; y: number; label: string; color: number }[] = [];
+    const cWp = this.courierManager.getWaypoint();
+    if (cWp) {
+      const colors = { warehouse: 0xffd600, pickup: 0x00b4ff, dropoff: 0xff6b35 } as const;
+      targets.push({ x: cWp.tileX, y: cWp.tileY, label: `▲ ${cWp.label}`, color: colors[cWp.phase] });
+    } else {
+      const eWp = this.emergencyManager.getWaypoint();
+      if (eWp?.phase === 'scene') {
+        targets.push({
+          x: eWp.tileX,
+          y: eWp.tileY,
+          label: `▲ ${eWp.label}`,
+          color: 0xff2d55,
+        });
+      }
+    }
+    if (!targets.length) return;
 
-    const colors = { warehouse: 0xffd600, pickup: 0x00b4ff, dropoff: 0xff6b35 } as const;
     const g = this.add.graphics().setDepth(6);
-    const targets = [
-      {
-        x: wp.tileX,
-        y: wp.tileY,
-        label: `▲ ${wp.label}`,
-        color: colors[wp.phase],
-      },
-    ];
 
     for (const t of targets) {
       const wx = t.x * TILE_SIZE + TILE_SIZE / 2;
@@ -2775,6 +2875,11 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.setCameraFollow(this.player.sprite, 1.3);
     }
+
+    // HUD/minimap ignore camera zoom (scrollFactor 0 still scales with zoom)
+    const inv = 1 / Math.max(0.5, this.cameras.main.zoom);
+    this.hud?.setUiScale(inv);
+    this.minimap?.setUiScale(inv);
 
     // Look-ahead along velocity (slightly shorter at high zoom)
     if (!this.cameraLookTarget || !this.cameraFollowTarget) return;

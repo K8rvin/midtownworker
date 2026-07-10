@@ -4,9 +4,11 @@ import type { JobManager } from '../systems/JobManager';
 import type { HousingManager } from '../systems/HousingManager';
 import type { CourierManager } from '../systems/CourierManager';
 import type { TaxiManager } from '../systems/TaxiManager';
+import type { EmergencyManager } from '../systems/EmergencyManager';
 import type { GroceryManager } from '../systems/GroceryManager';
 import shopsData from '../data/shops.json';
 import homesData from '../data/homes.json';
+import jobsData from '../data/jobs.json';
 import employmentData from '../data/employment-office.json';
 
 type Tab = 'work' | 'nav' | 'food' | 'home';
@@ -19,6 +21,7 @@ export interface SmartphoneCallbacks {
   onQuitJob: () => void;
   onTakeCourierOrder: () => void;
   onTakeTaxiFare: () => void;
+  onTakeEmergencyCall: () => void;
   onWashCar: () => void;
 }
 
@@ -44,6 +47,7 @@ export class SmartphoneUI {
     private housing: HousingManager,
     private courier: CourierManager,
     private taxi: TaxiManager,
+    private emergency: EmergencyManager,
     private grocery: GroceryManager,
     private cb: SmartphoneCallbacks
   ) {}
@@ -204,18 +208,22 @@ export class SmartphoneUI {
           d
         );
       }
+      if (this.jobs.isEmergencyJob()) {
+        this.addLine(GAME_HEIGHT / 2 - 100, this.emergency.getStatusText(), d, '#ff6b35');
+      }
 
       let y = GAME_HEIGHT / 2 - 40;
       if (!job.shiftOpen) {
         this.addBtn(y, 'Начать смену', d, () => {
           const err = this.jobs.openShift();
-          this.cb.onMessage(err ?? 'Смена открыта — можно брать заказы');
+          this.cb.onMessage(err ?? 'Смена открыта — можно брать заказы/вызовы');
           if (!err) this.cb.onShiftToggle(true);
           this.render();
         });
       } else {
         this.addBtn(y, 'Закончить смену', d, () => {
-          const busy = this.courier.hasActiveDelivery() || this.taxi.hasFare();
+          const busy =
+            this.courier.hasActiveDelivery() || this.taxi.hasFare() || this.emergency.hasCall();
           const err = this.jobs.closeShift(busy);
           this.cb.onMessage(err ?? 'Смена закрыта. Новые заказы не приходят');
           if (!err) this.cb.onShiftToggle(false);
@@ -239,6 +247,13 @@ export class SmartphoneUI {
           }
           this.addBtn(y, 'Помыть машину ($15)', d, () => {
             this.cb.onWashCar();
+            this.render();
+          });
+          y += 40;
+        }
+        if (this.jobs.isEmergencyJob() && !this.emergency.hasCall()) {
+          this.addBtn(y, 'Взять вызов', d, () => {
+            this.cb.onTakeEmergencyCall();
             this.render();
           });
           y += 40;
@@ -267,6 +282,14 @@ export class SmartphoneUI {
       if (s.type === 'vehicle') pois.push({ label: `🚗 ${s.name}`, x: s.doorX, y: s.doorY });
       if (s.type === 'bank') pois.push({ label: `🏦 ${s.name}`, x: s.doorX, y: s.doorY });
     }
+    for (const j of jobsData as { id: string; name: string; employer: string; doorX: number; doorY: number; jobType?: string }[]) {
+      if (j.id === 'police' || j.jobType === 'police') {
+        pois.push({ label: `🚓 ${j.employer}`, x: j.doorX, y: j.doorY });
+      }
+      if (j.id === 'firefighter' || j.jobType === 'firefighter') {
+        pois.push({ label: `🚒 ${j.employer}`, x: j.doorX, y: j.doorY });
+      }
+    }
     const emp = (employmentData as { name: string; doorX: number; doorY: number }[])[0];
     if (emp) pois.push({ label: `🏢 ${emp.name}`, x: emp.doorX, y: emp.doorY });
     if (this.jobs.isCourierJob()) {
@@ -277,8 +300,16 @@ export class SmartphoneUI {
       const dep = this.taxi.getDepotTile();
       pois.push({ label: '🚕 Парк такси', x: dep.x, y: dep.y });
     }
+    if (this.jobs.isPoliceJob()) {
+      const st = this.emergency.getStationTile('police');
+      pois.push({ label: '🚓 Участок', x: st.x, y: st.y });
+    }
+    if (this.jobs.isFirefighterJob()) {
+      const st = this.emergency.getStationTile('firefighter');
+      pois.push({ label: '🚒 Пожарная', x: st.x, y: st.y });
+    }
 
-    pois.slice(0, 10).forEach((p, i) => {
+    pois.slice(0, 12).forEach((p, i) => {
       this.addBtn(GAME_HEIGHT / 2 - 120 + i * 32, p.label, d, () => {
         this.cb.onNavSet({
           x: p.x * TILE_SIZE + TILE_SIZE / 2,

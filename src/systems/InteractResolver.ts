@@ -22,6 +22,8 @@ export type InteractKind =
   | 'taxi_pickup'
   | 'taxi_dropoff'
   | 'car_wash'
+  | 'emergency_take_call'
+  | 'emergency_resolve'
   | 'home_enter'
   | 'home_rent'
   | 'task_board'
@@ -49,6 +51,8 @@ const PRIORITY: Record<InteractKind, number> = {
   taxi_pickup: 79,
   courier_take_order: 78,
   taxi_take_fare: 78,
+  emergency_take_call: 78,
+  emergency_resolve: 79,
   job_start_shift: 77,
   job_end_shift: 77,
   car_wash: 76,

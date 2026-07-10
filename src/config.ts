@@ -115,6 +115,22 @@ export const DEFAULT_BANK: BankState = {
 
 export type CourierOrderCategory = 'food' | 'parcel' | 'fragile' | 'express';
 
+export type EmergencyService = 'police' | 'firefighter';
+
+/** Active police/firefighter dispatch call. */
+export interface EmergencyCallState {
+  callId: string;
+  service: EmergencyService;
+  title: string;
+  targetName: string;
+  targetX: number;
+  targetY: number;
+  pay: number;
+  timeLimitMinutes: number;
+  deadlineAbsMin: number;
+  startedAbsMin: number;
+}
+
 export interface CourierDeliveryState {
   orderId: string;
   pickupId: string;
@@ -150,6 +166,8 @@ export interface LifeStats {
   taxiFares: number;
   taxiRatingSum: number;
   taxiRatingCount: number;
+  policeCalls: number;
+  fireCalls: number;
 }
 
 export interface GameState {
@@ -208,6 +226,8 @@ export interface GameState {
   taxiFare: TaxiFareState | null;
   /** 0–100 cleanliness of work car (taxi). */
   taxiCarCleanliness: number;
+  /** Active police/fire dispatch. */
+  emergencyCall: EmergencyCallState | null;
   /** Smartphone navigation pin (world px). */
   navTarget: NavTarget | null;
   bank: BankState;
@@ -243,6 +263,8 @@ export const DEFAULT_LIFE_STATS: LifeStats = {
   taxiFares: 0,
   taxiRatingSum: 0,
   taxiRatingCount: 0,
+  policeCalls: 0,
+  fireCalls: 0,
 };
 
 export const DEFAULT_HOUSING: HousingState = {
@@ -296,6 +318,7 @@ export const DEFAULT_GAME_STATE: GameState = {
   courierDelivery: null,
   taxiFare: null,
   taxiCarCleanliness: 100,
+  emergencyCall: null,
   navTarget: null,
   bank: { ...DEFAULT_BANK },
 };

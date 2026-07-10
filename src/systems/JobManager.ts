@@ -71,12 +71,31 @@ export class JobManager {
   }
 
   isPieceworkJob(): boolean {
-    return this.isCourierJob() || this.isTaxiJob();
+    return (
+      this.isCourierJob() ||
+      this.isTaxiJob() ||
+      this.isPoliceJob() ||
+      this.isFirefighterJob()
+    );
   }
 
   isTaxiJob(): boolean {
     const cfg = this.getJobById(this.state.job?.id ?? '');
     return cfg?.jobType === 'taxi' || cfg?.id === 'taxi';
+  }
+
+  isPoliceJob(): boolean {
+    const cfg = this.getJobById(this.state.job?.id ?? '');
+    return cfg?.jobType === 'police' || cfg?.id === 'police';
+  }
+
+  isFirefighterJob(): boolean {
+    const cfg = this.getJobById(this.state.job?.id ?? '');
+    return cfg?.jobType === 'firefighter' || cfg?.id === 'firefighter';
+  }
+
+  isEmergencyJob(): boolean {
+    return this.isPoliceJob() || this.isFirefighterJob();
   }
 
   isShiftOpen(): boolean {
@@ -85,7 +104,7 @@ export class JobManager {
 
   openShift(): string | null {
     if (!this.state.job) return 'Нет работы';
-    if (!this.isPieceworkJob()) return 'Смена только для курьера/таксиста';
+    if (!this.isPieceworkJob()) return 'Смена только для сдельных профессий';
     this.state.job.shiftOpen = true;
     return null;
   }
@@ -93,8 +112,8 @@ export class JobManager {
   /** End accepting new orders; fails if active piecework order. */
   closeShift(hasActiveOrder: boolean): string | null {
     if (!this.state.job) return 'Нет работы';
-    if (!this.isPieceworkJob()) return 'Смена только для курьера/таксиста';
-    if (hasActiveOrder) return 'Сначала завершите текущий заказ';
+    if (!this.isPieceworkJob()) return 'Смена только для сдельных профессий';
+    if (hasActiveOrder) return 'Сначала завершите текущий заказ/вызов';
     this.state.job.shiftOpen = false;
     this.state.lifeStats.shiftsWorked += 1;
     return null;
@@ -134,6 +153,8 @@ export class JobManager {
     const job = this.state.job;
     if (!job) return 'Вы не устроены на работу';
     if (this.isCourierJob()) return 'Курьер работает по доставкам — возьмите заказ на складе';
+    if (this.isTaxiJob()) return 'Таксист работает по заказам — депо / смартфон';
+    if (this.isEmergencyJob()) return 'Экстренная служба — вызовы на участке, не офисная смена';
     if (job.workedToday) return 'Сегодня смена уже отработана';
 
     if (!atOffice) {

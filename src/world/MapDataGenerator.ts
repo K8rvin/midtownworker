@@ -364,6 +364,22 @@ function placeEmploymentBuildings(tiles: TileType[][], mapW: number, mapH: numbe
   }
 }
 
+function placeJobBuildings(tiles: TileType[][], mapW: number, mapH: number): void {
+  for (const job of jobsData as {
+    doorX: number;
+    doorY: number;
+    jobType?: string;
+    id?: string;
+  }[]) {
+    const bx = job.doorX - 1;
+    const by = job.doorY - 2;
+    const emergency = job.jobType === 'police' || job.jobType === 'firefighter' || job.id === 'police' || job.id === 'firefighter';
+    const bw = emergency ? 5 : 4;
+    const bh = emergency ? 4 : 3;
+    placeBlock(tiles, [], bx, by, bw, bh, mapW, mapH, false);
+  }
+}
+
 /** Standalone hospital block in midtown east — off the central intersection. */
 function placeHospitalBuilding(tiles: TileType[][], mapW: number, mapH: number): void {
   const bx = 128;
@@ -469,6 +485,7 @@ export function generateMapData(): GeneratedMapData {
   placeHomeBuildings(tiles, MAP_WIDTH, MAP_HEIGHT);
   placeShopBuildings(tiles, MAP_WIDTH, MAP_HEIGHT);
   placeEmploymentBuildings(tiles, MAP_WIDTH, MAP_HEIGHT);
+  placeJobBuildings(tiles, MAP_WIDTH, MAP_HEIGHT);
 
   applyBuildingInteriors(
     tiles,

@@ -77,11 +77,13 @@ export class HUD {
       color: '#9ca3af',
     });
     this.storyPanel = scene.add.graphics();
-    this.questText = scene.add.text(24, GAME_HEIGHT - 126, '', {
+    // Bottom-left objective — compact for camera zoom; scale compensated via setUiScale
+    this.questText = scene.add.text(20, GAME_HEIGHT - 118, '', {
       fontFamily: 'monospace',
-      fontSize: '14px',
+      fontSize: '12px',
       color: '#c8f542',
-      wordWrap: { width: 480 },
+      wordWrap: { width: 400 },
+      lineSpacing: 2,
     });
     this.gangBars = scene.add.graphics();
     this.gangLabels = scene.add.text(GAME_WIDTH - 310, GAME_HEIGHT - 66, '', {
@@ -90,15 +92,15 @@ export class HUD {
       color: '#9ca3af',
       lineSpacing: 6,
     });
-    this.interactHint = scene.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 30, '', {
+    this.interactHint = scene.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 28, '', {
       fontFamily: 'monospace',
-      fontSize: '16px',
+      fontSize: '15px',
       color: '#00e676',
     }).setOrigin(0.5);
-    this.dailyQuestText = scene.add.text(24, GAME_HEIGHT - 84, '', {
-      wordWrap: { width: 420 },
+    this.dailyQuestText = scene.add.text(20, GAME_HEIGHT - 76, '', {
+      wordWrap: { width: 380 },
       fontFamily: 'monospace',
-      fontSize: '12px',
+      fontSize: '11px',
       color: '#00b4ff',
     });
     this.p2HealthBar = scene.add.graphics();
@@ -159,6 +161,8 @@ export class HUD {
         : null;
       const isCourier = jobCfg?.jobType === 'courier' || jobCfg?.id === 'courier';
       const isTaxi = jobCfg?.jobType === 'taxi' || jobCfg?.id === 'taxi';
+      const isPolice = jobCfg?.jobType === 'police' || jobCfg?.id === 'police';
+      const isFire = jobCfg?.jobType === 'firefighter' || jobCfg?.id === 'firefighter';
       const shiftTag = this.state.job?.shiftOpen ? ' · смена' : '';
       this.weaponSlotsText.setText(
         this.state.job
@@ -166,7 +170,11 @@ export class HUD {
             ? `Курьер · ${this.state.lifeStats.courierDeliveries} дост.${shiftTag}`
             : isTaxi
               ? `Такси · ${this.state.lifeStats.taxiFares ?? 0} рейсов${shiftTag}`
-              : `Работа: ${this.state.job.name}${this.state.job.remoteUnlocked ? ' (удалёнка)' : ''}`
+              : isPolice
+                ? `Полиция · ${this.state.lifeStats.policeCalls ?? 0} вызовов${shiftTag}`
+                : isFire
+                  ? `Пожарные · ${this.state.lifeStats.fireCalls ?? 0} выездов${shiftTag}`
+                  : `Работа: ${this.state.job.name}${this.state.job.remoteUnlocked ? ' (удалёнка)' : ''}`
           : 'Безработный · P — смартфон'
       );
       this.drawHealthBar();
@@ -206,6 +214,14 @@ export class HUD {
               ? `🚕 ${f.passengerName} → ${f.dropoffName}`
               : `🚕 Забрать: ${f.passengerName}`
             : `🚕 Чистота ${Math.round(this.state.taxiCarCleanliness ?? 100)}% · P — заказы`
+        );
+        this.gangBars.clear();
+      } else if (isPolice || isFire) {
+        const c = this.state.emergencyCall;
+        this.dailyQuestText.setText(
+          c
+            ? `${isPolice ? '🚓' : '🚒'} ${c.title} → ${c.targetName} · ~$${c.pay}`
+            : `${isPolice ? '🚓' : '🚒'} Участок — смена / вызов (E) · P — смартфон`
         );
         this.gangBars.clear();
       } else {
@@ -301,19 +317,30 @@ export class HUD {
     this.needsLabels.setText(labels.join('\n'));
   }
 
+  /** Compensate camera zoom so HUD stays on-screen (scrollFactor 0 still scales with zoom). */
+  setUiScale(scale: number): void {
+    const s = Phaser.Math.Clamp(scale, 0.55, 1.15);
+    this.container.setScale(s);
+    this.coordsText.setScale(s);
+    this.coordsText.setPosition(GAME_WIDTH - 12 * s, GAME_HEIGHT - 12 * s);
+  }
+
   private drawStoryPanel(hasText: boolean): void {
     this.storyPanel.clear();
     if (!hasText) return;
-    const x = 12;
-    const y = GAME_HEIGHT - 142;
-    const w = 520;
-    const h = 72;
-    this.storyPanel.fillStyle(0x0d0d14, 0.82);
+    // Compact panel that fits after camera zoom (UI also scaled via setUiScale)
+    const x = 10;
+    const y = GAME_HEIGHT - 128;
+    const w = 420;
+    const h = 58;
+    this.storyPanel.fillStyle(0x0d0d14, 0.88);
     this.storyPanel.fillRoundedRect(x, y, w, h, 6);
-    this.storyPanel.lineStyle(1, 0xc8f542, 0.35);
+    this.storyPanel.lineStyle(1, 0xc8f542, 0.4);
     this.storyPanel.strokeRoundedRect(x, y, w, h, 6);
     this.storyPanel.lineStyle(2, 0xff2d55, 0.55);
-    this.storyPanel.lineBetween(x + 4, y + 8, x + 4, y + h - 8);
+    this.storyPanel.lineBetween(x + 4, y + 6, x + 4, y + h - 6);
+    this.questText.setPosition(x + 12, y + 8);
+    this.dailyQuestText.setPosition(x + 12, y + h + 4);
   }
 
   private courierStatusLine(d: CourierDeliveryState | null): string {

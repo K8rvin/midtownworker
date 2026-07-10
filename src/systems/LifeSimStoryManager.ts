@@ -78,24 +78,29 @@ export class LifeSimStoryManager {
 
   getObjectiveText(): string {
     const ch = this.getChapter();
-    if (!ch) return 'J — доска заданий · свободная игра';
+    if (!ch) return 'J — задания · P — смартфон';
 
     const marker = this.getMarker();
-    const loc = marker ? `▶ ${marker.label} (${marker.x}, ${marker.y})` : '';
+    // Compact: short location for zoomed camera HUD
+    const loc = marker ? `▶ ${marker.label}` : '';
 
     const bedStep = this.getBedSleepStep();
     if (bedStep === 'buy') {
-      return `${ch.title}: Купите кровать в мебельном\n${loc}`;
+      return `${ch.title}: купить кровать\n${loc}`;
     }
     if (bedStep === 'place') {
-      return `${ch.title}: Зайдите домой и поставьте кровать [E] на слот\n${loc}`;
+      return `${ch.title}: домой — поставить кровать [E]\n${loc}`;
     }
     if (bedStep === 'sleep') {
-      return `${ch.title}: Войдите домой и нажмите «Спать»\n${loc}`;
+      return `${ch.title}: домой — «Спать»\n${loc}`;
     }
 
     const task = this.lifeTasks.getActiveTask();
-    if (task?.id === ch.taskId) return `${ch.title}: ${task.description}\n${loc}`;
+    if (task?.id === ch.taskId) {
+      const desc =
+        task.description.length > 52 ? `${task.description.slice(0, 50)}…` : task.description;
+      return `${ch.title}: ${desc}\n${loc}`;
+    }
     return `${ch.title}\n${loc}`;
   }
 

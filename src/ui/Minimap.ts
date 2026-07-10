@@ -41,6 +41,9 @@ export class Minimap {
   private viewTx = 0;
   private viewTy = 0;
 
+  private titleText: Phaser.GameObjects.Text;
+  private legendText: Phaser.GameObjects.Text;
+
   constructor(
     private scene: Phaser.Scene,
     cityMap: CityMap,
@@ -74,22 +77,18 @@ export class Minimap {
     crosshair.lineBetween(this.size / 2 - 5, this.size / 2, this.size / 2 + 5, this.size / 2);
     crosshair.lineBetween(this.size / 2, this.size / 2 - 5, this.size / 2, this.size / 2 + 5);
 
-    this.container.add([bg, this.mapGfx, this.questMarkers, crosshair, this.playerDot, this.player2Dot]);
-
-    scene.add
-      .text(this.offsetX + this.size / 2, this.offsetY - 12, 'КАРТА', {
+    this.titleText = scene.add
+      .text(this.size / 2, -12, 'КАРТА', {
         fontFamily: 'monospace',
         fontSize: '11px',
         color: '#c8f542',
       })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(100);
+      .setOrigin(0.5);
 
-    scene.add
+    this.legendText = scene.add
       .text(
-        this.offsetX + this.size / 2,
-        this.offsetY + this.size + 10,
+        this.size / 2,
+        this.size + 10,
         LIFE_SIM
           ? '▶ сюжет  ◆ курьер  ■ магазин  ◎ задания'
           : '▶ цель  ▲ заказчик  ◎ таксофон  ■ магазин',
@@ -99,9 +98,25 @@ export class Minimap {
           color: '#6b7280',
         }
       )
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(100);
+      .setOrigin(0.5);
+
+    this.container.add([
+      bg,
+      this.mapGfx,
+      this.questMarkers,
+      crosshair,
+      this.playerDot,
+      this.player2Dot,
+      this.titleText,
+      this.legendText,
+    ]);
+  }
+
+  /** Keep minimap on-screen when main camera is zoomed in. */
+  setUiScale(scale: number): void {
+    const s = Phaser.Math.Clamp(scale, 0.55, 1.15);
+    this.container.setScale(s);
+    this.container.setPosition(GAME_WIDTH - 16 - this.size * s, this.offsetY);
   }
 
   update(
