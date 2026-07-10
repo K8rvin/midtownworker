@@ -2871,6 +2871,7 @@ export class GameScene extends Phaser.Scene {
     this.hud?.setUiScale(z);
     this.minimap?.setUiScale(z);
     this.mobileControls?.setUiScale(z);
+    this.courierWaypointArrow?.setUiScale(z);
   }
 
   private setCameraFollow(target: Phaser.GameObjects.GameObject, zoom: number): void {

@@ -82,8 +82,14 @@ if (!config.includes('courierCombo')) throw new Error('lifeStats.courierCombo mi
 if (!game.includes('getMarker') || !game.includes('updateCourierWaypoint')) {
   throw new Error('Story mission should feed WaypointArrow via updateCourierWaypoint');
 }
-if (!arrow.includes('stemStart') && !arrow.includes('ring = 24') && !arrow.includes('origin')) {
+if (!arrow.includes('origin')) {
   throw new Error('WaypointArrow should attach tightly to player origin');
+}
+if (!arrow.includes('legendRoot') && !arrow.includes('legendText') && !arrow.includes('setScrollFactor(0)')) {
+  throw new Error('Waypoint legend should be screen-space on the left');
+}
+if (!arrow.includes('ring = 16') && !arrow.includes('size = 9')) {
+  throw new Error('Waypoint arrow should be compact');
 }
 
 const homes = JSON.parse(readFileSync(join(root, 'src/data/homes.json'), 'utf8'));
