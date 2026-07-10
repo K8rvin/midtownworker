@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { TILE_SIZE } from '../config';
 import cityLayout from '../data/city-layout.json';
 import { TileType, type CityMap } from './CityMap';
-import { RoadNetwork, type RoadBand, type RoadIntersection } from './RoadNetwork';
+import { RoadNetwork, type RoadBand } from './RoadNetwork';
 
 /** Yellow double solid — separates opposing traffic. */
 const YELLOW = 0xffd54a;
@@ -54,8 +54,9 @@ export class RoadLayer {
     if (this.network.centerLineAt(tx, ty) === 'both') return true;
     if (this.network.findMajorIntersection(tx, ty, 2)) return true;
     for (const inter of this.network.intersections) {
-      const half = Math.floor(bandWidth(inter) / 2);
-      if (Math.abs(tx - inter.tx) <= half && Math.abs(ty - inter.ty) <= half) return true;
+      const vHalf = this.verticalBandHalf(inter.tx);
+      const hHalf = this.horizontalBandHalf(inter.ty);
+      if (Math.abs(tx - inter.tx) <= vHalf && Math.abs(ty - inter.ty) <= hHalf) return true;
     }
     return false;
   }
@@ -191,13 +192,18 @@ export class RoadLayer {
   private drawStopLines(gfx: Phaser.GameObjects.Graphics): void {
     gfx.lineStyle(3, WHITE, 0.8);
     for (const inter of this.network.intersections) {
-      const half = Math.floor(bandWidth(inter) / 2);
-      const stopDist = half + 1;
+      // Vertical vs horizontal approaches can differ (major × minor).
+      const vHalf = this.verticalBandHalf(inter.tx);
+      const hHalf = this.horizontalBandHalf(inter.ty);
+      const stopN = hHalf + 1;
+      const stopE = vHalf + 1;
 
-      this.drawStopLineSpan(gfx, inter.tx - half, inter.tx + half, inter.ty - stopDist, inter.ty - stopDist, 'h');
-      this.drawStopLineSpan(gfx, inter.tx - half, inter.tx + half, inter.ty + stopDist, inter.ty + stopDist, 'h');
-      this.drawStopLineSpan(gfx, inter.tx - stopDist, inter.tx - stopDist, inter.ty - half, inter.ty + half, 'v');
-      this.drawStopLineSpan(gfx, inter.tx + stopDist, inter.tx + stopDist, inter.ty - half, inter.ty + half, 'v');
+      // N/S stop lines span the vertical road width
+      this.drawStopLineSpan(gfx, inter.tx - vHalf, inter.tx + vHalf, inter.ty - stopN, inter.ty - stopN, 'h');
+      this.drawStopLineSpan(gfx, inter.tx - vHalf, inter.tx + vHalf, inter.ty + stopN, inter.ty + stopN, 'h');
+      // E/W stop lines span the horizontal road width
+      this.drawStopLineSpan(gfx, inter.tx - stopE, inter.tx - stopE, inter.ty - hHalf, inter.ty + hHalf, 'v');
+      this.drawStopLineSpan(gfx, inter.tx + stopE, inter.tx + stopE, inter.ty - hHalf, inter.ty + hHalf, 'v');
     }
   }
 
@@ -231,60 +237,122 @@ export class RoadLayer {
   }
 
   /**
-   * Zebra stays strictly on Road tiles (never sidewalk).
-   * Stripe long-axis is perpendicular to vehicle travel (classic piano keys):
-   * - N/S traffic → vertical bars (arrayed left→right across the carriageway)
-   * - E/W traffic → horizontal bars (arrayed top→bottom across the carriageway)
+   * Zebra stays on Road only. Width follows each approach band (major 5 / minor 3
+   * can differ on the same junction). Stripes ⊥ vehicle travel.
    */
   private drawCrosswalks(gfx: Phaser.GameObjects.Graphics): void {
     for (const inter of this.network.intersections) {
-      const half = Math.floor(bandWidth(inter) / 2);
-      // One tile past stop line (stop = half+1), depth 1–2 tiles — road band only
-      const zebraDist = half + 2;
+      const vHalf = this.verticalBandHalf(inter.tx);
+      const hHalf = this.horizontalBandHalf(inter.ty);
       const zebraDepth = 2;
+      // Just outside the cross-street box (stop = half+1 → zebra at half+2)
+      const nsDist = hHalf + 2;
+      const ewDist = vHalf + 2;
 
-      // North approach — cars travel N/S → stripes ⊥ travel = vertical ('ns')
-      this.drawZebraOnRoad(
-        gfx,
-        inter.tx - half,
-        inter.tx + half,
-        inter.ty - zebraDist - zebraDepth + 1,
-        inter.ty - zebraDist,
-        'ns'
-      );
+      // North — full width of the vertical road
+      {
+        const y0 = inter.ty - nsDist - zebraDepth + 1;
+        const y1 = inter.ty - nsDist;
+        const span = this.measureRoadSpanX(inter.tx, y0, y1, vHalf);
+        this.drawZebraOnRoad(gfx, span.minTx, span.maxTx, y0, y1, 'ns');
+      }
       // South
-      this.drawZebraOnRoad(
-        gfx,
-        inter.tx - half,
-        inter.tx + half,
-        inter.ty + zebraDist,
-        inter.ty + zebraDist + zebraDepth - 1,
-        'ns'
-      );
-      // West approach — cars travel E/W → stripes ⊥ travel = horizontal ('ew')
-      this.drawZebraOnRoad(
-        gfx,
-        inter.tx - zebraDist - zebraDepth + 1,
-        inter.tx - zebraDist,
-        inter.ty - half,
-        inter.ty + half,
-        'ew'
-      );
+      {
+        const y0 = inter.ty + nsDist;
+        const y1 = inter.ty + nsDist + zebraDepth - 1;
+        const span = this.measureRoadSpanX(inter.tx, y0, y1, vHalf);
+        this.drawZebraOnRoad(gfx, span.minTx, span.maxTx, y0, y1, 'ns');
+      }
+      // West — full width of the horizontal road
+      {
+        const x0 = inter.tx - ewDist - zebraDepth + 1;
+        const x1 = inter.tx - ewDist;
+        const span = this.measureRoadSpanY(inter.ty, x0, x1, hHalf);
+        this.drawZebraOnRoad(gfx, x0, x1, span.minTy, span.maxTy, 'ew');
+      }
       // East
-      this.drawZebraOnRoad(
-        gfx,
-        inter.tx + zebraDist,
-        inter.tx + zebraDist + zebraDepth - 1,
-        inter.ty - half,
-        inter.ty + half,
-        'ew'
-      );
+      {
+        const x0 = inter.tx + ewDist;
+        const x1 = inter.tx + ewDist + zebraDepth - 1;
+        const span = this.measureRoadSpanY(inter.ty, x0, x1, hHalf);
+        this.drawZebraOnRoad(gfx, x0, x1, span.minTy, span.maxTy, 'ew');
+      }
     }
+  }
+
+  /** Half-width (tiles) of the vertical road band through tx. */
+  private verticalBandHalf(tx: number): number {
+    for (const band of this.network.verticalBands) {
+      if (this.network.isInVerticalBand(tx, band)) return band.half;
+    }
+    return Math.floor(cityLayout.minorRoads.width / 2);
+  }
+
+  /** Half-width (tiles) of the horizontal road band through ty. */
+  private horizontalBandHalf(ty: number): number {
+    for (const band of this.network.horizontalBands) {
+      if (this.network.isInHorizontalBand(ty, band)) return band.half;
+    }
+    return Math.floor(cityLayout.minorRoads.width / 2);
+  }
+
+  /**
+   * Contiguous road span on X across rows [ty0..ty1] around centerTx.
+   * Grows to actual Road tiles so major (5) vs minor (3) fill correctly.
+   */
+  private measureRoadSpanX(
+    centerTx: number,
+    ty0: number,
+    ty1: number,
+    bandHalf: number
+  ): { minTx: number; maxTx: number } {
+    let minTx = centerTx;
+    let maxTx = centerTx;
+    const yLo = Math.min(ty0, ty1);
+    const yHi = Math.max(ty0, ty1);
+    let any = false;
+    for (let ty = yLo; ty <= yHi; ty++) {
+      if (!this.network.isRoad(centerTx, ty)) continue;
+      any = true;
+      let L = centerTx;
+      let R = centerTx;
+      while (this.network.isRoad(L - 1, ty)) L--;
+      while (this.network.isRoad(R + 1, ty)) R++;
+      minTx = Math.min(minTx, L);
+      maxTx = Math.max(maxTx, R);
+    }
+    if (!any) return { minTx: centerTx - bandHalf, maxTx: centerTx + bandHalf };
+    return { minTx, maxTx };
+  }
+
+  /** Contiguous road span on Y across cols [tx0..tx1] around centerTy. */
+  private measureRoadSpanY(
+    centerTy: number,
+    tx0: number,
+    tx1: number,
+    bandHalf: number
+  ): { minTy: number; maxTy: number } {
+    let minTy = centerTy;
+    let maxTy = centerTy;
+    const xLo = Math.min(tx0, tx1);
+    const xHi = Math.max(tx0, tx1);
+    let any = false;
+    for (let tx = xLo; tx <= xHi; tx++) {
+      if (!this.network.isRoad(tx, centerTy)) continue;
+      any = true;
+      let T = centerTy;
+      let B = centerTy;
+      while (this.network.isRoad(tx, T - 1)) T--;
+      while (this.network.isRoad(tx, B + 1)) B++;
+      minTy = Math.min(minTy, T);
+      maxTy = Math.max(maxTy, B);
+    }
+    if (!any) return { minTy: centerTy - bandHalf, maxTy: centerTy + bandHalf };
+    return { minTy, maxTy };
   }
 
   /**
    * Paint zebra only on Road tiles inside the box (skip sidewalk/building).
-   * Bars are drawn per-row/col of road so they never bleed onto curb.
    * @param barDir 'ns' = vertical bars — N/S roads; 'ew' = horizontal — E/W roads
    */
   private drawZebraOnRoad(
@@ -300,7 +368,6 @@ export class RoadLayer {
     const minTy = Math.min(ty0, ty1);
     const maxTy = Math.max(ty0, ty1);
 
-    // Collect road-only tiles
     const roadTiles: { tx: number; ty: number }[] = [];
     for (let ty = minTy; ty <= maxTy; ty++) {
       for (let tx = minTx; tx <= maxTx; tx++) {
@@ -326,11 +393,8 @@ export class RoadLayer {
     const right = (usedMaxTx + 1) * TILE_SIZE;
     const top = usedMinTy * TILE_SIZE;
     const bottom = (usedMaxTy + 1) * TILE_SIZE;
-    const w = right - left;
-    const h = bottom - top;
-    if (w < 8 || h < 8) return;
+    if (right - left < 8 || bottom - top < 8) return;
 
-    // Road mask set for pixel clip (only paint inside road tiles)
     const roadSet = new Set(roadTiles.map((t) => `${t.tx},${t.ty}`));
     const isRoadPx = (px: number, py: number) => {
       const tx = Math.floor(px / TILE_SIZE);
@@ -344,11 +408,9 @@ export class RoadLayer {
     const pad = 2;
 
     if (barDir === 'ew') {
-      // Horizontal bars: long axis E↔W — clip segments to road columns
       for (let y = top + pad; y < bottom - pad; y += bar + gap) {
         const bh = Math.min(bar, bottom - pad - y);
         if (bh <= 1) continue;
-        // Walk x and merge consecutive road spans
         let runStart: number | null = null;
         for (let x = left + pad; x <= right - pad; x++) {
           const on = x < right - pad && isRoadPx(x, y + bh / 2);
@@ -362,7 +424,6 @@ export class RoadLayer {
         }
       }
     } else {
-      // Vertical bars: long axis N↔S — clip segments to road rows
       for (let x = left + pad; x < right - pad; x += bar + gap) {
         const bw = Math.min(bar, right - pad - x);
         if (bw <= 1) continue;
@@ -380,8 +441,4 @@ export class RoadLayer {
       }
     }
   }
-}
-
-function bandWidth(inter: RoadIntersection): number {
-  return inter.major ? cityLayout.majorRoads.width : cityLayout.minorRoads.width;
 }

@@ -63,6 +63,13 @@ if (roadLayer.includes('TileType.Sidewalk') && roadLayer.includes('drawZebra')) 
 if (!roadLayer.includes('TileType.Road')) {
   throw new Error('Zebra should filter TileType.Road');
 }
+// Width must follow major/minor bands, not a single half per junction
+if (!roadLayer.includes('verticalBandHalf') || !roadLayer.includes('horizontalBandHalf')) {
+  throw new Error('Zebra/stop lines need per-axis band half (major×minor widths)');
+}
+if (!roadLayer.includes('measureRoadSpanX') || !roadLayer.includes('measureRoadSpanY')) {
+  throw new Error('Zebra must measure actual road span for full carriageway width');
+}
 if (!roadLayer.includes('Sidewalk') && !roadLayer.includes('curb')) {
   throw new Error('Zebra should reach sidewalk / curb');
 }
