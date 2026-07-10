@@ -496,6 +496,18 @@ export class Vehicle {
     this.updateVisuals();
   }
 
+  /**
+   * Player took the vehicle (carjack / garage) — stop NPC traffic AI permanently.
+   * Without this, after exitTraffic AI resumes and the empty car drives away.
+   */
+  claimByPlayer(): void {
+    this.isTraffic = false;
+    this.laneSegmentId = null;
+    this.laneWaypointIndex = 0;
+    this.trafficStuckTimer = 0;
+    this.stopMovement();
+  }
+
   getType(): string {
     return this.config.id;
   }

@@ -59,6 +59,15 @@ if (!courier.includes('getTimerLabel')) throw new Error('Courier timer label mis
 
 const soft = readFileSync(join(root, 'src/systems/SoftCrimeManager.ts'), 'utf8');
 if (!soft.includes('onCarjack')) throw new Error('SoftCrime carjack missing');
+if (!soft.includes('claimByPlayer')) throw new Error('Carjack should clear traffic AI via claimByPlayer');
+
+const vehicleSrc = readFileSync(join(root, 'src/entities/Vehicle.ts'), 'utf8');
+if (!vehicleSrc.includes('claimByPlayer')) throw new Error('Vehicle.claimByPlayer missing');
+
+const playerSrc = readFileSync(join(root, 'src/entities/Player.ts'), 'utf8');
+if (!playerSrc.includes('claimByPlayer')) {
+  throw new Error('Player enter/exit must claimByPlayer so stolen cars do not drive away');
+}
 if (!soft.includes('resolveFine')) throw new Error('SoftCrime fine missing');
 
 const game = readFileSync(join(root, 'src/scenes/GameScene.ts'), 'utf8');

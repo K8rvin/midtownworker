@@ -218,6 +218,8 @@ export class Player {
     this.inVehicle = true;
     this.currentVehicle = vehicle;
     vehicle.occupied = true;
+    // Steal / board: kill NPC driver AI so the car won't drive off after we exit
+    vehicle.claimByPlayer();
     this.hidden = true;
     this.sprite.setVisible(false);
     this.sprite.setVelocity(0, 0);
@@ -236,6 +238,8 @@ export class Player {
 
     this.inVehicle = false;
     vehicle.occupied = false;
+    // Park empty: no traffic AI, no residual velocity (driver already fled on carjack)
+    vehicle.claimByPlayer();
     this.currentVehicle = null;
     this.hidden = false;
     this.sprite.setVisible(true);

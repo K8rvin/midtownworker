@@ -90,6 +90,10 @@ export class SoftCrimeManager {
 
     this.state.stats.vehiclesStolen += 1;
 
+    // Driver abandoned the car — no more traffic AI on this vehicle
+    vehicle.claimByPlayer();
+    vehicle.occupied = true; // player is boarding
+
     // Fleeing former driver
     const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
     const fx = playerPos.x + Math.cos(angle) * 28;
