@@ -232,10 +232,9 @@ export class RoadLayer {
 
   /**
    * Zebra connects sidewalk ↔ sidewalk across the full road.
-   * Stripes run curb-to-curb (perpendicular to the sidewalk line).
-   *
-   * N/S road: horizontal bars spanning left sidewalk → right sidewalk.
-   * E/W road: vertical bars spanning top sidewalk → bottom sidewalk.
+   * Stripe long-axis is perpendicular to vehicle travel (classic piano keys):
+   * - N/S traffic → vertical bars (arrayed left→right across the carriageway)
+   * - E/W traffic → horizontal bars (arrayed top→bottom across the carriageway)
    */
   private drawCrosswalks(gfx: Phaser.GameObjects.Graphics): void {
     for (const inter of this.network.intersections) {
@@ -246,14 +245,14 @@ export class RoadLayer {
       // Include sidewalk tiles on both curbs (±1 beyond road band)
       const curb = 1;
 
-      // North approach — vertical road: span sidewalks on E and W of road
+      // North approach — cars travel N/S → stripes ⊥ travel = vertical ('ns')
       this.drawZebraCurbToCurb(
         gfx,
         inter.tx - half - curb,
         inter.tx + half + curb,
         inter.ty - zebraDist - zebraDepth + 1,
         inter.ty - zebraDist,
-        'ew'
+        'ns'
       );
       // South
       this.drawZebraCurbToCurb(
@@ -262,16 +261,16 @@ export class RoadLayer {
         inter.tx + half + curb,
         inter.ty + zebraDist,
         inter.ty + zebraDist + zebraDepth - 1,
-        'ew'
+        'ns'
       );
-      // West approach — horizontal road: span sidewalks N and S of road
+      // West approach — cars travel E/W → stripes ⊥ travel = horizontal ('ew')
       this.drawZebraCurbToCurb(
         gfx,
         inter.tx - zebraDist - zebraDepth + 1,
         inter.tx - zebraDist,
         inter.ty - half - curb,
         inter.ty + half + curb,
-        'ns'
+        'ew'
       );
       // East
       this.drawZebraCurbToCurb(
@@ -280,15 +279,15 @@ export class RoadLayer {
         inter.tx + zebraDist + zebraDepth - 1,
         inter.ty - half - curb,
         inter.ty + half + curb,
-        'ns'
+        'ew'
       );
     }
   }
 
   /**
    * Draw zebra only where road/sidewalk exists; bars fill sidewalk-to-sidewalk box.
-   * @param barDir 'ew' = horizontal stripes (arrayed top→bottom) — for N/S roads
-   *               'ns' = vertical stripes (arrayed left→right) — for E/W roads
+   * @param barDir 'ns' = vertical bars (long axis N↔S), arrayed left→right — N/S roads
+   *               'ew' = horizontal bars (long axis E↔W), arrayed top→bottom — E/W roads
    */
   private drawZebraCurbToCurb(
     gfx: Phaser.GameObjects.Graphics,
@@ -332,18 +331,19 @@ export class RoadLayer {
     const h = bottom - top;
     if (w < 8 || h < 8) return;
 
-    gfx.fillStyle(WHITE, 0.62);
-    const bar = 7;
-    const gap = 5;
+    gfx.fillStyle(WHITE, 0.72);
+    // Wider bars so the long-axis (⊥ to traffic) reads clearly top-down
+    const bar = 9;
+    const gap = 6;
 
     if (barDir === 'ew') {
-      // Horizontal stripes: run left→right (sidewalk to sidewalk on N/S road)
+      // Horizontal bars: long axis E↔W (⊥ to E/W traffic)
       for (let y = top + 2; y < bottom - 2; y += bar + gap) {
         const bh = Math.min(bar, bottom - 2 - y);
         if (bh > 1) gfx.fillRect(left + 1, y, w - 2, bh);
       }
     } else {
-      // Vertical stripes: run top→bottom (sidewalk to sidewalk on E/W road)
+      // Vertical bars: long axis N↔S (⊥ to N/S traffic)
       for (let x = left + 2; x < right - 2; x += bar + gap) {
         const bw = Math.min(bar, right - 2 - x);
         if (bw > 1) gfx.fillRect(x, top + 1, bw, h - 2);

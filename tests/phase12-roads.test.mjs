@@ -39,6 +39,20 @@ if (!roadLayer.includes('drawEqualDashes') && !roadLayer.includes('northH')) {
 if (!roadLayer.includes('drawZebraCurbToCurb') && !roadLayer.includes('drawCrosswalks')) {
   throw new Error('Crosswalk / zebra drawing missing');
 }
+// Zebra bars must be ⊥ to vehicle travel: N/S approaches use 'ns', E/W use 'ew'
+{
+  const northCall = roadLayer.indexOf('// North approach');
+  const westCall = roadLayer.indexOf('// West approach');
+  if (northCall < 0 || westCall < 0) throw new Error('Zebra approach comments missing');
+  const northBlock = roadLayer.slice(northCall, westCall);
+  const westBlock = roadLayer.slice(westCall, roadLayer.indexOf('private drawZebraCurbToCurb'));
+  if (!northBlock.includes("'ns'") || northBlock.includes("'ew'")) {
+    throw new Error("N/S road zebra must use barDir 'ns' (stripes ⊥ to N/S traffic)");
+  }
+  if (!westBlock.includes("'ew'")) {
+    throw new Error("E/W road zebra must use barDir 'ew' (stripes ⊥ to E/W traffic)");
+  }
+}
 if (!roadLayer.includes('Sidewalk') && !roadLayer.includes('curb')) {
   throw new Error('Zebra should reach sidewalk / curb');
 }
