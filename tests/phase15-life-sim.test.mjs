@@ -22,12 +22,12 @@ if (!storyMgr.includes('getBedPurchasedStepMessage')) throw new Error('Bed purch
 if (!storyMgr.includes('autoFinishFirstJobChapter') || !storyMgr.includes('task_first_job')) {
   throw new Error('Should skip first-job tutorial when already employed');
 }
-if (!storyData.includes('task_first_job')) throw new Error('First job story chapter missing');
 
 const storyData = readFileSync(join(root, 'src', 'data', 'life-sim-story.json'), 'utf8');
 if (!storyData.includes('task_rent_home')) throw new Error('Story chapters missing');
 if (!storyData.includes('task_tutorial_bed_sleep')) throw new Error('Bed and sleep tutorial chapter missing');
 if (!storyData.includes('кровати нет')) throw new Error('Story should mention missing bed');
+if (!storyData.includes('task_first_job')) throw new Error('First job story chapter missing');
 
 const jobMgr = readFileSync(join(root, 'src', 'systems', 'JobManager.ts'), 'utf8');
 if (!jobMgr.includes('canApply')) throw new Error('JobManager single-job guard missing');
