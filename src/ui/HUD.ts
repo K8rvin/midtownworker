@@ -116,9 +116,7 @@ export class HUD {
         color: '#6b7280',
         align: 'right',
       })
-      .setOrigin(1, 1)
-      .setScrollFactor(0)
-      .setDepth(100);
+      .setOrigin(1, 1);
 
     this.container.add([
       panel,
@@ -138,7 +136,13 @@ export class HUD {
       this.gangBars,
       this.gangLabels,
       this.interactHint,
+      this.coordsText,
     ]);
+  }
+
+  /** Roots for main-camera ignore (fixed UI layer). */
+  getUiRoots(): Phaser.GameObjects.GameObject[] {
+    return [this.container];
   }
 
   update(
@@ -317,12 +321,18 @@ export class HUD {
     this.needsLabels.setText(labels.join('\n'));
   }
 
-  /** Compensate camera zoom so HUD stays on-screen (scrollFactor 0 still scales with zoom). */
-  setUiScale(scale: number): void {
-    const s = Phaser.Math.Clamp(scale, 0.55, 1.15);
+  /**
+   * Counteract main-camera zoom on scrollFactor-0 UI.
+   * Phaser zooms around screen center, so we scale by 1/z and shift origin.
+   * @param cameraZoom current cameras.main.zoom
+   */
+  setUiScale(cameraZoom: number): void {
+    const z = Phaser.Math.Clamp(cameraZoom, 0.5, 2.5);
+    const s = 1 / z;
+    const ox = GAME_WIDTH * 0.5 * (1 - s);
+    const oy = GAME_HEIGHT * 0.5 * (1 - s);
     this.container.setScale(s);
-    this.coordsText.setScale(s);
-    this.coordsText.setPosition(GAME_WIDTH - 12 * s, GAME_HEIGHT - 12 * s);
+    this.container.setPosition(ox, oy);
   }
 
   private drawStoryPanel(hasText: boolean): void {

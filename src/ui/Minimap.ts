@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME_WIDTH, TILE_SIZE, LIFE_SIM } from '../config';
+import { GAME_WIDTH, GAME_HEIGHT, TILE_SIZE, LIFE_SIM } from '../config';
 import { TileType, type CityMap } from '../world/CityMap';
 import type { QuestManager } from '../systems/QuestManager';
 import shopsData from '../data/shops.json';
@@ -112,11 +112,21 @@ export class Minimap {
     ]);
   }
 
-  /** Keep minimap on-screen when main camera is zoomed in. */
-  setUiScale(scale: number): void {
-    const s = Phaser.Math.Clamp(scale, 0.55, 1.15);
+  getUiRoots(): Phaser.GameObjects.GameObject[] {
+    return [this.container];
+  }
+
+  /**
+   * Counteract main-camera zoom (scrollFactor 0 still scales from screen center).
+   * @param cameraZoom current cameras.main.zoom
+   */
+  setUiScale(cameraZoom: number): void {
+    const z = Phaser.Math.Clamp(cameraZoom, 0.5, 2.5);
+    const s = 1 / z;
+    const ox = GAME_WIDTH * 0.5 * (1 - s);
+    const oy = GAME_HEIGHT * 0.5 * (1 - s);
     this.container.setScale(s);
-    this.container.setPosition(GAME_WIDTH - 16 - this.size * s, this.offsetY);
+    this.container.setPosition(ox + this.offsetX * s, oy + this.offsetY * s);
   }
 
   update(

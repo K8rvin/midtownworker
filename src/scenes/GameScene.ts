@@ -415,6 +415,7 @@ export class GameScene extends Phaser.Scene {
       this.courierWaypointArrow = new WaypointArrow(this);
       this.needsEffects = new NeedsEffectsOverlay(this);
     }
+    this.applyHudZoomCompensation();
     this.cameras.main.roundPixels = true;
     this.questLog = new QuestLog(
       this,
@@ -2841,6 +2842,16 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.setCameraFollow(this.player.sprite, 1.3);
     }
+    // Pin HUD to screen immediately (zoom already applied)
+    this.applyHudZoomCompensation();
+  }
+
+  /** Keep fixed UI (scrollFactor 0) aligned to screen edges under camera zoom. */
+  private applyHudZoomCompensation(): void {
+    const z = this.cameras.main?.zoom ?? 1;
+    this.hud?.setUiScale(z);
+    this.minimap?.setUiScale(z);
+    this.mobileControls?.setUiScale(z);
   }
 
   private setCameraFollow(target: Phaser.GameObjects.GameObject, zoom: number): void {
@@ -2876,10 +2887,7 @@ export class GameScene extends Phaser.Scene {
       this.setCameraFollow(this.player.sprite, 1.3);
     }
 
-    // HUD/minimap ignore camera zoom (scrollFactor 0 still scales with zoom)
-    const inv = 1 / Math.max(0.5, this.cameras.main.zoom);
-    this.hud?.setUiScale(inv);
-    this.minimap?.setUiScale(inv);
+    this.applyHudZoomCompensation();
 
     // Look-ahead along velocity (slightly shorter at high zoom)
     if (!this.cameraLookTarget || !this.cameraFollowTarget) return;

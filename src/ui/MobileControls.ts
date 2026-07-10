@@ -40,6 +40,16 @@ export class MobileControls {
     scene.input.on('pointerup', this.onPointerUp, this);
   }
 
+  /** Counteract main-camera zoom so touch controls stay on-screen. */
+  setUiScale(cameraZoom: number): void {
+    const z = Phaser.Math.Clamp(cameraZoom, 0.5, 2.5);
+    const s = 1 / z;
+    const ox = GAME_WIDTH * 0.5 * (1 - s);
+    const oy = GAME_HEIGHT * 0.5 * (1 - s);
+    this.container.setScale(s);
+    this.container.setPosition(ox, oy);
+  }
+
   getMovementVector(): { x: number; y: number } {
     return { ...this.move };
   }
