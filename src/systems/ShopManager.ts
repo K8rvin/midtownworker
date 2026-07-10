@@ -5,6 +5,7 @@ import shopsData from '../data/shops.json';
 import weaponsData from '../data/weapons.json';
 import vehiclesData from '../data/vehicles.json';
 import ammoData from '../data/ammo.json';
+import furnitureData from '../data/furniture.json';
 
 export interface ShopClerkConfig {
   name: string;
@@ -56,10 +57,34 @@ export function shopMarkerColor(type: string): number {
       return 0xffd600;
     case 'bank':
       return 0xffd700;
+    case 'pharmacy':
+      return 0x4ade80;
+    case 'cafe':
+      return 0xfbbf24;
+    case 'pawn':
+      return 0xa78bfa;
     default:
       return 0xff2d55;
   }
 }
+
+/** Pharmacy / cafe catalog (ids referenced from shops.json items). */
+export const PHARMACY_ITEMS: { id: string; name: string; price: number; heal?: number; sleep?: number }[] = [
+  { id: 'bandage', name: 'Бинт', price: 25, heal: 20 },
+  { id: 'medkit', name: 'Аптечка', price: 55, heal: 45 },
+  { id: 'vitamins', name: 'Витамины', price: 35, sleep: 18 },
+  { id: 'full_heal', name: 'Полное лечение', price: 75, heal: 999 },
+];
+
+export const CAFE_ITEMS: { id: string; name: string; price: number; hunger: number }[] = [
+  { id: 'coffee_cup', name: 'Кофе', price: 18, hunger: 12 },
+  { id: 'soup_bowl', name: 'Суп дня', price: 32, hunger: 28 },
+  { id: 'business_lunch', name: 'Бизнес-ланч', price: 55, hunger: 50 },
+  { id: 'cake', name: 'Пирожное', price: 22, hunger: 18 },
+];
+
+const PAWN_FURNITURE_RATE = 0.4;
+const PAWN_VEHICLE_RATE = 0.35;
 
 export class ShopManager {
   public shops: ShopConfig[] = shopsData as ShopConfig[];
@@ -227,12 +252,111 @@ export class ShopManager {
   }
 
   heal(): string | null {
-    const shop = this.shops.find((s) => s.type === 'hospital');
+    const shop = this.shops.find((s) => s.type === 'hospital' || s.type === 'pharmacy');
     const price = shop?.healPrice ?? 200;
     if (this.state.money < price) return 'Недостаточно денег';
     if (this.state.health >= this.state.maxHealth) return 'Здоровье полное';
     this.state.money -= price;
     this.state.health = this.state.maxHealth;
     return null;
+  }
+
+  /** Pharmacy catalog purchase. */
+  buyPharmacy(itemId: string, shopHealPrice?: number): string | null {
+    if (itemId === 'full_heal') {
+      const price = shopHealPrice ?? 75;
+      if (this.state.money < price) return 'Недостаточно денег';
+      if (this.state.health >= this.state.maxHealth) return 'Здоровье полное';
+      this.state.money -= price;
+      this.state.health = this.state.maxHealth;
+      return null;
+    }
+    const item = PHARMACY_ITEMS.find((i) => i.id === itemId);
+    if (!item) return 'Нет товара';
+    if (this.state.money < item.price) return 'Недостаточно денег';
+    this.state.money -= item.price;
+    if (item.heal) {
+      this.state.health = Math.min(this.state.maxHealth, this.state.health + item.heal);
+    }
+    if (item.sleep) {
+      this.state.sleep = Math.min(100, this.state.sleep + item.sleep);
+    }
+    return null;
+  }
+
+  /** Cafe: eat on the spot (no fridge). */
+  buyCafe(itemId: string): string | null {
+    const item = CAFE_ITEMS.find((i) => i.id === itemId);
+    if (!item) return 'Нет в меню';
+    if (this.state.money < item.price) return 'Недостаточно денег';
+    this.state.money -= item.price;
+    this.state.hunger = Math.min(100, this.state.hunger + item.hunger);
+    this.state.lifeStats.foodBought += 1;
+    return null;
+  }
+
+  /** Pawn: sell unplaced furniture (40% of shop price). */
+  pawnSellFurniture(furnitureId: string): string | null {
+    const item = (furnitureData as { id: string; name: string; price: number }[]).find(
+      (f) => f.id === furnitureId
+    );
+    if (!item) return 'Нет такого предмета';
+    const idx = this.state.homeFurniture.indexOf(furnitureId);
+    if (idx < 0) return 'Нет в запасе (нужна нерасставленная мебель)';
+    // Don't sell if currently placed
+    if (Object.values(this.state.furniturePlaced).includes(furnitureId)) {
+      return 'Сначала уберите с слота дома';
+    }
+    this.state.homeFurniture.splice(idx, 1);
+    const pay = Math.max(5, Math.floor(item.price * PAWN_FURNITURE_RATE));
+    this.state.money += pay;
+    return null;
+  }
+
+  pawnFurnitureOffer(furnitureId: string): number {
+    const item = (furnitureData as { id: string; price: number }[]).find((f) => f.id === furnitureId);
+    if (!item) return 0;
+    return Math.max(5, Math.floor(item.price * PAWN_FURNITURE_RATE));
+  }
+
+  /** Pawn: sell owned vehicle (35%). */
+  pawnSellVehicle(vehicleId: string): string | null {
+    const item = (vehiclesData as VehicleConfig[]).find((v) => v.id === vehicleId);
+    if (!item) return 'Нет такой машины';
+    if (item.price <= 0) return 'Служебный транспорт не принимают';
+    const idx = this.state.ownedVehicles.indexOf(vehicleId);
+    if (idx < 0) return 'Нет в гараже';
+    this.state.ownedVehicles.splice(idx, 1);
+    const pay = Math.max(10, Math.floor(item.price * PAWN_VEHICLE_RATE));
+    this.state.money += pay;
+    return null;
+  }
+
+  pawnVehicleOffer(vehicleId: string): number {
+    const item = (vehiclesData as VehicleConfig[]).find((v) => v.id === vehicleId);
+    if (!item || item.price <= 0) return 0;
+    return Math.max(10, Math.floor(item.price * PAWN_VEHICLE_RATE));
+  }
+
+  listPawnableFurniture(): { id: string; name: string; offer: number }[] {
+    const out: { id: string; name: string; offer: number }[] = [];
+    const placed = new Set(Object.values(this.state.furniturePlaced));
+    for (const fid of this.state.homeFurniture) {
+      if (placed.has(fid)) continue;
+      const item = (furnitureData as { id: string; name: string; price: number }[]).find((f) => f.id === fid);
+      if (!item) continue;
+      out.push({ id: fid, name: item.name, offer: this.pawnFurnitureOffer(fid) });
+    }
+    return out;
+  }
+
+  listPawnableVehicles(): { id: string; name: string; offer: number }[] {
+    const out: { id: string; name: string; offer: number }[] = [];
+    for (const vid of this.state.ownedVehicles) {
+      const item = (vehiclesData as VehicleConfig[]).find((v) => v.id === vid);
+      if (!item || item.price <= 0) continue;
+      out.push({ id: vid, name: item.name, offer: this.pawnVehicleOffer(vid) });
+    }
+    return out;
   }
 }

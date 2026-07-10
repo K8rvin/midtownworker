@@ -96,6 +96,7 @@ import { TaxiManager } from '../systems/TaxiManager';
 import { EmergencyManager } from '../systems/EmergencyManager';
 import { SmartphoneUI } from '../ui/SmartphoneUI';
 import { BankUI } from '../ui/BankUI';
+import { ServiceShopUI } from '../ui/ServiceShopUI';
 
 export class GameScene extends Phaser.Scene {
   private state!: GameState;
@@ -163,6 +164,7 @@ export class GameScene extends Phaser.Scene {
   private groceryManager!: GroceryManager;
   private lifeTaskLog!: LifeTaskLog;
   private lifeShopUI: LifeShopUI | null = null;
+  private serviceShopUI: ServiceShopUI | null = null;
   private jobApplicationUI: JobApplicationUI | null = null;
   private scopeOverlay!: ScopeOverlay;
   private employmentOfficeManager!: EmploymentOfficeManager;
@@ -987,6 +989,7 @@ export class GameScene extends Phaser.Scene {
       this.tutorial.isVisible() ||
       this.shopUI.isVisible() ||
       this.lifeShopUI?.isVisible() ||
+      this.serviceShopUI?.isVisible() ||
       this.bankUI?.isVisible() ||
       this.jobApplicationUI?.isVisible() ||
       this.smartphone?.isVisible() ||
@@ -1015,6 +1018,10 @@ export class GameScene extends Phaser.Scene {
       }
       if (this.bankUI?.isVisible()) {
         this.bankUI.close();
+        return;
+      }
+      if (this.serviceShopUI?.isVisible()) {
+        this.serviceShopUI.close();
         return;
       }
       if (LIFE_SIM && this.lifeTaskLog.isVisible()) {
@@ -1550,7 +1557,15 @@ export class GameScene extends Phaser.Scene {
           const clerkDist = Phaser.Math.Distance.Between(px, py, cx, cy);
           if (clerkDist <= 40) {
             const clerkHint =
-              shop.type === 'bank' ? `${shop.name} — вклад / кредит` : `${shop.name} — купить`;
+              shop.type === 'bank'
+                ? `${shop.name} — вклад / кредит`
+                : shop.type === 'pharmacy'
+                  ? `${shop.name} — лечение`
+                  : shop.type === 'cafe'
+                    ? `${shop.name} — меню`
+                    : shop.type === 'pawn'
+                      ? `${shop.name} — сдать вещи`
+                      : `${shop.name} — купить`;
             candidates.push(
               makeCandidate('shop_clerk', clerkDist, clerkHint, { shop, player })
             );
@@ -1696,6 +1711,11 @@ export class GameScene extends Phaser.Scene {
           this.openLifeShop(shop.type as 'grocery' | 'furniture', shop);
         } else if (LIFE_SIM && shop.type === 'bank') {
           this.openBankUI();
+        } else if (
+          LIFE_SIM &&
+          (shop.type === 'pharmacy' || shop.type === 'cafe' || shop.type === 'pawn')
+        ) {
+          this.openServiceShop(shop);
         } else if (LIFE_SIM && shop.type === 'vehicle') {
           this.shopUI.show(shop);
         } else {
@@ -2494,6 +2514,21 @@ export class GameScene extends Phaser.Scene {
     this.bankUI.show();
   }
 
+  private openServiceShop(shop: ShopConfig): void {
+    this.serviceShopUI?.close();
+    this.serviceShopUI = new ServiceShopUI(
+      this,
+      this.state,
+      this.shopManager,
+      shop,
+      (msg) => this.showMessage(msg),
+      () => {
+        this.serviceShopUI = null;
+      }
+    );
+    this.serviceShopUI.show();
+  }
+
   private openLifeShop(type: 'grocery' | 'furniture', shop?: { items?: string[] }): void {
     this.lifeShopUI?.close();
     this.lifeShopUI = new LifeShopUI(
@@ -2851,7 +2886,13 @@ export class GameScene extends Phaser.Scene {
                     ? 'shop_vehicle'
                     : shop.type === 'bank'
                       ? 'shop_bank'
-                      : 'shop_hospital';
+                      : shop.type === 'pharmacy'
+                        ? 'shop_pharmacy'
+                        : shop.type === 'cafe'
+                          ? 'shop_cafe'
+                          : shop.type === 'pawn'
+                            ? 'shop_pawn'
+                            : 'shop_hospital';
           const s = this.add.sprite(obj.x * TILE_SIZE + 16, obj.y * TILE_SIZE + 16, key);
           s.setDepth(3);
           this.shopSprites.push(s);
@@ -3235,6 +3276,7 @@ export class GameScene extends Phaser.Scene {
       this.softCrime = null;
     });
     safe(() => this.bankUI?.close());
+    safe(() => this.serviceShopUI?.close());
     safe(() => this.smartphone?.close());
     safe(() => this.tireMarks?.clear());
     safe(() => {

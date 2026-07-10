@@ -1323,6 +1323,34 @@ export class SpriteGenerator {
       g.fillRect(11, 9, 2, 8);
       g.fillRect(9, 12, 6, 2);
     });
+
+    if (this.shouldGen('shop_pharmacy')) this.makeTexture('shop_pharmacy', 24, 24, (g) => {
+      g.fillStyle(0x0f2a18, 1);
+      g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x4ade80, 1);
+      g.fillRect(10, 4, 4, 16);
+      g.fillRect(4, 10, 16, 4);
+    });
+
+    if (this.shouldGen('shop_cafe')) this.makeTexture('shop_cafe', 24, 24, (g) => {
+      g.fillStyle(0x2a1a0a, 1);
+      g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0xfbbf24, 1);
+      g.fillCircle(12, 13, 7);
+      g.fillStyle(0x1a1a2e, 1);
+      g.fillCircle(12, 13, 4);
+      g.fillStyle(0xfbbf24, 1);
+      g.fillRect(17, 8, 3, 8);
+    });
+
+    if (this.shouldGen('shop_pawn')) this.makeTexture('shop_pawn', 24, 24, (g) => {
+      g.fillStyle(0x1a1028, 1);
+      g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0xa78bfa, 1);
+      g.fillRect(5, 8, 14, 10);
+      g.fillStyle(0xffd700, 1);
+      g.fillCircle(12, 13, 4);
+    });
   }
 
   private genBullet(): void {

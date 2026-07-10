@@ -149,5 +149,51 @@
     "interiorH": 2,
     "clerk": { "name": "Кассир", "x": 138, "y": 95 },
     "items": []
+  },
+  {
+    "id": "pharmacy_1",
+    "type": "pharmacy",
+    "name": "Аптека «Здоровье»",
+    "x": 84,
+    "y": 96,
+    "doorX": 84,
+    "doorY": 97,
+    "interiorX": 83,
+    "interiorY": 95,
+    "interiorW": 3,
+    "interiorH": 2,
+    "clerk": { "name": "Фармацевт", "x": 84, "y": 95 },
+    "healPrice": 75,
+    "items": ["bandage", "medkit", "vitamins"]
+  },
+  {
+    "id": "cafe_1",
+    "type": "cafe",
+    "name": "Кафе «Уголёк»",
+    "x": 90,
+    "y": 96,
+    "doorX": 90,
+    "doorY": 97,
+    "interiorX": 89,
+    "interiorY": 95,
+    "interiorW": 3,
+    "interiorH": 2,
+    "clerk": { "name": "Бариста", "x": 90, "y": 95 },
+    "items": ["coffee_cup", "soup_bowl", "business_lunch", "cake"]
+  },
+  {
+    "id": "pawn_1",
+    "type": "pawn",
+    "name": "Ломбард «Залог»",
+    "x": 116,
+    "y": 96,
+    "doorX": 116,
+    "doorY": 97,
+    "interiorX": 115,
+    "interiorY": 95,
+    "interiorW": 3,
+    "interiorH": 2,
+    "clerk": { "name": "Оценщик", "x": 116, "y": 95 },
+    "items": []
   }
 ]

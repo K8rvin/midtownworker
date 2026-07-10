@@ -281,6 +281,9 @@ export class SmartphoneUI {
       if (s.type === 'furniture') pois.push({ label: `🛋 ${s.name}`, x: s.doorX, y: s.doorY });
       if (s.type === 'vehicle') pois.push({ label: `🚗 ${s.name}`, x: s.doorX, y: s.doorY });
       if (s.type === 'bank') pois.push({ label: `🏦 ${s.name}`, x: s.doorX, y: s.doorY });
+      if (s.type === 'pharmacy') pois.push({ label: `💊 ${s.name}`, x: s.doorX, y: s.doorY });
+      if (s.type === 'cafe') pois.push({ label: `☕ ${s.name}`, x: s.doorX, y: s.doorY });
+      if (s.type === 'pawn') pois.push({ label: `💎 ${s.name}`, x: s.doorX, y: s.doorY });
     }
     for (const j of jobsData as { id: string; name: string; employer: string; doorX: number; doorY: number; jobType?: string }[]) {
       if (j.id === 'police' || j.jobType === 'police') {
