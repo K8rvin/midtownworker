@@ -36,11 +36,14 @@ if (!roadLayer.includes('0xffd54a') && !roadLayer.includes('YELLOW')) {
 if (!roadLayer.includes('drawSameDirectionDashes') && !roadLayer.includes('lanes < 2')) {
   throw new Error('Equal same-direction dashed dividers missing');
 }
-if (!roadLayer.includes('drawZebraSpan') && !roadLayer.includes('drawCrosswalks')) {
+if (!roadLayer.includes('drawZebraBox') && !roadLayer.includes('drawCrosswalks')) {
   throw new Error('Crosswalk / zebra drawing missing');
 }
-if (!roadLayer.includes('approach')) {
-  throw new Error('Zebras should sit on approach tiles outside intersection');
+if (!roadLayer.includes('zebraInner') && !roadLayer.includes('zebraOuter')) {
+  throw new Error('Zebras should be offset further from intersection');
+}
+if (!roadLayer.includes("barDir === 'ns'") && !roadLayer.includes("'ns'")) {
+  throw new Error('Zebra bars should support NS/EW orientation');
 }
 
 const spriteGen = readFileSync(join(root, 'src', 'graphics', 'SpriteGenerator.ts'), 'utf8');
