@@ -63,6 +63,14 @@ export function shopMarkerColor(type: string): number {
       return 0xfbbf24;
     case 'pawn':
       return 0xa78bfa;
+    case 'laundry':
+      return 0x38bdf8;
+    case 'hotel':
+      return 0xf472b6;
+    case 'post':
+      return 0x94a3b8;
+    case 'gym':
+      return 0xfb923c;
     default:
       return 0xff2d55;
   }
@@ -358,5 +366,87 @@ export class ShopManager {
       out.push({ id: vid, name: item.name, offer: this.pawnVehicleOffer(vid) });
     }
     return out;
+  }
+
+  /** Laundry: wash work car cheaper than taxi depot. */
+  laundryWashCar(): string | null {
+    const cost = 12;
+    if (this.state.money < cost) return `Нужно $${cost}`;
+    this.state.money -= cost;
+    this.state.taxiCarCleanliness = 100;
+    return null;
+  }
+
+  laundryWashClothes(): string | null {
+    const cost = 18;
+    if (this.state.money < cost) return `Нужно $${cost}`;
+    this.state.money -= cost;
+    this.state.sleep = Math.min(100, this.state.sleep + 8);
+    this.state.drunkLevel = Math.max(0, this.state.drunkLevel - 12);
+    return null;
+  }
+
+  /** Hotel: pay for rest (advances hour, restores sleep). */
+  hotelRest(tier: 'cheap' | 'normal'): string | null {
+    const cost = tier === 'cheap' ? 35 : 65;
+    const sleepGain = tier === 'cheap' ? 35 : 60;
+    const hours = tier === 'cheap' ? 3 : 5;
+    if (this.state.money < cost) return `Нужно $${cost}`;
+    this.state.money -= cost;
+    this.state.sleep = Math.min(100, this.state.sleep + sleepGain);
+    this.state.hunger = Math.max(5, this.state.hunger - 8);
+    this.state.health = Math.min(this.state.maxHealth, this.state.health + (tier === 'normal' ? 10 : 0));
+    this.state.hour = (this.state.hour + hours) % 24;
+    if (this.state.hour < hours) this.state.day += 1;
+    return null;
+  }
+
+  /** Post office services. */
+  postBuyStamps(): string | null {
+    const cost = 8;
+    if (this.state.money < cost) return `Нужно $${cost}`;
+    this.state.money -= cost;
+    return null;
+  }
+
+  postPayBills(): string | null {
+    const cost = 40;
+    if (this.state.money < cost) return `Нужно $${cost}`;
+    this.state.money -= cost;
+    // Soft benefit: tiny rent pressure relief flavor — add a day if renting
+    if (this.state.housing.type === 'rent' && this.state.housing.rentDueDay > 0) {
+      this.state.housing.rentDueDay += 1;
+    }
+    return null;
+  }
+
+  postSendParcel(): string | null {
+    const cost = 22;
+    if (this.state.money < cost) return `Нужно $${cost}`;
+    this.state.money -= cost;
+    return null;
+  }
+
+  /** Gym: train / sauna. */
+  gymWorkout(): string | null {
+    const cost = 28;
+    if (this.state.money < cost) return `Нужно $${cost}`;
+    if (this.state.hunger < 20) return 'Слишком голодны для тренировки';
+    if (this.state.sleep < 15) return 'Слишком устали для тренировки';
+    this.state.money -= cost;
+    this.state.hunger = Math.max(5, this.state.hunger - 12);
+    this.state.sleep = Math.max(5, this.state.sleep - 8);
+    this.state.health = Math.min(this.state.maxHealth, this.state.health + 12);
+    this.state.drunkLevel = Math.max(0, this.state.drunkLevel - 15);
+    return null;
+  }
+
+  gymSauna(): string | null {
+    const cost = 20;
+    if (this.state.money < cost) return `Нужно $${cost}`;
+    this.state.money -= cost;
+    this.state.sleep = Math.min(100, this.state.sleep + 22);
+    this.state.drunkLevel = Math.max(0, this.state.drunkLevel - 20);
+    return null;
   }
 }

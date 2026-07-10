@@ -1351,6 +1351,43 @@ export class SpriteGenerator {
       g.fillStyle(0xffd700, 1);
       g.fillCircle(12, 13, 4);
     });
+
+    if (this.shouldGen('shop_laundry')) this.makeTexture('shop_laundry', 24, 24, (g) => {
+      g.fillStyle(0x0a1a28, 1);
+      g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x38bdf8, 1);
+      g.fillCircle(12, 12, 8);
+      g.fillStyle(0x0d0d14, 1);
+      g.fillCircle(12, 12, 4);
+    });
+
+    if (this.shouldGen('shop_hotel')) this.makeTexture('shop_hotel', 24, 24, (g) => {
+      g.fillStyle(0x2a1020, 1);
+      g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0xf472b6, 1);
+      g.fillRect(4, 10, 16, 10);
+      g.fillRect(6, 6, 12, 6);
+      g.fillStyle(0xffffff, 1);
+      g.fillRect(10, 14, 4, 6);
+    });
+
+    if (this.shouldGen('shop_post')) this.makeTexture('shop_post', 24, 24, (g) => {
+      g.fillStyle(0x1a1a24, 1);
+      g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x94a3b8, 1);
+      g.fillRect(4, 7, 16, 12);
+      g.fillStyle(0x0d0d14, 1);
+      g.fillTriangle(4, 7, 12, 14, 20, 7);
+    });
+
+    if (this.shouldGen('shop_gym')) this.makeTexture('shop_gym', 24, 24, (g) => {
+      g.fillStyle(0x1a1208, 1);
+      g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0xfb923c, 1);
+      g.fillRect(3, 10, 6, 4);
+      g.fillRect(15, 10, 6, 4);
+      g.fillRect(8, 11, 8, 2);
+    });
   }
 
   private genBullet(): void {

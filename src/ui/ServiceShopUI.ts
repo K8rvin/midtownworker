@@ -7,8 +7,6 @@ import {
   type ShopManager,
 } from '../systems/ShopManager';
 
-export type ServiceShopType = 'pharmacy' | 'cafe' | 'pawn';
-
 export class ServiceShopUI {
   private nodes: Phaser.GameObjects.GameObject[] = [];
   private visible = false;
@@ -43,9 +41,24 @@ export class ServiceShopUI {
   }
 
   private titleFor(): string {
-    if (this.shop.type === 'pharmacy') return '💊 АПТЕКА';
-    if (this.shop.type === 'cafe') return '☕ КАФЕ';
-    return '💎 ЛОМБАРД';
+    switch (this.shop.type) {
+      case 'pharmacy':
+        return '💊 АПТЕКА';
+      case 'cafe':
+        return '☕ КАФЕ';
+      case 'pawn':
+        return '💎 ЛОМБАРД';
+      case 'laundry':
+        return '🧺 ПРАЧЕЧНАЯ';
+      case 'hotel':
+        return '🛏 ХОСТЕЛ';
+      case 'post':
+        return '✉ ПОЧТА';
+      case 'gym':
+        return '🏋 СПОРТЗАЛ';
+      default:
+        return this.shop.name;
+    }
   }
 
   private render(): void {
@@ -77,11 +90,16 @@ export class ServiceShopUI {
     this.nodes.push(title);
 
     const sub = this.scene.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 155, `${this.shop.name} · $${this.state.money}`, {
-        fontFamily: 'monospace',
-        fontSize: '13px',
-        color: '#9ca3af',
-      })
+      .text(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2 - 155,
+        `${this.shop.name} · $${this.state.money} · HP ${Math.round(this.state.health)} · сон ${Math.round(this.state.sleep)}`,
+        {
+          fontFamily: 'monospace',
+          fontSize: '12px',
+          color: '#9ca3af',
+        }
+      )
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(d + 2);
@@ -144,6 +162,74 @@ export class ServiceShopUI {
           },
         });
       }
+    } else if (this.shop.type === 'laundry') {
+      const clean = Math.round(this.state.taxiCarCleanliness ?? 100);
+      actions.push({
+        label: `Помыть авто · $12 (сейчас ${clean}%)`,
+        fn: () => {
+          const err = this.shops.laundryWashCar();
+          this.act(err, err ? '' : 'Авто вымыто (100%)');
+        },
+      });
+      actions.push({
+        label: 'Стирка · $18 (+сон, −алкоголь)',
+        fn: () => {
+          const err = this.shops.laundryWashClothes();
+          this.act(err, err ? '' : 'Одежда чистая, стало легче');
+        },
+      });
+    } else if (this.shop.type === 'hotel') {
+      actions.push({
+        label: 'Койка · $35 (≈3ч, +35 сон)',
+        fn: () => {
+          const err = this.shops.hotelRest('cheap');
+          this.act(err, err ? '' : 'Отдохнули в хостеле');
+        },
+      });
+      actions.push({
+        label: 'Комната · $65 (≈5ч, +60 сон, +HP)',
+        fn: () => {
+          const err = this.shops.hotelRest('normal');
+          this.act(err, err ? '' : 'Выспались в номере');
+        },
+      });
+    } else if (this.shop.type === 'post') {
+      actions.push({
+        label: 'Марки / конверты · $8',
+        fn: () => {
+          const err = this.shops.postBuyStamps();
+          this.act(err, err ? '' : 'Купили марки');
+        },
+      });
+      actions.push({
+        label: 'Оплатить счета · $40 (+1 день к аренде)',
+        fn: () => {
+          const err = this.shops.postPayBills();
+          this.act(err, err ? '' : 'Счета оплачены');
+        },
+      });
+      actions.push({
+        label: 'Отправить посылку · $22',
+        fn: () => {
+          const err = this.shops.postSendParcel();
+          this.act(err, err ? '' : 'Посылка отправлена');
+        },
+      });
+    } else if (this.shop.type === 'gym') {
+      actions.push({
+        label: 'Тренировка · $28 (+HP, −голод/сон)',
+        fn: () => {
+          const err = this.shops.gymWorkout();
+          this.act(err, err ? '' : 'Хорошая тренировка');
+        },
+      });
+      actions.push({
+        label: 'Сауна · $20 (+сон, −алкоголь)',
+        fn: () => {
+          const err = this.shops.gymSauna();
+          this.act(err, err ? '' : 'Расслабились в сауне');
+        },
+      });
     }
 
     actions.slice(0, 10).forEach((a, i) => {

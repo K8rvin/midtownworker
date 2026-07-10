@@ -1565,7 +1565,15 @@ export class GameScene extends Phaser.Scene {
                     ? `${shop.name} — меню`
                     : shop.type === 'pawn'
                       ? `${shop.name} — сдать вещи`
-                      : `${shop.name} — купить`;
+                      : shop.type === 'laundry'
+                        ? `${shop.name} — стирка / мойка`
+                        : shop.type === 'hotel'
+                          ? `${shop.name} — ночлег`
+                          : shop.type === 'post'
+                            ? `${shop.name} — почта`
+                            : shop.type === 'gym'
+                              ? `${shop.name} — тренировка`
+                              : `${shop.name} — купить`;
             candidates.push(
               makeCandidate('shop_clerk', clerkDist, clerkHint, { shop, player })
             );
@@ -1713,7 +1721,13 @@ export class GameScene extends Phaser.Scene {
           this.openBankUI();
         } else if (
           LIFE_SIM &&
-          (shop.type === 'pharmacy' || shop.type === 'cafe' || shop.type === 'pawn')
+          (shop.type === 'pharmacy' ||
+            shop.type === 'cafe' ||
+            shop.type === 'pawn' ||
+            shop.type === 'laundry' ||
+            shop.type === 'hotel' ||
+            shop.type === 'post' ||
+            shop.type === 'gym')
         ) {
           this.openServiceShop(shop);
         } else if (LIFE_SIM && shop.type === 'vehicle') {
@@ -2892,7 +2906,15 @@ export class GameScene extends Phaser.Scene {
                           ? 'shop_cafe'
                           : shop.type === 'pawn'
                             ? 'shop_pawn'
-                            : 'shop_hospital';
+                            : shop.type === 'laundry'
+                              ? 'shop_laundry'
+                              : shop.type === 'hotel'
+                                ? 'shop_hotel'
+                                : shop.type === 'post'
+                                  ? 'shop_post'
+                                  : shop.type === 'gym'
+                                    ? 'shop_gym'
+                                    : 'shop_hospital';
           const s = this.add.sprite(obj.x * TILE_SIZE + 16, obj.y * TILE_SIZE + 16, key);
           s.setDepth(3);
           this.shopSprites.push(s);
