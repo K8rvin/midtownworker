@@ -36,6 +36,9 @@ if (!traffic.includes('minSpacing') && !traffic.includes('minSpacing')) {
   if (!traffic.includes('70')) throw new Error('Traffic spawn spacing missing');
 }
 if (!traffic.includes('separateFrom')) throw new Error('TrafficManager separation pass missing');
+if (!traffic.includes('playerStolen')) {
+  throw new Error('Traffic despawn must skip playerStolen cars');
+}
 
 const lanes = readFileSync(join(root, 'src/world/LaneNavigation.ts'), 'utf8');
 if (!lanes.includes("east', 1") && !lanes.includes('east", 1')) {
@@ -81,11 +84,6 @@ if (!game.includes('softCrime')) throw new Error('SoftCrime not wired in GameSce
 if (!game.includes('handleCarjackCaught')) throw new Error('Carjack catch dialog missing');
 if (!game.includes('isFirstJack') || !game.includes('playerStolen')) {
   throw new Error('GameScene must carjack only once (isFirstJack before claim)');
-}
-
-const traffic = readFileSync(join(root, 'src/systems/TrafficManager.ts'), 'utf8');
-if (!traffic.includes('playerStolen')) {
-  throw new Error('Traffic despawn must skip playerStolen cars');
 }
 
 const config = readFileSync(join(root, 'src/config.ts'), 'utf8');
