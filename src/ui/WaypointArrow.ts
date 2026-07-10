@@ -14,7 +14,7 @@ export interface WaypointOrigin {
 }
 
 /**
- * World-space navigation: chevron grows from the player toward the goal
+ * World-space navigation: chevron grows from the player icon toward the goal
  * (not pinned to screen edges).
  */
 export class WaypointArrow {
@@ -41,7 +41,7 @@ export class WaypointArrow {
 
   /**
    * @param target destination in world pixels
-   * @param origin player (or vehicle) world position — arrow is drawn around this point
+   * @param origin player (or vehicle) world position — arrow is drawn from this icon
    */
   update(target: WaypointTarget | null, origin?: WaypointOrigin | null): void {
     if (!target || !origin) {
@@ -63,27 +63,28 @@ export class WaypointArrow {
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
 
-    // Ring offset from character center so chevron is clearly "from me"
-    const ring = 36;
-    const size = 16;
+    // Tight attach to player/vehicle icon center
+    const stemStart = 12;
+    const ring = 24;
+    const size = 14;
     const arrowX = origin.x + cos * ring;
     const arrowY = origin.y + sin * ring;
 
     this.gfx.clear();
 
-    // Soft ground disc under player (anchors the arrow to character)
-    this.gfx.fillStyle(color, 0.2);
-    this.gfx.fillCircle(origin.x, origin.y, 10);
-    this.gfx.lineStyle(2, color, 0.55);
-    this.gfx.strokeCircle(origin.x, origin.y, 10);
+    // Soft ground disc under player (anchors the arrow to character icon)
+    this.gfx.fillStyle(color, 0.22);
+    this.gfx.fillCircle(origin.x, origin.y, 9);
+    this.gfx.lineStyle(2, color, 0.65);
+    this.gfx.strokeCircle(origin.x, origin.y, 9);
 
-    // Stem from near feet toward tip
-    this.gfx.lineStyle(3, color, 0.75);
+    // Stem from icon edge toward tip
+    this.gfx.lineStyle(3, color, 0.85);
     this.gfx.lineBetween(
-      origin.x + cos * 16,
-      origin.y + sin * 16,
-      arrowX - cos * 8,
-      arrowY - sin * 8
+      origin.x + cos * stemStart,
+      origin.y + sin * stemStart,
+      arrowX - cos * 6,
+      arrowY - sin * 6
     );
 
     // Chevron tip
@@ -102,7 +103,7 @@ export class WaypointArrow {
       baseX - perpX,
       baseY - perpY
     );
-    this.gfx.lineStyle(2, 0xffffff, 0.85);
+    this.gfx.lineStyle(2, 0xffffff, 0.9);
     this.gfx.strokeTriangle(
       tipX,
       tipY,
@@ -113,9 +114,9 @@ export class WaypointArrow {
     );
 
     if (target.label) {
-      // Label slightly behind the player opposite to travel direction (readable)
+      // Label near the player, slightly opposite travel direction
       this.label.setText(target.label);
-      this.label.setPosition(origin.x - cos * 8, origin.y - sin * 8 - 28);
+      this.label.setPosition(origin.x - cos * 6, origin.y - sin * 6 - 26);
       this.label.setColor(target.labelColor ?? '#ffd600');
       this.label.setVisible(true);
     } else {

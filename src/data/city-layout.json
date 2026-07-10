@@ -164,6 +164,6 @@
     { "district": "old_town", "kind": "clock_tower", "x": 68, "y": 68 },
     { "district": "industrial_mid", "kind": "crane", "x": 132, "y": 72 },
     { "district": "waterfront", "kind": "dock", "x": 180, "y": 100 },
-    { "district": "midtown_east", "kind": "billboard", "x": 132, "y": 126 }
+    { "district": "midtown_east", "kind": "billboard", "x": 138, "y": 118 }
   ]
 }

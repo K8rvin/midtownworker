@@ -78,4 +78,31 @@ const config = readFileSync(join(root, 'src/config.ts'), 'utf8');
 if (!config.includes('CourierOrderCategory')) throw new Error('Courier categories missing');
 if (!config.includes('courierCombo')) throw new Error('lifeStats.courierCombo missing');
 
+// Mission arrow from player + midtown home off road
+if (!game.includes('getMarker') || !game.includes('updateCourierWaypoint')) {
+  throw new Error('Story mission should feed WaypointArrow via updateCourierWaypoint');
+}
+if (!arrow.includes('stemStart') && !arrow.includes('ring = 24') && !arrow.includes('origin')) {
+  throw new Error('WaypointArrow should attach tightly to player origin');
+}
+
+const homes = JSON.parse(readFileSync(join(root, 'src/data/homes.json'), 'utf8'));
+const midtown = homes.find((h) => h.id === 'apt_midtown_1');
+if (!midtown) throw new Error('apt_midtown_1 missing');
+// Minor road centers 25/75/125/175 width 3; major 50/100/150 width 5
+const onMinor = (n) => [25, 75, 125, 175].some((c) => Math.abs(n - c) <= 1);
+const onMajor = (n) => [50, 100, 150].some((c) => Math.abs(n - c) <= 2);
+if (onMinor(midtown.doorX) || onMinor(midtown.doorY) || onMajor(midtown.doorX) || onMajor(midtown.doorY)) {
+  throw new Error(`Midtown apt door still on road: ${midtown.doorX},${midtown.doorY}`);
+}
+
+const layout = JSON.parse(readFileSync(join(root, 'src/data/city-layout.json'), 'utf8'));
+const bb = (layout.landmarks || []).find((l) => l.kind === 'billboard' && l.district === 'midtown_east');
+if (bb && (onMinor(bb.x) || onMinor(bb.y) || onMajor(bb.x) || onMajor(bb.y))) {
+  throw new Error(`Midtown billboard still on road: ${bb.x},${bb.y}`);
+}
+if (bb && bb.x === 132 && bb.y === 126) {
+  throw new Error('Billboard still at old on-road coords 132,126');
+}
+
 console.log('City logistics checks passed');

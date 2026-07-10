@@ -881,6 +881,25 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    // Story / tutorial mission — arrow from player icon to objective
+    const story = this.lifeSimStory?.getMarker?.();
+    if (story) {
+      const tx = story.x * TILE_SIZE + TILE_SIZE / 2;
+      const ty = story.y * TILE_SIZE + TILE_SIZE / 2;
+      const distM = Math.round(Math.hypot(tx - pos.x, ty - pos.y) / 8);
+      this.courierWaypointArrow.update(
+        {
+          x: tx,
+          y: ty,
+          label: `▶ ${story.label} · ${distM}м`,
+          color: 0xffd600,
+          labelColor: '#ffd600',
+        },
+        { x: pos.x, y: pos.y }
+      );
+      return;
+    }
+
     const nav = this.state.navTarget;
     if (nav) {
       const distM = Math.round(Math.hypot(nav.x - pos.x, nav.y - pos.y) / 8);
