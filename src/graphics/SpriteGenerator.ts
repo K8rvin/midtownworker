@@ -76,22 +76,16 @@ export class SpriteGenerator {
     });
 
     this.forceTile('tile_road', (g) => {
+      // Neutral asphalt only — lane markings drawn by RoadLayer along the road axis
       g.fillStyle(0x1a1a28, 1);
       g.fillRect(0, 0, 32, 32);
       g.fillStyle(0x2a2a3c, 1);
       g.fillRect(0, 0, 32, 32);
-      // asphalt grit
+      // asphalt grit (no directional lines — those looked wrong on E-W roads)
       for (let i = 0; i < 18; i++) {
         g.fillStyle(i % 2 ? 0x323248 : 0x222234, 1);
         g.fillRect((i * 5) % 31, (i * 9) % 31, 1, 1);
       }
-      // center dashed line
-      g.fillStyle(0xc8b86a, 1);
-      for (let y = 2; y < 30; y += 8) g.fillRect(15, y, 2, 4);
-      // edge curbs
-      g.fillStyle(0x3a3a50, 1);
-      g.fillRect(0, 0, 32, 1);
-      g.fillRect(0, 31, 32, 1);
     });
 
     this.forceTile('tile_sidewalk', (g) => {

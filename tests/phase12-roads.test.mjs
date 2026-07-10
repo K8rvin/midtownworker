@@ -27,7 +27,24 @@ const traffic = readFileSync(join(root, 'src', 'systems', 'TrafficManager.ts'), 
 if (!traffic.includes('TrafficLightManager')) throw new Error('TrafficManager should pass traffic lights');
 
 const roadLayer = readFileSync(join(root, 'src', 'world', 'RoadLayer.ts'), 'utf8');
-if (!roadLayer.includes('drawCenterLines')) throw new Error('RoadLayer center lines missing');
+if (!roadLayer.includes('drawRoadMarkings') && !roadLayer.includes('drawCenterLines')) {
+  throw new Error('RoadLayer road markings missing');
+}
+if (!roadLayer.includes('YELLOW') && !roadLayer.includes('0xffd54a') && !roadLayer.includes('double')) {
+  // double yellow for opposing traffic
+  if (!roadLayer.includes('gap = 3') && !roadLayer.includes('cy - gap')) {
+    throw new Error('Double center line (opposing traffic) missing');
+  }
+}
+if (!roadLayer.includes('drawDashedAlong') && !roadLayer.includes('dash')) {
+  throw new Error('Dashed lane markings missing');
+}
+
+const spriteGen = readFileSync(join(root, 'src', 'graphics', 'SpriteGenerator.ts'), 'utf8');
+const roadTileBlock = spriteGen.match(/forceTile\('tile_road'[\s\S]*?\}\);/)?.[0] ?? '';
+if (roadTileBlock.includes('0xc8b86a') || roadTileBlock.includes('center dashed')) {
+  throw new Error('tile_road must not bake directional yellow dashes (use RoadLayer)');
+}
 
 const lights = readFileSync(join(root, 'src', 'systems', 'TrafficLightManager.ts'), 'utf8');
 if (!lights.includes('shouldStop')) throw new Error('TrafficLightManager shouldStop missing');
