@@ -127,10 +127,53 @@ export class LifeSimStoryManager {
     const ch = chapters.find((c) => c.id === chapterId);
     if (!ch) return null;
     this.state.storyChapter = chapterId;
+
+    // Already employed → skip "first job" tutorial chapter entirely
+    if (this.isFirstJobChapter(ch) && this.state.job) {
+      return this.autoFinishFirstJobChapter(ch);
+    }
+
     if (!this.state.completedLifeTasks.includes(ch.taskId)) {
       this.lifeTasks.forceStartTask(ch.taskId);
     }
     return ch.onStart;
+  }
+
+  private isFirstJobChapter(ch: StoryChapter): boolean {
+    return ch.taskId === 'task_first_job';
+  }
+
+  /**
+   * Player already has a job (applied earlier or loaded save) — complete
+   * task_first_job, grant reward once, advance past employment tutorial.
+   */
+  private autoFinishFirstJobChapter(ch: StoryChapter): string {
+    const jobName = this.state.job?.name ?? 'работа';
+    const task = this.lifeTasks.tasks.find((t) => t.id === ch.taskId);
+
+    if (!this.state.completedLifeTasks.includes(ch.taskId)) {
+      this.state.completedLifeTasks.push(ch.taskId);
+      if (task) {
+        this.state.money += task.reward;
+        this.state.lifeStats.tasksCompleted += 1;
+      }
+    }
+    if (this.state.activeLifeTaskId === ch.taskId) {
+      this.state.activeLifeTaskId = null;
+    }
+    delete this.state.questProgress[ch.taskId];
+
+    const nextId = ch.id + 1;
+    const next = chapters.find((c) => c.id === nextId);
+    let tail = ch.onComplete;
+    if (next && nextId <= tutorialCompleteChapter) {
+      const nextStart = this.startChapter(nextId);
+      if (nextStart) tail = `${tail}\n${nextStart}`;
+    } else {
+      this.state.storyChapter = tutorialCompleteChapter + 1;
+    }
+
+    return `Работа уже есть («${jobName}») — квест устройства пропущен.\n${tail}`;
   }
 
   handleLifeEvent(
@@ -187,9 +230,16 @@ export class LifeSimStoryManager {
   /** Restore tutorial task if save has chapter but no active task. */
   syncTutorialTask(): string | null {
     if (!this.isTutorialActive()) return null;
-    if (this.state.activeLifeTaskId) return null;
     const ch = this.getChapter();
-    if (!ch || this.state.completedLifeTasks.includes(ch.taskId)) return null;
+    if (!ch) return null;
+
+    // Save mid-chapter with a job already held
+    if (this.isFirstJobChapter(ch) && this.state.job) {
+      return this.autoFinishFirstJobChapter(ch);
+    }
+
+    if (this.state.activeLifeTaskId) return null;
+    if (this.state.completedLifeTasks.includes(ch.taskId)) return null;
     const started = this.lifeTasks.startTask(ch.taskId);
     return started ? ch.onStart : null;
   }

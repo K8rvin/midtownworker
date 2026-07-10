@@ -19,6 +19,10 @@ if (!storyMgr.includes('LifeSimStoryManager')) throw new Error('Story manager mi
 if (!storyMgr.includes('getBedSleepStep')) throw new Error('Dynamic bed tutorial marker missing');
 if (!storyMgr.includes('buildTutorialDialogLines')) throw new Error('Tutorial dialog lines builder missing');
 if (!storyMgr.includes('getBedPurchasedStepMessage')) throw new Error('Bed purchase step message missing');
+if (!storyMgr.includes('autoFinishFirstJobChapter') || !storyMgr.includes('task_first_job')) {
+  throw new Error('Should skip first-job tutorial when already employed');
+}
+if (!storyData.includes('task_first_job')) throw new Error('First job story chapter missing');
 
 const storyData = readFileSync(join(root, 'src', 'data', 'life-sim-story.json'), 'utf8');
 if (!storyData.includes('task_rent_home')) throw new Error('Story chapters missing');
