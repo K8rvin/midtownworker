@@ -233,6 +233,10 @@ export interface GameState {
   bank: BankState;
   /** Soft crime: insurance active until this game day (inclusive). 0 = none. */
   insuranceUntilDay: number;
+  /** Day for which casinoDayBet is tracked (resets daily). */
+  casinoDay: number;
+  /** Total wagered at casino on casinoDay (soft daily limit). */
+  casinoDayBet: number;
 }
 
 export interface CoopPlayerData {
@@ -324,4 +328,6 @@ export const DEFAULT_GAME_STATE: GameState = {
   navTarget: null,
   bank: { ...DEFAULT_BANK },
   insuranceUntilDay: 0,
+  casinoDay: 0,
+  casinoDayBet: 0,
 };

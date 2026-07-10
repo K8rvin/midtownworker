@@ -1076,13 +1076,7 @@ export class GameScene extends Phaser.Scene {
       this.toggleFullMap();
     }
 
-    if (
-      this.inputMgr.justPressedInteract() &&
-      !this.shopUI.isVisible() &&
-      !this.lifeShopUI?.isVisible() &&
-      !this.bankUI?.isVisible() &&
-      !(LIFE_SIM ? this.lifeTaskLog.isVisible() : this.questLog.isVisible())
-    ) {
+    if (this.inputMgr.justPressedInteract() && !this.isUIBlocking()) {
       this.handleInteract();
     }
 
@@ -1113,7 +1107,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleInteract(): void {
-    if (this.dialogBox.isVisible() || this.shopUI.isVisible()) return;
+    if (this.isUIBlocking()) return;
     const candidate = pickBest(this.collectInteractCandidates(this.player));
     if (candidate) this.executeInteract(this.player, candidate);
   }
@@ -1491,7 +1485,42 @@ export class GameScene extends Phaser.Scene {
     const py = pos.y;
 
     if (player.inVehicle) {
-      candidates.push(makeCandidate('vehicle_exit', 0, 'Выйти из машины'));
+      // Fallback only — nearby taxi/emergency/drive-thru must win over exit.
+      candidates.push(makeCandidate('vehicle_exit', 96, 'Выйти из машины'));
+
+      if (LIFE_SIM) {
+        // Drive-thru: gas / garage / laundry without leaving the car.
+        for (const shop of this.shopManager.shops) {
+          if (shop.type !== 'gas' && shop.type !== 'garage' && shop.type !== 'laundry') continue;
+          if (!this.shopManager.isNearShopDoor(shop, px, py, 78)) continue;
+          const dx = shop.doorX * TILE_SIZE + TILE_SIZE / 2;
+          const dy = shop.doorY * TILE_SIZE + TILE_SIZE / 2;
+          const dist = Phaser.Math.Distance.Between(px, py, dx, dy);
+          const hint =
+            shop.type === 'gas'
+              ? `${shop.name} — заправка`
+              : shop.type === 'garage'
+                ? `${shop.name} — ремонт`
+                : `${shop.name} — мойка авто`;
+          candidates.push(makeCandidate('service_drive', dist, hint, { shop, player }));
+        }
+        candidates.push(...this.collectLifeSimCandidates(px, py, player));
+      }
+
+      const nearTransition = this.getNearestTransition(px, py);
+      if (nearTransition) {
+        const tx = nearTransition.x * TILE_SIZE + TILE_SIZE / 2;
+        const ty = nearTransition.y * TILE_SIZE + TILE_SIZE / 2;
+        candidates.push(
+          makeCandidate(
+            'transition',
+            Phaser.Math.Distance.Between(px, py, tx, ty),
+            nearTransition.label ?? getMapConfig(nearTransition.targetMap).name,
+            { transition: nearTransition }
+          )
+        );
+      }
+
       return candidates;
     }
 
@@ -1717,6 +1746,7 @@ export class GameScene extends Phaser.Scene {
       case 'shop_door_exit':
         this.exitShop(payload!.shop as ShopConfig, (payload?.player as Player) ?? player);
         break;
+      case 'service_drive':
       case 'shop_clerk': {
         const shop = payload!.shop as ShopConfig;
         if (shop.killerOnly && !this.jobManager.isViolentJobActive()) {
@@ -2540,6 +2570,28 @@ export class GameScene extends Phaser.Scene {
     this.bankUI.show();
   }
 
+  /** Vehicle for gas/garage: seated car, else nearest claimed/owned car by the bay. */
+  private getServiceVehicle(maxDist = 88): Vehicle | null {
+    if (this.player.inVehicle && this.player.currentVehicle?.active) {
+      return this.player.currentVehicle;
+    }
+    const pos = this.player.getPosition();
+    let best: Vehicle | null = null;
+    let bestD = maxDist;
+    const consider = (v: Vehicle) => {
+      // Only the car you left / own — never random traffic.
+      if (!v.active || v.occupied || v.isTraffic) return;
+      const d = Phaser.Math.Distance.Between(pos.x, pos.y, v.sprite.x, v.sprite.y);
+      if (d < bestD) {
+        bestD = d;
+        best = v;
+      }
+    };
+    for (const v of this.trafficManager.getAllVehicles()) consider(v);
+    for (const v of this.garageManager.parkedVehicles) consider(v);
+    return best;
+  }
+
   private openServiceShop(shop: ShopConfig): void {
     this.serviceShopUI?.close();
     this.serviceShopUI = new ServiceShopUI(
@@ -2552,11 +2604,11 @@ export class GameScene extends Phaser.Scene {
         this.serviceShopUI = null;
       },
       {
-        inVehicle: () => Boolean(this.player.inVehicle && this.player.currentVehicle?.active),
-        hp: () => this.player.currentVehicle?.hp ?? 0,
-        maxHp: () => this.player.currentVehicle?.config.hp ?? 0,
+        inVehicle: () => Boolean(this.getServiceVehicle()),
+        hp: () => this.getServiceVehicle()?.hp ?? 0,
+        maxHp: () => this.getServiceVehicle()?.config.hp ?? 0,
         repair: (amount) => {
-          const v = this.player.currentVehicle;
+          const v = this.getServiceVehicle();
           if (!v) return;
           if (amount === 'full') v.hp = v.config.hp;
           else v.hp = Math.min(v.config.hp, v.hp + amount);

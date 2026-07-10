@@ -83,18 +83,31 @@ export class ServiceShopUI {
     this.clear();
     const d = 212;
     const overlay = this.scene.add
-      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.55)
+      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.62)
       .setScrollFactor(0)
       .setDepth(d)
       .setInteractive();
     this.nodes.push(overlay);
 
-    const panel = this.scene.add
-      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 460, 440, 0x0d0d14, 0.98)
-      .setStrokeStyle(2, 0xc8f542, 0.55)
+    // Soft glow frame behind panel
+    const glow = this.scene.add
+      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 476, 456, 0xc8f542, 0.08)
       .setScrollFactor(0)
       .setDepth(d + 1);
+    this.nodes.push(glow);
+
+    const panel = this.scene.add
+      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 468, 448, 0x0d0d14, 0.98)
+      .setStrokeStyle(2, 0xc8f542, 0.7)
+      .setScrollFactor(0)
+      .setDepth(d + 2);
     this.nodes.push(panel);
+
+    const accent = this.scene.add
+      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 200, 420, 3, 0xc8f542, 0.85)
+      .setScrollFactor(0)
+      .setDepth(d + 3);
+    this.nodes.push(accent);
 
     const title = this.scene.add
       .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 185, this.titleFor(), {
@@ -104,7 +117,7 @@ export class ServiceShopUI {
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
-      .setDepth(d + 2);
+      .setDepth(d + 3);
     this.nodes.push(title);
 
     const sub = this.scene.add
@@ -120,7 +133,7 @@ export class ServiceShopUI {
       )
       .setOrigin(0.5)
       .setScrollFactor(0)
-      .setDepth(d + 2);
+      .setDepth(d + 3);
     this.nodes.push(sub);
 
     const actions: { label: string; fn: () => void }[] = [];
@@ -249,16 +262,16 @@ export class ServiceShopUI {
         },
       });
     } else if (this.shop.type === 'gas') {
-      const inV = this.vehicle?.inVehicle() ?? false;
+      const hasCar = this.vehicle?.inVehicle() ?? false;
       const hp = this.vehicle?.hp() ?? 0;
       const max = this.vehicle?.maxHp() ?? 0;
       actions.push({
-        label: inV
+        label: hasCar
           ? `Заправить · $40 (HP ${Math.round(hp)}/${max}, мойка)`
-          : 'Заправить · $40 (нужно сидеть в машине у АЗС)',
+          : 'Заправить · $40 (машина у колонки / E с авто)',
         fn: () => {
           if (!this.vehicle?.inVehicle()) {
-            this.onMessage('Подъедьте к АЗС на машине и зайдите в сервис снова');
+            this.onMessage('Подъедьте на машине (E у АЗС) или оставьте её у входа');
             return;
           }
           const cost = 40;
@@ -280,16 +293,16 @@ export class ServiceShopUI {
         },
       });
     } else if (this.shop.type === 'garage') {
-      const inV = this.vehicle?.inVehicle() ?? false;
+      const hasCar = this.vehicle?.inVehicle() ?? false;
       const hp = this.vehicle?.hp() ?? 0;
       const max = this.vehicle?.maxHp() ?? 0;
       actions.push({
-        label: inV
+        label: hasCar
           ? `Полный ремонт · $90 (HP ${Math.round(hp)}/${max})`
-          : 'Полный ремонт · $90 (сядьте в авто)',
+          : 'Полный ремонт · $90 (машина у бокса / E с авто)',
         fn: () => {
           if (!this.vehicle?.inVehicle()) {
-            this.onMessage('Нужна машина: сядьте и подойдите к клерку');
+            this.onMessage('Подгоните машину к сервису (E с авто или рядом с входом)');
             return;
           }
           const cost = 90;
@@ -303,10 +316,12 @@ export class ServiceShopUI {
         },
       });
       actions.push({
-        label: inV ? 'Частичный ремонт · $45 (+40% HP)' : 'Частичный ремонт · $45 (нужна машина)',
+        label: hasCar
+          ? 'Частичный ремонт · $45 (+40% HP)'
+          : 'Частичный ремонт · $45 (нужна машина рядом)',
         fn: () => {
           if (!this.vehicle?.inVehicle()) {
-            this.onMessage('Нужна машина: сядьте и подойдите к клерку');
+            this.onMessage('Подгоните машину к сервису (E с авто или рядом с входом)');
             return;
           }
           const cost = 45;
@@ -339,9 +354,16 @@ export class ServiceShopUI {
         },
       });
     } else if (this.shop.type === 'casino') {
+      const dayBet =
+        this.state.casinoDay === this.state.day ? this.state.casinoDayBet ?? 0 : 0;
+      const left = Math.max(0, 500 - dayBet);
+      actions.push({
+        label: `Лимит дня: $${left} / $500`,
+        fn: () => this.onMessage(left <= 0 ? 'Лимит ставок на сегодня исчерпан' : `Можно поставить ещё $${left}`),
+      });
       for (const amount of [20, 50, 100]) {
         actions.push({
-          label: `Ставка $${amount} (×2 при выигрыше, ~45%)`,
+          label: `Ставка $${amount} (×2, ~45%)`,
           fn: () => {
             const r = this.shops.casinoBet(amount);
             if (r.err) {
@@ -361,28 +383,32 @@ export class ServiceShopUI {
         .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 110 + i * 34, a.label, {
           fontFamily: 'monospace',
           fontSize: '13px',
-          color: '#c8f542',
-          backgroundColor: '#1a1a2e',
-          padding: { x: 12, y: 6 },
+          color: '#e8ff8a',
+          backgroundColor: '#16162a',
+          padding: { x: 14, y: 7 },
         })
         .setOrigin(0.5)
         .setScrollFactor(0)
-        .setDepth(d + 2)
+        .setDepth(d + 3)
         .setInteractive({ useHandCursor: true });
+      btn.on('pointerover', () => btn.setStyle({ color: '#0d0d14', backgroundColor: '#c8f542' }));
+      btn.on('pointerout', () => btn.setStyle({ color: '#e8ff8a', backgroundColor: '#16162a' }));
       btn.on('pointerdown', a.fn);
       this.nodes.push(btn);
     });
 
     const close = this.scene.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 185, '[Esc] Закрыть', {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 190, '[Esc] Закрыть', {
         fontFamily: 'monospace',
         fontSize: '12px',
-        color: '#6b7280',
+        color: '#9ca3af',
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
-      .setDepth(d + 2)
+      .setDepth(d + 3)
       .setInteractive({ useHandCursor: true });
+    close.on('pointerover', () => close.setColor('#c8f542'));
+    close.on('pointerout', () => close.setColor('#9ca3af'));
     close.on('pointerdown', () => this.close());
     this.nodes.push(close);
   }

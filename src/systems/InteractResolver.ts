@@ -29,7 +29,9 @@ export type InteractKind =
   | 'task_board'
   | 'employment_enter'
   | 'employment_exit'
-  | 'employment_clerk';
+  | 'employment_clerk'
+  /** Drive-thru service UI (gas / garage / laundry) while seated in car. */
+  | 'service_drive';
 
 export interface InteractCandidate {
   kind: InteractKind;
@@ -43,8 +45,10 @@ const PRIORITY: Record<InteractKind, number> = {
   stairs: 100,
   traffic_vehicle: 90,
   garage_vehicle: 88,
-  vehicle_exit: 85,
+  /** Low so taxi/emergency/drive-thru win when near a point of interest. */
+  vehicle_exit: 40,
   shop_clerk: 80,
+  service_drive: 86,
   courier_deliver: 79,
   courier_pickup: 79,
   taxi_dropoff: 79,

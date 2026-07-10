@@ -185,19 +185,23 @@ export class HUD {
       this.drawP2HealthBar();
       this.drawVehicleBar(vehicleHp);
       this.gangBars.clear();
+      const insured =
+        this.state.insuranceUntilDay > 0 && this.state.day <= this.state.insuranceUntilDay
+          ? ` · 🛡 до дн.${this.state.insuranceUntilDay}`
+          : '';
       if (this.state.housing.type === 'rent' && this.state.housing.homeId) {
         const days = Math.max(0, this.state.housing.rentDueDay - this.state.day);
         // rent amount not on state — show days only
         this.gangLabels.setText(
-          days === 0
+          (days === 0
             ? `Аренда: сегодня списание`
-            : `Аренда через ${days} дн. (до дн.${this.state.housing.rentDueDay})`
+            : `Аренда через ${days} дн. (до дн.${this.state.housing.rentDueDay})`) + insured
         );
       } else {
         this.gangLabels.setText(
-          this.state.housing.homeId
+          (this.state.housing.homeId
             ? `Дом: ${this.state.housing.type === 'owned' ? 'свой' : 'аренда'}`
-            : 'Жильё: нет · P — смартфон'
+            : 'Жильё: нет · P — смартфон') + insured
         );
       }
       this.drawStoryPanel(!!storyLine);

@@ -486,14 +486,26 @@ export class ShopManager {
     return `Полис до дня ${this.state.insuranceUntilDay}`;
   }
 
+  /** Soft daily casino wager cap (keeps economy stable). */
+  static readonly CASINO_DAY_LIMIT = 500;
+
   /**
    * Casino: even-money coin flip, slight house edge (~45% win).
-   * Returns null on success; message via out param pattern — returns result string always as error|null for money fail.
+   * Daily wager limit CASINO_DAY_LIMIT.
    */
   casinoBet(amount: number): { err: string | null; won?: boolean; payout?: number } {
     if (amount < 10) return { err: 'Мин. ставка $10' };
     if (this.state.money < amount) return { err: 'Недостаточно денег' };
+    if (this.state.casinoDay !== this.state.day) {
+      this.state.casinoDay = this.state.day;
+      this.state.casinoDayBet = 0;
+    }
+    if (this.state.casinoDayBet + amount > ShopManager.CASINO_DAY_LIMIT) {
+      const left = Math.max(0, ShopManager.CASINO_DAY_LIMIT - this.state.casinoDayBet);
+      return { err: left <= 0 ? 'Лимит казино на сегодня ($500)' : `Лимит дня: осталось $${left}` };
+    }
     this.state.money -= amount;
+    this.state.casinoDayBet += amount;
     const win = Math.random() < 0.45;
     if (win) {
       const payout = amount * 2;

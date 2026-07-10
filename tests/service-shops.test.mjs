@@ -42,6 +42,25 @@ if (!game.includes('openServiceShop')) throw new Error('openServiceShop not wire
 if (!game.includes("shop.type === 'gas'") || !game.includes("shop.type === 'casino'")) {
   throw new Error('gas/casino clerk branch missing');
 }
+// Drive-thru / in-vehicle services (taxi + АЗС must not be blocked by early vehicle_exit return)
+if (!game.includes("service_drive") || !game.includes('getServiceVehicle')) {
+  throw new Error('Drive-thru gas/garage (service_drive / getServiceVehicle) missing');
+}
+if (game.includes("makeCandidate('vehicle_exit', 0,")) {
+  throw new Error('vehicle_exit distance 0 steals all in-car interacts (taxi/АЗС)');
+}
+if (!game.includes('collectLifeSimCandidates(px, py, player)')) {
+  throw new Error('In-vehicle path must collect life-sim candidates (taxi pickup)');
+}
+
+const ir = readFileSync(join(root, 'src/systems/InteractResolver.ts'), 'utf8');
+if (!ir.includes('service_drive')) throw new Error('InteractKind service_drive missing');
+if (!mgr.includes('CASINO_DAY_LIMIT') || !mgr.includes('casinoDayBet')) {
+  throw new Error('Casino daily limit missing');
+}
+
+const hud = readFileSync(join(root, 'src/ui/HUD.ts'), 'utf8');
+if (!hud.includes('insuranceUntilDay')) throw new Error('HUD should show insurance status');
 
 const soft = readFileSync(join(root, 'src/systems/SoftCrimeManager.ts'), 'utf8');
 if (!soft.includes('insuranceUntilDay')) throw new Error('Fine should respect insurance');

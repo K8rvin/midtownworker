@@ -63,6 +63,13 @@ if (!game.includes("justPressed('P')")) throw new Error('P key for phone missing
 if (!game.includes('job_end_shift')) throw new Error('end shift interact missing');
 if (!game.includes('taxi_take_fare')) throw new Error('taxi interact missing');
 if (!game.includes('spawnJobSiteMarkers')) throw new Error('Job site visual markers missing');
+// QA: taxi pickup requires inVehicle + collectLifeSimCandidates while seated
+if (!game.includes('isNearPickup') || !game.includes('taxi_pickup')) {
+  throw new Error('taxi_pickup wiring missing');
+}
+if (game.includes("makeCandidate('vehicle_exit', 0,")) {
+  throw new Error('vehicle_exit dist 0 blocks taxi_pickup while driving');
+}
 
 const config = readFileSync(join(root, 'src/config.ts'), 'utf8');
 if (!config.includes('TaxiFareState')) throw new Error('TaxiFareState missing');
