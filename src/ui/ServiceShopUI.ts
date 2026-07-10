@@ -7,6 +7,15 @@ import {
   type ShopManager,
 } from '../systems/ShopManager';
 
+/** Optional vehicle helpers (gas / garage need the car the player is in). */
+export interface ServiceVehicleApi {
+  inVehicle: () => boolean;
+  hp: () => number;
+  maxHp: () => number;
+  repair: (amount: number | 'full') => void;
+  wash: () => void;
+}
+
 export class ServiceShopUI {
   private nodes: Phaser.GameObjects.GameObject[] = [];
   private visible = false;
@@ -17,7 +26,8 @@ export class ServiceShopUI {
     private shops: ShopManager,
     private shop: ShopConfig,
     private onMessage: (msg: string) => void,
-    private onClose: () => void
+    private onClose: () => void,
+    private vehicle: ServiceVehicleApi | null = null
   ) {}
 
   isVisible(): boolean {
@@ -56,6 +66,14 @@ export class ServiceShopUI {
         return '✉ ПОЧТА';
       case 'gym':
         return '🏋 СПОРТЗАЛ';
+      case 'gas':
+        return '⛽ АЗС';
+      case 'garage':
+        return '🔧 АВТОСЕРВИС';
+      case 'insurance':
+        return '🛡 СТРАХОВКА';
+      case 'casino':
+        return '🎰 КАЗИНО';
       default:
         return this.shop.name;
     }
@@ -230,6 +248,112 @@ export class ServiceShopUI {
           this.act(err, err ? '' : 'Расслабились в сауне');
         },
       });
+    } else if (this.shop.type === 'gas') {
+      const inV = this.vehicle?.inVehicle() ?? false;
+      const hp = this.vehicle?.hp() ?? 0;
+      const max = this.vehicle?.maxHp() ?? 0;
+      actions.push({
+        label: inV
+          ? `Заправить · $40 (HP ${Math.round(hp)}/${max}, мойка)`
+          : 'Заправить · $40 (нужно сидеть в машине у АЗС)',
+        fn: () => {
+          if (!this.vehicle?.inVehicle()) {
+            this.onMessage('Подъедьте к АЗС на машине и зайдите в сервис снова');
+            return;
+          }
+          const cost = 40;
+          if (this.state.money < cost) {
+            this.onMessage(`Нужно $${cost}`);
+            return;
+          }
+          this.state.money -= cost;
+          this.vehicle.repair(Math.ceil(this.vehicle.maxHp() * 0.35));
+          this.vehicle.wash();
+          this.act(null, 'Заправлено: +35% HP, авто вымыто');
+        },
+      });
+      actions.push({
+        label: 'Снэк с полки · $16 (+голод)',
+        fn: () => {
+          const err = this.shops.gasSnack();
+          this.act(err, err ? '' : 'Перекусили на АЗС');
+        },
+      });
+    } else if (this.shop.type === 'garage') {
+      const inV = this.vehicle?.inVehicle() ?? false;
+      const hp = this.vehicle?.hp() ?? 0;
+      const max = this.vehicle?.maxHp() ?? 0;
+      actions.push({
+        label: inV
+          ? `Полный ремонт · $90 (HP ${Math.round(hp)}/${max})`
+          : 'Полный ремонт · $90 (сядьте в авто)',
+        fn: () => {
+          if (!this.vehicle?.inVehicle()) {
+            this.onMessage('Нужна машина: сядьте и подойдите к клерку');
+            return;
+          }
+          const cost = 90;
+          if (this.state.money < cost) {
+            this.onMessage(`Нужно $${cost}`);
+            return;
+          }
+          this.state.money -= cost;
+          this.vehicle.repair('full');
+          this.act(null, 'Машина как новая');
+        },
+      });
+      actions.push({
+        label: inV ? 'Частичный ремонт · $45 (+40% HP)' : 'Частичный ремонт · $45 (нужна машина)',
+        fn: () => {
+          if (!this.vehicle?.inVehicle()) {
+            this.onMessage('Нужна машина: сядьте и подойдите к клерку');
+            return;
+          }
+          const cost = 45;
+          if (this.state.money < cost) {
+            this.onMessage(`Нужно $${cost}`);
+            return;
+          }
+          this.state.money -= cost;
+          this.vehicle.repair(Math.ceil(this.vehicle.maxHp() * 0.4));
+          this.act(null, 'Подлатали кузов');
+        },
+      });
+    } else if (this.shop.type === 'insurance') {
+      actions.push({
+        label: `Статус: ${this.shops.insuranceStatus()}`,
+        fn: () => this.onMessage(this.shops.insuranceStatus()),
+      });
+      actions.push({
+        label: 'Полис 7 дней · $120 (штраф −60%)',
+        fn: () => {
+          const err = this.shops.buyInsurance('week');
+          this.act(err, err ? '' : `Страховка до дня ${this.state.insuranceUntilDay}`);
+        },
+      });
+      actions.push({
+        label: 'Полис 30 дней · $320 (штраф −60%)',
+        fn: () => {
+          const err = this.shops.buyInsurance('month');
+          this.act(err, err ? '' : `Страховка до дня ${this.state.insuranceUntilDay}`);
+        },
+      });
+    } else if (this.shop.type === 'casino') {
+      for (const amount of [20, 50, 100]) {
+        actions.push({
+          label: `Ставка $${amount} (×2 при выигрыше, ~45%)`,
+          fn: () => {
+            const r = this.shops.casinoBet(amount);
+            if (r.err) {
+              this.onMessage(r.err);
+              return;
+            }
+            if (r.won) this.onMessage(`Выигрыш! +$${r.payout}`);
+            else this.onMessage(`Проигрыш −$${amount}`);
+            this.render();
+          },
+        });
+      }
     }
 
     actions.slice(0, 10).forEach((a, i) => {

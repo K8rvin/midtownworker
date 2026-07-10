@@ -255,14 +255,23 @@ export class SoftCrimeManager {
   }
 
   resolveFine(fine: number): string {
-    if (this.state.money < fine) {
-      return `Не хватает денег на штраф $${fine}`;
+    let due = fine;
+    let insured = false;
+    if (this.state.insuranceUntilDay > 0 && this.state.day <= this.state.insuranceUntilDay) {
+      due = Math.max(10, Math.floor(fine * 0.4));
+      insured = true;
     }
-    this.state.money -= fine;
+    if (this.state.money < due) {
+      return `Не хватает денег на штраф $${due}${insured ? ' (со страховкой)' : ''}`;
+    }
+    this.state.money -= due;
     this.softWanted = 0;
     this.pendingChoice = false;
     this.releaseChaseToPatrol();
-    return `Штраф $${fine} оплачен. Авто конфисковано.`;
+    if (insured) {
+      return `Штраф $${due} (страховка, было $${fine}). Авто конфисковано.`;
+    }
+    return `Штраф $${due} оплачен. Авто конфисковано.`;
   }
 
   resolveArrest(_money = 0): string {

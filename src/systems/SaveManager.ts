@@ -94,6 +94,7 @@ function parseState(raw: string): GameState | null {
       activeLifeTaskId: parsed.activeLifeTaskId ?? null,
       storyChapter: parsed.storyChapter ?? 0,
       bank: { ...DEFAULT_BANK, ...parsed.bank },
+      insuranceUntilDay: parsed.insuranceUntilDay ?? 0,
     };
   } catch {
     return null;

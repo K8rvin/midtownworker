@@ -231,6 +231,8 @@ export interface GameState {
   /** Smartphone navigation pin (world px). */
   navTarget: NavTarget | null;
   bank: BankState;
+  /** Soft crime: insurance active until this game day (inclusive). 0 = none. */
+  insuranceUntilDay: number;
 }
 
 export interface CoopPlayerData {
@@ -321,4 +323,5 @@ export const DEFAULT_GAME_STATE: GameState = {
   emergencyCall: null,
   navTarget: null,
   bank: { ...DEFAULT_BANK },
+  insuranceUntilDay: 0,
 };

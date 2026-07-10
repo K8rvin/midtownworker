@@ -71,6 +71,14 @@ export function shopMarkerColor(type: string): number {
       return 0x94a3b8;
     case 'gym':
       return 0xfb923c;
+    case 'gas':
+      return 0x22d3ee;
+    case 'garage':
+      return 0x64748b;
+    case 'insurance':
+      return 0x818cf8;
+    case 'casino':
+      return 0xef4444;
     default:
       return 0xff2d55;
   }
@@ -448,5 +456,50 @@ export class ShopManager {
     this.state.sleep = Math.min(100, this.state.sleep + 22);
     this.state.drunkLevel = Math.max(0, this.state.drunkLevel - 20);
     return null;
+  }
+
+  /** Gas station snack (no vehicle required). */
+  gasSnack(): string | null {
+    const cost = 16;
+    if (this.state.money < cost) return `Нужно $${cost}`;
+    this.state.money -= cost;
+    this.state.hunger = Math.min(100, this.state.hunger + 20);
+    this.state.lifeStats.foodBought += 1;
+    return null;
+  }
+
+  /** Insurance: soft-crime fine discount until day. */
+  buyInsurance(tier: 'week' | 'month'): string | null {
+    const cost = tier === 'week' ? 120 : 320;
+    const days = tier === 'week' ? 7 : 30;
+    if (this.state.money < cost) return `Нужно $${cost}`;
+    this.state.money -= cost;
+    const start = Math.max(this.state.day, this.state.insuranceUntilDay || 0);
+    this.state.insuranceUntilDay = start + days;
+    return null;
+  }
+
+  insuranceStatus(): string {
+    if (!this.state.insuranceUntilDay || this.state.day > this.state.insuranceUntilDay) {
+      return 'Нет полиса';
+    }
+    return `Полис до дня ${this.state.insuranceUntilDay}`;
+  }
+
+  /**
+   * Casino: even-money coin flip, slight house edge (~45% win).
+   * Returns null on success; message via out param pattern — returns result string always as error|null for money fail.
+   */
+  casinoBet(amount: number): { err: string | null; won?: boolean; payout?: number } {
+    if (amount < 10) return { err: 'Мин. ставка $10' };
+    if (this.state.money < amount) return { err: 'Недостаточно денег' };
+    this.state.money -= amount;
+    const win = Math.random() < 0.45;
+    if (win) {
+      const payout = amount * 2;
+      this.state.money += payout;
+      return { err: null, won: true, payout };
+    }
+    return { err: null, won: false, payout: 0 };
   }
 }

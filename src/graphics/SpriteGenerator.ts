@@ -1388,6 +1388,43 @@ export class SpriteGenerator {
       g.fillRect(15, 10, 6, 4);
       g.fillRect(8, 11, 8, 2);
     });
+
+    if (this.shouldGen('shop_gas')) this.makeTexture('shop_gas', 24, 24, (g) => {
+      g.fillStyle(0x0a1a1a, 1);
+      g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x22d3ee, 1);
+      g.fillRect(8, 4, 8, 14);
+      g.fillRect(14, 6, 6, 2);
+      g.fillStyle(0xffffff, 1);
+      g.fillRect(10, 8, 4, 6);
+    });
+
+    if (this.shouldGen('shop_garage')) this.makeTexture('shop_garage', 24, 24, (g) => {
+      g.fillStyle(0x141820, 1);
+      g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x64748b, 1);
+      g.fillRect(4, 8, 16, 12);
+      g.fillStyle(0xffd600, 1);
+      g.fillRect(6, 12, 12, 3);
+    });
+
+    if (this.shouldGen('shop_insurance')) this.makeTexture('shop_insurance', 24, 24, (g) => {
+      g.fillStyle(0x10122a, 1);
+      g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x818cf8, 1);
+      g.fillTriangle(12, 4, 4, 10, 20, 10);
+      g.fillRect(6, 10, 12, 10);
+    });
+
+    if (this.shouldGen('shop_casino')) this.makeTexture('shop_casino', 24, 24, (g) => {
+      g.fillStyle(0x200808, 1);
+      g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0xef4444, 1);
+      g.fillCircle(12, 12, 8);
+      g.fillStyle(0xffd700, 1);
+      g.fillRect(10, 6, 4, 12);
+      g.fillRect(6, 10, 12, 4);
+    });
   }
 
   private genBullet(): void {

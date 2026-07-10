@@ -1573,7 +1573,15 @@ export class GameScene extends Phaser.Scene {
                             ? `${shop.name} — почта`
                             : shop.type === 'gym'
                               ? `${shop.name} — тренировка`
-                              : `${shop.name} — купить`;
+                              : shop.type === 'gas'
+                                ? `${shop.name} — заправка`
+                                : shop.type === 'garage'
+                                  ? `${shop.name} — ремонт`
+                                  : shop.type === 'insurance'
+                                    ? `${shop.name} — полис`
+                                    : shop.type === 'casino'
+                                      ? `${shop.name} — ставки`
+                                      : `${shop.name} — купить`;
             candidates.push(
               makeCandidate('shop_clerk', clerkDist, clerkHint, { shop, player })
             );
@@ -1727,7 +1735,11 @@ export class GameScene extends Phaser.Scene {
             shop.type === 'laundry' ||
             shop.type === 'hotel' ||
             shop.type === 'post' ||
-            shop.type === 'gym')
+            shop.type === 'gym' ||
+            shop.type === 'gas' ||
+            shop.type === 'garage' ||
+            shop.type === 'insurance' ||
+            shop.type === 'casino')
         ) {
           this.openServiceShop(shop);
         } else if (LIFE_SIM && shop.type === 'vehicle') {
@@ -2538,6 +2550,20 @@ export class GameScene extends Phaser.Scene {
       (msg) => this.showMessage(msg),
       () => {
         this.serviceShopUI = null;
+      },
+      {
+        inVehicle: () => Boolean(this.player.inVehicle && this.player.currentVehicle?.active),
+        hp: () => this.player.currentVehicle?.hp ?? 0,
+        maxHp: () => this.player.currentVehicle?.config.hp ?? 0,
+        repair: (amount) => {
+          const v = this.player.currentVehicle;
+          if (!v) return;
+          if (amount === 'full') v.hp = v.config.hp;
+          else v.hp = Math.min(v.config.hp, v.hp + amount);
+        },
+        wash: () => {
+          this.state.taxiCarCleanliness = 100;
+        },
       }
     );
     this.serviceShopUI.show();
@@ -2914,7 +2940,15 @@ export class GameScene extends Phaser.Scene {
                                   ? 'shop_post'
                                   : shop.type === 'gym'
                                     ? 'shop_gym'
-                                    : 'shop_hospital';
+                                    : shop.type === 'gas'
+                                      ? 'shop_gas'
+                                      : shop.type === 'garage'
+                                        ? 'shop_garage'
+                                        : shop.type === 'insurance'
+                                          ? 'shop_insurance'
+                                          : shop.type === 'casino'
+                                            ? 'shop_casino'
+                                            : 'shop_hospital';
           const s = this.add.sprite(obj.x * TILE_SIZE + 16, obj.y * TILE_SIZE + 16, key);
           s.setDepth(3);
           this.shopSprites.push(s);
