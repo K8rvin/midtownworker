@@ -51,9 +51,6 @@ if (!taxiJob) throw new Error('taxi job missing');
 if (taxiJob.doorX === 112 && taxiJob.doorY === 108) {
   throw new Error('Taxi depot still at old cramped coords near grocery');
 }
-if (!game.includes('spawnJobSiteMarkers') && !readFileSync(join(root, 'src/scenes/GameScene.ts'), 'utf8').includes('spawnJobSiteMarkers')) {
-  throw new Error('Job site visual markers missing');
-}
 
 const phone = readFileSync(join(root, 'src/ui/SmartphoneUI.ts'), 'utf8');
 if (!phone.includes('nav') || !phone.includes('food') || !phone.includes('work')) {
@@ -65,6 +62,7 @@ if (!game.includes('openSmartphone')) throw new Error('openSmartphone missing');
 if (!game.includes("justPressed('P')")) throw new Error('P key for phone missing');
 if (!game.includes('job_end_shift')) throw new Error('end shift interact missing');
 if (!game.includes('taxi_take_fare')) throw new Error('taxi interact missing');
+if (!game.includes('spawnJobSiteMarkers')) throw new Error('Job site visual markers missing');
 
 const config = readFileSync(join(root, 'src/config.ts'), 'utf8');
 if (!config.includes('TaxiFareState')) throw new Error('TaxiFareState missing');
