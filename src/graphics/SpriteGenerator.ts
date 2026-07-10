@@ -1325,105 +1325,153 @@ export class SpriteGenerator {
     });
 
     if (this.shouldGen('shop_pharmacy')) this.makeTexture('shop_pharmacy', 24, 24, (g) => {
-      g.fillStyle(0x0f2a18, 1);
+      g.fillStyle(0x0a2014, 1);
       g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x14532d, 1);
+      g.fillRect(1, 1, 22, 22);
       g.fillStyle(0x4ade80, 1);
-      g.fillRect(10, 4, 4, 16);
-      g.fillRect(4, 10, 16, 4);
+      g.fillRect(10, 3, 4, 18);
+      g.fillRect(3, 10, 18, 4);
+      g.fillStyle(0xffffff, 0.85);
+      g.fillRect(11, 5, 2, 14);
+      g.fillRect(5, 11, 14, 2);
     });
 
     if (this.shouldGen('shop_cafe')) this.makeTexture('shop_cafe', 24, 24, (g) => {
-      g.fillStyle(0x2a1a0a, 1);
+      g.fillStyle(0x1c1008, 1);
       g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x78350f, 1);
+      g.fillRect(2, 14, 20, 8);
       g.fillStyle(0xfbbf24, 1);
-      g.fillCircle(12, 13, 7);
+      g.fillCircle(11, 12, 6);
       g.fillStyle(0x1a1a2e, 1);
-      g.fillCircle(12, 13, 4);
+      g.fillCircle(11, 12, 3);
       g.fillStyle(0xfbbf24, 1);
-      g.fillRect(17, 8, 3, 8);
+      g.fillRect(16, 7, 3, 9);
+      g.fillStyle(0xfde68a, 1);
+      g.fillRect(4, 4, 6, 2);
     });
 
     if (this.shouldGen('shop_pawn')) this.makeTexture('shop_pawn', 24, 24, (g) => {
-      g.fillStyle(0x1a1028, 1);
+      g.fillStyle(0x12081c, 1);
       g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x4c1d95, 1);
+      g.fillRect(3, 6, 18, 14);
       g.fillStyle(0xa78bfa, 1);
       g.fillRect(5, 8, 14, 10);
       g.fillStyle(0xffd700, 1);
       g.fillCircle(12, 13, 4);
+      g.fillStyle(0xfff7cc, 1);
+      g.fillCircle(12, 13, 2);
     });
 
     if (this.shouldGen('shop_laundry')) this.makeTexture('shop_laundry', 24, 24, (g) => {
-      g.fillStyle(0x0a1a28, 1);
+      g.fillStyle(0x061018, 1);
       g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x0e7490, 1);
+      g.fillRect(3, 4, 18, 16);
       g.fillStyle(0x38bdf8, 1);
-      g.fillCircle(12, 12, 8);
-      g.fillStyle(0x0d0d14, 1);
-      g.fillCircle(12, 12, 4);
+      g.fillCircle(12, 12, 7);
+      g.fillStyle(0xe0f2fe, 1);
+      g.fillCircle(12, 12, 3);
+      g.fillStyle(0x22d3ee, 0.7);
+      g.fillRect(5, 5, 3, 2);
     });
 
     if (this.shouldGen('shop_hotel')) this.makeTexture('shop_hotel', 24, 24, (g) => {
-      g.fillStyle(0x2a1020, 1);
+      g.fillStyle(0x1a0814, 1);
       g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x9d174d, 1);
+      g.fillRect(3, 8, 18, 14);
       g.fillStyle(0xf472b6, 1);
-      g.fillRect(4, 10, 16, 10);
-      g.fillRect(6, 6, 12, 6);
+      g.fillRect(5, 5, 14, 6);
       g.fillStyle(0xffffff, 1);
-      g.fillRect(10, 14, 4, 6);
+      g.fillRect(10, 14, 4, 8);
+      g.fillStyle(0xfbcfe8, 1);
+      g.fillRect(6, 10, 3, 3);
+      g.fillRect(15, 10, 3, 3);
     });
 
     if (this.shouldGen('shop_post')) this.makeTexture('shop_post', 24, 24, (g) => {
-      g.fillStyle(0x1a1a24, 1);
+      g.fillStyle(0x111318, 1);
       g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x334155, 1);
+      g.fillRect(2, 5, 20, 16);
       g.fillStyle(0x94a3b8, 1);
       g.fillRect(4, 7, 16, 12);
       g.fillStyle(0x0d0d14, 1);
       g.fillTriangle(4, 7, 12, 14, 20, 7);
+      g.fillStyle(0xf87171, 1);
+      g.fillRect(16, 16, 4, 3);
     });
 
     if (this.shouldGen('shop_gym')) this.makeTexture('shop_gym', 24, 24, (g) => {
-      g.fillStyle(0x1a1208, 1);
+      g.fillStyle(0x140c04, 1);
       g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x9a3412, 1);
+      g.fillRect(2, 6, 20, 14);
       g.fillStyle(0xfb923c, 1);
-      g.fillRect(3, 10, 6, 4);
-      g.fillRect(15, 10, 6, 4);
-      g.fillRect(8, 11, 8, 2);
+      g.fillRect(2, 10, 6, 5);
+      g.fillRect(16, 10, 6, 5);
+      g.fillRect(7, 11, 10, 3);
+      g.fillStyle(0xffedd5, 1);
+      g.fillRect(11, 8, 2, 9);
     });
 
     if (this.shouldGen('shop_gas')) this.makeTexture('shop_gas', 24, 24, (g) => {
-      g.fillStyle(0x0a1a1a, 1);
+      g.fillStyle(0x042f2e, 1);
       g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x134e4a, 1);
+      g.fillRect(1, 1, 22, 22);
       g.fillStyle(0x22d3ee, 1);
-      g.fillRect(8, 4, 8, 14);
-      g.fillRect(14, 6, 6, 2);
+      g.fillRect(7, 3, 8, 16);
+      g.fillRect(13, 5, 7, 2);
+      g.fillStyle(0x0f172a, 1);
+      g.fillRect(9, 7, 4, 8);
       g.fillStyle(0xffffff, 1);
-      g.fillRect(10, 8, 4, 6);
+      g.fillRect(10, 9, 2, 4);
+      g.fillStyle(0xfbbf24, 1);
+      g.fillRect(2, 18, 20, 3);
     });
 
     if (this.shouldGen('shop_garage')) this.makeTexture('shop_garage', 24, 24, (g) => {
-      g.fillStyle(0x141820, 1);
+      g.fillStyle(0x0c1016, 1);
       g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x334155, 1);
+      g.fillRect(2, 6, 20, 16);
       g.fillStyle(0x64748b, 1);
       g.fillRect(4, 8, 16, 12);
       g.fillStyle(0xffd600, 1);
       g.fillRect(6, 12, 12, 3);
+      g.fillStyle(0x94a3b8, 1);
+      g.fillCircle(8, 18, 2);
+      g.fillCircle(16, 18, 2);
     });
 
     if (this.shouldGen('shop_insurance')) this.makeTexture('shop_insurance', 24, 24, (g) => {
-      g.fillStyle(0x10122a, 1);
+      g.fillStyle(0x0b1020, 1);
       g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x312e81, 1);
+      g.fillRect(2, 4, 20, 18);
       g.fillStyle(0x818cf8, 1);
-      g.fillTriangle(12, 4, 4, 10, 20, 10);
-      g.fillRect(6, 10, 12, 10);
+      g.fillTriangle(12, 3, 3, 10, 21, 10);
+      g.fillRect(6, 10, 12, 11);
+      g.fillStyle(0xc7d2fe, 1);
+      g.fillRect(10, 13, 4, 6);
     });
 
     if (this.shouldGen('shop_casino')) this.makeTexture('shop_casino', 24, 24, (g) => {
-      g.fillStyle(0x200808, 1);
+      g.fillStyle(0x1a0505, 1);
       g.fillRect(0, 0, 24, 24);
+      g.fillStyle(0x7f1d1d, 1);
+      g.fillRect(1, 1, 22, 22);
       g.fillStyle(0xef4444, 1);
       g.fillCircle(12, 12, 8);
       g.fillStyle(0xffd700, 1);
-      g.fillRect(10, 6, 4, 12);
-      g.fillRect(6, 10, 12, 4);
+      g.fillRect(10, 5, 4, 14);
+      g.fillRect(5, 10, 14, 4);
+      g.fillStyle(0xfef3c7, 1);
+      g.fillCircle(12, 12, 2);
     });
   }
 

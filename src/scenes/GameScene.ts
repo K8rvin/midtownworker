@@ -97,6 +97,7 @@ import { EmergencyManager } from '../systems/EmergencyManager';
 import { SmartphoneUI } from '../ui/SmartphoneUI';
 import { BankUI } from '../ui/BankUI';
 import { ServiceShopUI } from '../ui/ServiceShopUI';
+import { CityLifeManager } from '../systems/CityLifeManager';
 
 export class GameScene extends Phaser.Scene {
   private state!: GameState;
@@ -143,6 +144,8 @@ export class GameScene extends Phaser.Scene {
   private jobSiteLabels: Phaser.GameObjects.Text[] = [];
   private timeManager = new TimeManager();
   private needsManager = new NeedsManager();
+  private cityLife = new CityLifeManager();
+  private lastFuelWarnAt = 0;
   private jobManager!: JobManager;
   private courierManager!: CourierManager;
   private softCrime: SoftCrimeManager | null = null;
@@ -586,6 +589,7 @@ export class GameScene extends Phaser.Scene {
         if (rentMsg) this.showMessage(rentMsg);
         const bankMsg = this.bankManager.onDayAdvanced();
         if (bankMsg) this.showMessage(bankMsg);
+        for (const m of this.cityLife.onDayAdvanced(this.state)) this.showMessage(m);
         const warn = this.housingManager.rentWarningMessage();
         if (warn && this.lastRentWarnDay !== this.state.day) {
           this.lastRentWarnDay = this.state.day;
@@ -603,6 +607,20 @@ export class GameScene extends Phaser.Scene {
         if (warn && this.state.hour === 9 && this.lastRentWarnDay !== this.state.day) {
           this.lastRentWarnDay = this.state.day;
           this.showMessage(warn);
+        }
+        const flavor = this.cityLife.tryRandomEvent(this.state, true);
+        if (flavor) this.showMessage(flavor);
+      }
+
+      // Low fuel toast (throttle spam)
+      if (this.player.inVehicle && this.player.currentVehicle) {
+        const f = this.player.currentVehicle.fuel;
+        if (f <= 15 && f > 0 && this.time.now - this.lastFuelWarnAt > 12000) {
+          this.lastFuelWarnAt = this.time.now;
+          this.showMessage('⛽ Мало топлива — АЗС на главной (E с авто)');
+        } else if (f <= 0 && this.time.now - this.lastFuelWarnAt > 8000) {
+          this.lastFuelWarnAt = this.time.now;
+          this.showMessage('⛽ Бак пуст — дотяните до АЗС');
         }
       }
     }
@@ -978,10 +996,15 @@ export class GameScene extends Phaser.Scene {
     if (candidate) this.executeInteract(player, candidate);
   }
 
-  private getVehicleHpInfo(): { current: number; max: number } | null {
+  private getVehicleHpInfo(): {
+    current: number;
+    max: number;
+    fuel?: number;
+    maxFuel?: number;
+  } | null {
     if (!this.player.inVehicle || !this.player.currentVehicle) return null;
     const v = this.player.currentVehicle;
-    return { current: v.hp, max: v.config.hp };
+    return { current: v.hp, max: v.config.hp, fuel: v.fuel, maxFuel: v.maxFuel };
   }
 
   private isUIBlocking(): boolean {
@@ -1818,7 +1841,7 @@ export class GameScene extends Phaser.Scene {
           this.taxiManager.hasFare() ||
           this.emergencyManager.hasCall();
         const err = this.jobManager.closeShift(busy);
-        this.showMessage(err ?? 'Смена закрыта');
+        this.showMessage(err ?? this.jobManager.shiftReportLine());
         this.refreshCourierMarkers();
         break;
       }
@@ -2251,6 +2274,7 @@ export class GameScene extends Phaser.Scene {
       this.showMessage(result);
       return;
     }
+    this.state.shiftJobsDone = (this.state.shiftJobsDone ?? 0) + 1;
     this.showMessage(result.message);
     this.refreshCourierMarkers();
     this.hudUpdate(this.getInteractHint());
@@ -2295,6 +2319,7 @@ export class GameScene extends Phaser.Scene {
       this.showMessage(result);
       return;
     }
+    this.state.shiftJobsDone = (this.state.shiftJobsDone ?? 0) + 1;
     this.showMessage(result.message);
     this.refreshCourierMarkers();
   }
@@ -2387,6 +2412,7 @@ export class GameScene extends Phaser.Scene {
       this.showMessage(result);
       return;
     }
+    this.state.shiftJobsDone = (this.state.shiftJobsDone ?? 0) + 1;
     this.showMessage(result.message);
     this.notifyLifeEvent('courier_delivery');
     this.lifeTaskManager.onLifeEvent('courier_delivery');
@@ -2607,6 +2633,9 @@ export class GameScene extends Phaser.Scene {
         inVehicle: () => Boolean(this.getServiceVehicle()),
         hp: () => this.getServiceVehicle()?.hp ?? 0,
         maxHp: () => this.getServiceVehicle()?.config.hp ?? 0,
+        fuel: () => this.getServiceVehicle()?.fuel ?? 0,
+        maxFuel: () => this.getServiceVehicle()?.maxFuel ?? 100,
+        refuel: (amount) => this.getServiceVehicle()?.refuel(amount),
         repair: (amount) => {
           const v = this.getServiceVehicle();
           if (!v) return;
@@ -2619,6 +2648,9 @@ export class GameScene extends Phaser.Scene {
       }
     );
     this.serviceShopUI.show();
+    getAudio(this).playSfx(
+      shop.type === 'gas' ? 'gas' : shop.type === 'casino' ? 'casino' : 'shop_chime'
+    );
   }
 
   private openLifeShop(type: 'grocery' | 'furniture', shop?: { items?: string[] }): void {

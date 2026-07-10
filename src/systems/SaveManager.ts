@@ -97,6 +97,11 @@ function parseState(raw: string): GameState | null {
       insuranceUntilDay: parsed.insuranceUntilDay ?? 0,
       casinoDay: parsed.casinoDay ?? 0,
       casinoDayBet: parsed.casinoDayBet ?? 0,
+      billsDueDay: parsed.billsDueDay ?? 8,
+      billsOwed: parsed.billsOwed ?? 0,
+      shiftMoneyAtOpen: parsed.shiftMoneyAtOpen ?? 0,
+      shiftJobsDone: parsed.shiftJobsDone ?? 0,
+      lastCityEventDay: parsed.lastCityEventDay ?? 0,
     };
   } catch {
     return null;

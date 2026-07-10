@@ -36,6 +36,7 @@ const ui = readFileSync(join(root, 'src/ui/ServiceShopUI.ts'), 'utf8');
 if (!ui.includes('АЗС') || !ui.includes('КАЗИНО') || !ui.includes('СТРАХОВКА')) {
   throw new Error('ServiceShopUI titles incomplete for new services');
 }
+if (!ui.includes('Полный бак')) throw new Error('Gas full-tank option missing');
 
 const game = readFileSync(join(root, 'src/scenes/GameScene.ts'), 'utf8');
 if (!game.includes('openServiceShop')) throw new Error('openServiceShop not wired');

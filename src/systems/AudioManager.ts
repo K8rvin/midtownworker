@@ -12,7 +12,10 @@ export type SfxType =
   | 'buy'
   | 'alert'
   | 'victory'
-  | 'footstep';
+  | 'footstep'
+  | 'gas'
+  | 'shop_chime'
+  | 'casino';
 
 export class AudioManager {
   private ctx: AudioContext | null = null;
@@ -100,6 +103,19 @@ export class AudioManager {
         break;
       case 'footstep':
         this.noiseBurst(ctx, 0.03, vol * 0.25, 200);
+        break;
+      case 'gas':
+        this.noiseBurst(ctx, 0.18, vol * 0.35, 400);
+        this.tone(ctx, 180, 0.2, 'triangle', vol * 0.4, 90);
+        break;
+      case 'shop_chime':
+        this.tone(ctx, 880, 0.08, 'sine', vol * 0.55, 0);
+        this.tone(ctx, 1175, 0.12, 'sine', vol * 0.45, 0.08);
+        break;
+      case 'casino':
+        this.tone(ctx, 523, 0.06, 'square', vol * 0.4, 659);
+        this.tone(ctx, 659, 0.06, 'square', vol * 0.35, 784);
+        this.tone(ctx, 784, 0.1, 'square', vol * 0.3, 0.12);
         break;
     }
     void t;

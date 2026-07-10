@@ -56,6 +56,9 @@ const phone = readFileSync(join(root, 'src/ui/SmartphoneUI.ts'), 'utf8');
 if (!phone.includes('nav') || !phone.includes('food') || !phone.includes('work')) {
   throw new Error('Smartphone tabs incomplete');
 }
+if (!phone.includes('NavFilter') || !phone.includes("id: 'service'")) {
+  throw new Error('Smartphone nav filters incomplete');
+}
 
 const game = readFileSync(join(root, 'src/scenes/GameScene.ts'), 'utf8');
 if (!game.includes('openSmartphone')) throw new Error('openSmartphone missing');

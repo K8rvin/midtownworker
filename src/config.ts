@@ -237,6 +237,16 @@ export interface GameState {
   casinoDay: number;
   /** Total wagered at casino on casinoDay (soft daily limit). */
   casinoDayBet: number;
+  /** Next game day utility bills are due (inclusive). */
+  billsDueDay: number;
+  /** Unpaid utilities (accrues if missed). */
+  billsOwed: number;
+  /** Money snapshot when piecework shift opened (for end-of-shift report). */
+  shiftMoneyAtOpen: number;
+  /** Deliveries/fares/calls completed during open shift. */
+  shiftJobsDone: number;
+  /** Soft city event cooldowns (absolute day*100 + hour-ish). */
+  lastCityEventDay: number;
 }
 
 export interface CoopPlayerData {
@@ -330,4 +340,9 @@ export const DEFAULT_GAME_STATE: GameState = {
   insuranceUntilDay: 0,
   casinoDay: 0,
   casinoDayBet: 0,
+  billsDueDay: 8,
+  billsOwed: 0,
+  shiftMoneyAtOpen: 0,
+  shiftJobsDone: 0,
+  lastCityEventDay: 0,
 };

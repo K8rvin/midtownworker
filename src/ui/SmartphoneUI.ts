@@ -12,6 +12,7 @@ import jobsData from '../data/jobs.json';
 import employmentData from '../data/employment-office.json';
 
 type Tab = 'work' | 'nav' | 'food' | 'home';
+type NavFilter = 'all' | 'food' | 'work' | 'service' | 'money';
 
 export interface SmartphoneCallbacks {
   onMessage: (msg: string) => void;
@@ -39,6 +40,8 @@ export class SmartphoneUI {
   private nodes: Phaser.GameObjects.GameObject[] = [];
   private visible = false;
   private tab: Tab = 'work';
+  private navFilter: NavFilter = 'all';
+  private navPage = 0;
 
   constructor(
     private scene: Phaser.Scene,
@@ -225,7 +228,7 @@ export class SmartphoneUI {
           const busy =
             this.courier.hasActiveDelivery() || this.taxi.hasFare() || this.emergency.hasCall();
           const err = this.jobs.closeShift(busy);
-          this.cb.onMessage(err ?? 'Смена закрыта. Новые заказы не приходят');
+          this.cb.onMessage(err ?? this.jobs.shiftReportLine());
           if (!err) this.cb.onShiftToggle(false);
           this.render();
         });
@@ -267,61 +270,123 @@ export class SmartphoneUI {
   }
 
   private renderNav(d: number): void {
-    this.addLine(GAME_HEIGHT / 2 - 150, 'Маршрут (стрелка на улице)', d, '#c8f542');
-    const pois: { label: string; x: number; y: number }[] = [];
+    this.addLine(GAME_HEIGHT / 2 - 150, 'Маршрут · фильтр', d, '#c8f542');
+    const filters: { id: NavFilter; label: string }[] = [
+      { id: 'all', label: 'Все' },
+      { id: 'food', label: 'Еда' },
+      { id: 'work', label: 'Работа' },
+      { id: 'service', label: 'Сервис' },
+      { id: 'money', label: 'Деньги' },
+    ];
+    filters.forEach((f, i) => {
+      const active = this.navFilter === f.id;
+      const x = GAME_WIDTH / 2 - 160 + i * 80;
+      const btn = this.scene.add
+        .text(x, GAME_HEIGHT / 2 - 128, f.label, {
+          fontFamily: 'monospace',
+          fontSize: '11px',
+          color: active ? '#0d0d14' : '#9ca3af',
+          backgroundColor: active ? '#c8f542' : '#1a1a2e',
+          padding: { x: 6, y: 3 },
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(d + 2)
+        .setInteractive({ useHandCursor: true });
+      btn.on('pointerdown', () => {
+        this.navFilter = f.id;
+        this.navPage = 0;
+        this.render();
+      });
+      this.nodes.push(btn);
+    });
+
+    type Poi = { label: string; x: number; y: number; cat: NavFilter | 'home' };
+    const pois: Poi[] = [];
 
     if (this.state.housing.homeId) {
       const home = (homesData as { id: string; name: string; doorX: number; doorY: number }[]).find(
         (h) => h.id === this.state.housing.homeId
       );
-      if (home) pois.push({ label: `Дом: ${home.name}`, x: home.doorX, y: home.doorY });
+      if (home) pois.push({ label: `🏠 ${home.name}`, x: home.doorX, y: home.doorY, cat: 'home' });
     }
     for (const s of shopsData as { type: string; name: string; doorX: number; doorY: number }[]) {
-      if (s.type === 'grocery') pois.push({ label: `🛒 ${s.name}`, x: s.doorX, y: s.doorY });
-      if (s.type === 'furniture') pois.push({ label: `🛋 ${s.name}`, x: s.doorX, y: s.doorY });
-      if (s.type === 'vehicle') pois.push({ label: `🚗 ${s.name}`, x: s.doorX, y: s.doorY });
-      if (s.type === 'bank') pois.push({ label: `🏦 ${s.name}`, x: s.doorX, y: s.doorY });
-      if (s.type === 'pharmacy') pois.push({ label: `💊 ${s.name}`, x: s.doorX, y: s.doorY });
-      if (s.type === 'cafe') pois.push({ label: `☕ ${s.name}`, x: s.doorX, y: s.doorY });
-      if (s.type === 'pawn') pois.push({ label: `💎 ${s.name}`, x: s.doorX, y: s.doorY });
-      if (s.type === 'laundry') pois.push({ label: `🧺 ${s.name}`, x: s.doorX, y: s.doorY });
-      if (s.type === 'hotel') pois.push({ label: `🛏 ${s.name}`, x: s.doorX, y: s.doorY });
-      if (s.type === 'post') pois.push({ label: `✉ ${s.name}`, x: s.doorX, y: s.doorY });
-      if (s.type === 'gym') pois.push({ label: `🏋 ${s.name}`, x: s.doorX, y: s.doorY });
-      if (s.type === 'gas') pois.push({ label: `⛽ ${s.name}`, x: s.doorX, y: s.doorY });
-      if (s.type === 'garage') pois.push({ label: `🔧 ${s.name}`, x: s.doorX, y: s.doorY });
-      if (s.type === 'insurance') pois.push({ label: `🛡 ${s.name}`, x: s.doorX, y: s.doorY });
-      if (s.type === 'casino') pois.push({ label: `🎰 ${s.name}`, x: s.doorX, y: s.doorY });
+      const push = (label: string, cat: NavFilter) =>
+        pois.push({ label, x: s.doorX, y: s.doorY, cat });
+      if (s.type === 'grocery') push(`🛒 ${s.name}`, 'food');
+      if (s.type === 'cafe') push(`☕ ${s.name}`, 'food');
+      if (s.type === 'furniture') push(`🛋 ${s.name}`, 'service');
+      if (s.type === 'vehicle') push(`🚗 ${s.name}`, 'service');
+      if (s.type === 'bank') push(`🏦 ${s.name}`, 'money');
+      if (s.type === 'pharmacy') push(`💊 ${s.name}`, 'service');
+      if (s.type === 'pawn') push(`💎 ${s.name}`, 'money');
+      if (s.type === 'laundry') push(`🧺 ${s.name}`, 'service');
+      if (s.type === 'hotel') push(`🛏 ${s.name}`, 'service');
+      if (s.type === 'post') push(`✉ ${s.name}`, 'money');
+      if (s.type === 'gym') push(`🏋 ${s.name}`, 'service');
+      if (s.type === 'gas') push(`⛽ ${s.name}`, 'service');
+      if (s.type === 'garage') push(`🔧 ${s.name}`, 'service');
+      if (s.type === 'insurance') push(`🛡 ${s.name}`, 'money');
+      if (s.type === 'casino') push(`🎰 ${s.name}`, 'money');
     }
-    for (const j of jobsData as { id: string; name: string; employer: string; doorX: number; doorY: number; jobType?: string }[]) {
+    for (const j of jobsData as {
+      id: string;
+      name: string;
+      employer: string;
+      doorX: number;
+      doorY: number;
+      jobType?: string;
+    }[]) {
       if (j.id === 'police' || j.jobType === 'police') {
-        pois.push({ label: `🚓 ${j.employer}`, x: j.doorX, y: j.doorY });
+        pois.push({ label: `🚓 ${j.employer}`, x: j.doorX, y: j.doorY, cat: 'work' });
       }
       if (j.id === 'firefighter' || j.jobType === 'firefighter') {
-        pois.push({ label: `🚒 ${j.employer}`, x: j.doorX, y: j.doorY });
+        pois.push({ label: `🚒 ${j.employer}`, x: j.doorX, y: j.doorY, cat: 'work' });
+      }
+      if (j.jobType === 'courier' || j.id === 'courier') {
+        pois.push({ label: `📦 ${j.employer}`, x: j.doorX, y: j.doorY, cat: 'work' });
+      }
+      if (j.jobType === 'taxi' || j.id === 'taxi') {
+        pois.push({ label: `🚕 ${j.employer}`, x: j.doorX, y: j.doorY, cat: 'work' });
       }
     }
     const emp = (employmentData as { name: string; doorX: number; doorY: number }[])[0];
-    if (emp) pois.push({ label: `🏢 ${emp.name}`, x: emp.doorX, y: emp.doorY });
+    if (emp) pois.push({ label: `🏢 ${emp.name}`, x: emp.doorX, y: emp.doorY, cat: 'work' });
     if (this.jobs.isCourierJob()) {
       const wh = this.courier.getWarehouseTile();
-      pois.push({ label: '📦 Склад курьера', x: wh.x, y: wh.y });
+      pois.push({ label: '📦 Склад курьера', x: wh.x, y: wh.y, cat: 'work' });
     }
     if (this.jobs.isTaxiJob()) {
       const dep = this.taxi.getDepotTile();
-      pois.push({ label: '🚕 Парк «Жёлтый» (депо [E])', x: dep.x, y: dep.y });
+      pois.push({ label: '🚕 Парк «Жёлтый»', x: dep.x, y: dep.y, cat: 'work' });
     }
     if (this.jobs.isPoliceJob()) {
       const st = this.emergency.getStationTile('police');
-      pois.push({ label: '🚓 Участок', x: st.x, y: st.y });
+      pois.push({ label: '🚓 Участок', x: st.x, y: st.y, cat: 'work' });
     }
     if (this.jobs.isFirefighterJob()) {
       const st = this.emergency.getStationTile('firefighter');
-      pois.push({ label: '🚒 Пожарная', x: st.x, y: st.y });
+      pois.push({ label: '🚒 Пожарная', x: st.x, y: st.y, cat: 'work' });
     }
 
-    pois.slice(0, 12).forEach((p, i) => {
-      this.addBtn(GAME_HEIGHT / 2 - 120 + i * 32, p.label, d, () => {
+    const filtered =
+      this.navFilter === 'all'
+        ? pois
+        : pois.filter((p) => p.cat === this.navFilter || (this.navFilter === 'service' && p.cat === 'home'));
+    const pageSize = 8;
+    const maxPage = Math.max(0, Math.ceil(filtered.length / pageSize) - 1);
+    if (this.navPage > maxPage) this.navPage = maxPage;
+    const page = filtered.slice(this.navPage * pageSize, this.navPage * pageSize + pageSize);
+
+    this.addLine(
+      GAME_HEIGHT / 2 - 105,
+      `${filtered.length} точек · стр. ${this.navPage + 1}/${maxPage + 1}`,
+      d,
+      '#6b7280'
+    );
+
+    page.forEach((p, i) => {
+      this.addBtn(GAME_HEIGHT / 2 - 80 + i * 30, p.label, d, () => {
         this.cb.onNavSet({
           x: p.x * TILE_SIZE + TILE_SIZE / 2,
           y: p.y * TILE_SIZE + TILE_SIZE / 2,
@@ -331,6 +396,13 @@ export class SmartphoneUI {
         this.close();
       });
     });
+
+    if (maxPage > 0) {
+      this.addBtn(GAME_HEIGHT / 2 + 155, '← / → страница', d, () => {
+        this.navPage = (this.navPage + 1) % (maxPage + 1);
+        this.render();
+      });
+    }
     this.addBtn(GAME_HEIGHT / 2 + 185, 'Сбросить маршрут', d, () => {
       this.cb.onNavSet(null);
       this.cb.onMessage('Маршрут сброшен');

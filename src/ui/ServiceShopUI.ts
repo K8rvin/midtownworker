@@ -12,6 +12,9 @@ export interface ServiceVehicleApi {
   inVehicle: () => boolean;
   hp: () => number;
   maxHp: () => number;
+  fuel?: () => number;
+  maxFuel?: () => number;
+  refuel?: (amount: number | 'full') => void;
   repair: (amount: number | 'full') => void;
   wash: () => void;
 }
@@ -233,7 +236,10 @@ export class ServiceShopUI {
         },
       });
       actions.push({
-        label: 'Оплатить счета · $40 (+1 день к аренде)',
+        label:
+          (this.state.billsOwed ?? 0) > 0
+            ? `Оплатить ЖКХ · $${this.state.billsOwed}`
+            : 'Предоплата счетов · $40 (+аренда/срок)',
         fn: () => {
           const err = this.shops.postPayBills();
           this.act(err, err ? '' : 'Счета оплачены');
@@ -263,26 +269,48 @@ export class ServiceShopUI {
       });
     } else if (this.shop.type === 'gas') {
       const hasCar = this.vehicle?.inVehicle() ?? false;
+      const fuel = this.vehicle?.fuel?.() ?? 0;
+      const maxFuel = this.vehicle?.maxFuel?.() ?? 100;
       const hp = this.vehicle?.hp() ?? 0;
       const max = this.vehicle?.maxHp() ?? 0;
       actions.push({
         label: hasCar
-          ? `Заправить · $40 (HP ${Math.round(hp)}/${max}, мойка)`
-          : 'Заправить · $40 (машина у колонки / E с авто)',
+          ? `Полный бак · $35 (⛽ ${Math.round(fuel)}/${maxFuel})`
+          : 'Полный бак · $35 (машина у колонки / E с авто)',
         fn: () => {
           if (!this.vehicle?.inVehicle()) {
             this.onMessage('Подъедьте на машине (E у АЗС) или оставьте её у входа');
             return;
           }
-          const cost = 40;
+          const cost = 35;
           if (this.state.money < cost) {
             this.onMessage(`Нужно $${cost}`);
             return;
           }
           this.state.money -= cost;
-          this.vehicle.repair(Math.ceil(this.vehicle.maxHp() * 0.35));
+          this.vehicle.refuel?.('full');
+          this.act(null, 'Бак полный');
+        },
+      });
+      actions.push({
+        label: hasCar
+          ? `Комплекс · $55 (бак + мойка + HP ${Math.round(hp)}/${max})`
+          : 'Комплекс · $55 (нужна машина)',
+        fn: () => {
+          if (!this.vehicle?.inVehicle()) {
+            this.onMessage('Подъедьте на машине (E у АЗС) или оставьте её у входа');
+            return;
+          }
+          const cost = 55;
+          if (this.state.money < cost) {
+            this.onMessage(`Нужно $${cost}`);
+            return;
+          }
+          this.state.money -= cost;
+          this.vehicle.refuel?.('full');
+          this.vehicle.repair(Math.ceil(this.vehicle.maxHp() * 0.25));
           this.vehicle.wash();
-          this.act(null, 'Заправлено: +35% HP, авто вымыто');
+          this.act(null, 'Заправлено, подлатали, вымыли');
         },
       });
       actions.push({

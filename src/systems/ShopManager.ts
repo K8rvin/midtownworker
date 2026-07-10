@@ -418,13 +418,21 @@ export class ShopManager {
   }
 
   postPayBills(): string | null {
+    const owed = this.state.billsOwed ?? 0;
+    if (owed > 0) {
+      if (this.state.money < owed) return `ЖКХ: нужно $${owed}`;
+      this.state.money -= owed;
+      this.state.billsOwed = 0;
+      return null;
+    }
+    // No debt: optional prepay (rent buffer + push next bills)
     const cost = 40;
     if (this.state.money < cost) return `Нужно $${cost}`;
     this.state.money -= cost;
-    // Soft benefit: tiny rent pressure relief flavor — add a day if renting
     if (this.state.housing.type === 'rent' && this.state.housing.rentDueDay > 0) {
       this.state.housing.rentDueDay += 1;
     }
+    this.state.billsDueDay = Math.max(this.state.billsDueDay ?? this.state.day, this.state.day) + 3;
     return null;
   }
 

@@ -27,6 +27,9 @@ export class Vehicle {
   public sprite: Phaser.Physics.Arcade.Sprite;
   public config: VehicleConfig;
   public hp: number;
+  /** 0–100 fuel. Traffic AI ignores drain. */
+  public fuel = 100;
+  public readonly maxFuel = 100;
   public occupied = false;
   public isTraffic = false;
   public active = true;
@@ -112,7 +115,19 @@ export class Vehicle {
 
   updateDriving(throttle: number, steer: number, dt: number): void {
     this.syncFromPhysics();
-    this.lastThrottle = throttle;
+
+    // Fuel: player cars only — empty tank blocks acceleration (brakes still work).
+    let th = throttle;
+    if (!this.isTraffic) {
+      if (this.fuel <= 0 && th > 0) th = 0;
+      const speedRatio = Math.min(1, Math.abs(this.state.speed) / Math.max(1, this.config.maxSpeed));
+      if (th > 0.04 || speedRatio > 0.08) {
+        // ~45–60s continuous full-speed drive empties a full tank.
+        const burn = (0.9 + speedRatio * 1.6) * Math.max(0.15, Math.abs(th)) * dt * 1.15;
+        this.fuel = Math.max(0, this.fuel - burn);
+      }
+    }
+    this.lastThrottle = th;
 
     const steerTarget = Math.abs(steer) < 0.04 ? 0 : steer;
     const rate = steerTarget === 0 ? this.steerDecayRate : this.steerSmoothRate;
@@ -122,18 +137,19 @@ export class Vehicle {
     const friction = this.config.friction ?? 2.5;
     const grip = this.config.grip ?? 8;
     const brakePower = this.config.brakePower ?? this.config.acceleration * 1.4;
+    const fuelFactor = this.isTraffic || this.fuel > 5 ? 1 : this.fuel > 0 ? 0.45 : 0.12;
 
     this.state = VehiclePhysics.update(
       this.state,
       {
-        maxSpeed: this.config.maxSpeed,
-        acceleration: this.config.acceleration,
+        maxSpeed: this.config.maxSpeed * fuelFactor,
+        acceleration: this.config.acceleration * fuelFactor,
         handling: this.config.handling,
         friction,
         grip,
         brakePower,
       },
-      throttle,
+      th,
       steer,
       dt,
       this.steerSmoothed
@@ -145,6 +161,11 @@ export class Vehicle {
     }
     this.sprite.setAngle(this.state.angle);
     this.updateVisuals();
+  }
+
+  refuel(amount: number | 'full'): void {
+    if (amount === 'full') this.fuel = this.maxFuel;
+    else this.fuel = Math.min(this.maxFuel, this.fuel + amount);
   }
 
   /**

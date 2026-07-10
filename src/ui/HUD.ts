@@ -147,7 +147,7 @@ export class HUD {
 
   update(
     interactHint = '',
-    vehicleHp: { current: number; max: number } | null = null,
+    vehicleHp: { current: number; max: number; fuel?: number; maxFuel?: number } | null = null,
     timeManager?: TimeManager,
     worldPos?: { x: number; y: number } | null,
     coordLabel = '',
@@ -240,9 +240,16 @@ export class HUD {
       if (worldPos) {
         const tx = Math.floor(worldPos.x / TILE_SIZE);
         const ty = Math.floor(worldPos.y / TILE_SIZE);
+        let navBit = '';
+        if (this.state.navTarget) {
+          const distM = Math.round(
+            Math.hypot(this.state.navTarget.x - worldPos.x, this.state.navTarget.y - worldPos.y) / 8
+          );
+          navBit = ` · 📍 ${distM}м`;
+        }
         const prefix = coordLabel ? `${coordLabel} · ` : '';
         this.coordsText.setText(
-          `${prefix}тайл (${tx}, ${ty}) · мир ${Math.round(worldPos.x)}, ${Math.round(worldPos.y)}`
+          `${prefix}(${tx}, ${ty})${navBit}`
         );
       } else {
         this.coordsText.setText(coordLabel);
@@ -405,16 +412,29 @@ export class HUD {
     this.healthBar.strokeRect(GAME_WIDTH - 180, 14, 160, 18);
   }
 
-  private drawVehicleBar(vehicleHp: { current: number; max: number } | null): void {
+  private drawVehicleBar(
+    vehicleHp: { current: number; max: number; fuel?: number; maxFuel?: number } | null
+  ): void {
     this.vehicleBar.clear();
     if (!vehicleHp) return;
+    // HP (orange)
     this.vehicleBar.fillStyle(0x333333, 1);
-    this.vehicleBar.fillRect(GAME_WIDTH - 180, 36, 160, 12);
+    this.vehicleBar.fillRect(GAME_WIDTH - 180, 36, 160, 10);
     this.vehicleBar.fillStyle(0xffa726, 1);
     const pct = Phaser.Math.Clamp(vehicleHp.current / vehicleHp.max, 0, 1);
-    this.vehicleBar.fillRect(GAME_WIDTH - 180, 36, 160 * pct, 12);
+    this.vehicleBar.fillRect(GAME_WIDTH - 180, 36, 160 * pct, 10);
     this.vehicleBar.lineStyle(1, 0xffd600, 0.6);
-    this.vehicleBar.strokeRect(GAME_WIDTH - 180, 36, 160, 12);
+    this.vehicleBar.strokeRect(GAME_WIDTH - 180, 36, 160, 10);
+    // Fuel (cyan)
+    const maxF = vehicleHp.maxFuel ?? 100;
+    const fuel = vehicleHp.fuel ?? maxF;
+    const fp = Phaser.Math.Clamp(fuel / maxF, 0, 1);
+    this.vehicleBar.fillStyle(0x1a2a2e, 1);
+    this.vehicleBar.fillRect(GAME_WIDTH - 180, 48, 160, 8);
+    this.vehicleBar.fillStyle(fp < 0.2 ? 0xff2d55 : 0x22d3ee, 1);
+    this.vehicleBar.fillRect(GAME_WIDTH - 180, 48, 160 * fp, 8);
+    this.vehicleBar.lineStyle(1, 0x22d3ee, 0.55);
+    this.vehicleBar.strokeRect(GAME_WIDTH - 180, 48, 160, 8);
   }
 
   private drawGangBars(): void {

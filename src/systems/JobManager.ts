@@ -106,6 +106,8 @@ export class JobManager {
     if (!this.state.job) return 'Нет работы';
     if (!this.isPieceworkJob()) return 'Смена только для сдельных профессий';
     this.state.job.shiftOpen = true;
+    this.state.shiftMoneyAtOpen = this.state.money;
+    this.state.shiftJobsDone = 0;
     return null;
   }
 
@@ -117,6 +119,14 @@ export class JobManager {
     this.state.job.shiftOpen = false;
     this.state.lifeStats.shiftsWorked += 1;
     return null;
+  }
+
+  /** End-of-shift summary (call after closeShift succeeds). */
+  shiftReportLine(): string {
+    const earned = this.state.money - (this.state.shiftMoneyAtOpen ?? this.state.money);
+    const jobs = this.state.shiftJobsDone ?? 0;
+    const sign = earned >= 0 ? '+' : '';
+    return `📋 Смена закрыта: ${jobs} заказов · ${sign}$${earned}`;
   }
 
   hasJob(): boolean {
